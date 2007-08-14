@@ -24,6 +24,9 @@ h1 a:hover { text-decoration:underline; }
 	float:left;
 }
 
+#menu select { width:150px; }
+#menu input[type="text"] { width:150px; }
+
 #content {
 	min-height:200px;
 	margin-left:180px;

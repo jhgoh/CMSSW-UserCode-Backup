@@ -72,7 +72,7 @@
 	if ( $cmssw_version != "" ) { 
 ?>
   Sample : 
-  <select name="sample" style="width:150px">
+  <select name="sample">
    <option value="">=== Sample ===</option> 
 <?
 		foreach ($samples as $item) { 
@@ -88,7 +88,7 @@
 	if ( $cmssw_version != "" and $sample != "" ) {
 ?>
   Validator :
-  <select name="validator" style="width:150px">
+  <select name="validator">
    <option value="">=== Validator ===</option>
 <?
 		foreach ($validators as $item) { 
@@ -104,7 +104,7 @@
 	if ( $cmssw_version != "" and $sample != "" and $validator != "" ) {
 ?>
   Category :
-  <select name="category" style="width:150px">
+  <select name="category">
    <option value="">=== Category ===</option>
 <?
 		reset($categories);
@@ -118,7 +118,7 @@
 <?
 	}
 ?>
-  Keyword : <input type="text" name="keywords" value="<?=$keywords?>"/><br/>
+  Keyword : <input type="text" name="keywords" value="<?=$keywords?>" class="text"/><br/>
   Thumbnail <input type="checkbox" name="thumbnail" <? if ($thumbnail != "") { ?>checked="checked"<? } ?> /> <br/>
   <input type="hidden" name="mode" value="<?=$mode?>"/>
   <input type="submit" name="submit" value="OK"/>
