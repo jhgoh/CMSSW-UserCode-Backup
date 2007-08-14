@@ -17,12 +17,20 @@
 <body>
 <?
 	$webpath = '/afs/cern.ch/user/j/jhgoh/public/html/Validation';
-	//Variables :
-	//external : refVer
-	//external : cmssw_version
-	//internal : $refROOTPath
-	//internal : $cmpROOTPath
 	
+	// Categorization of plots
+	//   add your validator and plots here.
+	switch ($validator) {
+	case 'SingleMuonValidator' :
+		$categories = array('efficiency'=>array('GlbSim_effEta', 'StaSim_effEta'),
+				    'resolution'=>array('GlbEtaVsErrQPt_2', 'StaEtaVsErrQPt_2'));
+		break;
+	case 'MultiTrackAnalyzer':
+		$categories = array('efficiency'=>array('eff'), 
+				    'resolution'=>array('QPtResMean'));
+		break;
+	}
+
 	$cmssw_versions = array();
 	$samples = array();
 	$validators = array();
@@ -92,6 +100,23 @@
   </select>
 <?
 	} 
+
+	if ( $cmssw_version != "" and $sample != "" and $validator != "" ) {
+?>
+  Category :
+  <select name="category" style="width:150px">
+   <option value="">=== Category ===</option>
+<?
+		reset($categories);
+		foreach (array_keys($categories) as $item)  {
+?>
+   <option id="<?=$item?>" value="<?=$item?>"<? if ($category==$item) print ' selected="selected"'?>><?=$item?></option>
+<?
+		}
+?>
+  </select>
+<?
+	}
 ?>
   Keyword : <input type="text" name="keywords" value="<?=$keywords?>"/><br/>
   Thumbnail <input type="checkbox" name="thumbnail" <? if ($thumbnail != "") { ?>checked="checked"<? } ?> /> <br/>
@@ -132,7 +157,10 @@
  </pre>
 
 <? 
-	$images = filter(getListOfImages($workArea), explode(' ', $keywords)); 
+	if ( $category == "" ) $images = getListOfImages($workArea);
+	else $images = $categories[$category];
+
+	$images = filter($images, explode(' ', $keywords));
 ?>
  <h3>Result (<?=count($images)?> plots)</h3>
 <?
