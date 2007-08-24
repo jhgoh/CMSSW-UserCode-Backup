@@ -15,6 +15,7 @@
 </head>
 
 <body>
+<form id="subForm" action="<?=$PHP_SELF?>">
 <?
 	$webpath = '/afs/cern.ch/user/j/jhgoh/public/html/Validation';
 	
@@ -57,7 +58,7 @@
 <div id="menu">
  <p>
   Release :
-  <select name="cmssw_version" style="width:150px;">
+  <select name="cmssw_version" onchange="this.form.submit();">
    <option value="">=== CMSSW_VERSION ===</option> 
 <?
 	foreach ($cmssw_versions as $item) { 
@@ -72,7 +73,7 @@
 	if ( $cmssw_version != "" ) { 
 ?>
   Sample : 
-  <select name="sample">
+  <select name="sample" onchange="this.form.submit();">
    <option value="">=== Sample ===</option> 
 <?
 		foreach ($samples as $item) { 
@@ -88,7 +89,7 @@
 	if ( $cmssw_version != "" and $sample != "" ) {
 ?>
   Validator :
-  <select name="validator">
+  <select name="validator" onchange="this.form.submit();">
    <option value="">=== Validator ===</option>
 <?
 		foreach ($validators as $item) { 
@@ -104,7 +105,7 @@
 	if ( $cmssw_version != "" and $sample != "" and $validator != "" ) {
 ?>
   Category :
-  <select name="category">
+  <select name="category" onchange="this.form.submit();">
    <option value="">=== Category ===</option>
 <?
 		reset($categories);
@@ -121,7 +122,7 @@
   Keyword : <input type="text" name="keywords" value="<?=$keywords?>" class="text"/><br/>
   Thumbnail <input type="checkbox" name="thumbnail" <? if ($thumbnail != "") { ?>checked="checked"<? } ?> /> <br/>
   <input type="hidden" name="mode" value="<?=$mode?>"/>
-  <input type="submit" name="submit" value="OK"/>
+  <input type="submit" name="OK" value="OK"/>
  </p>
 </div>
 
@@ -167,7 +168,7 @@
 	if ( $thumbnail != "" ) {
 		foreach ($images as $item) {
 			$img  = "data/$cmssw_version/$sample/$validator/$item.gif";
-			$link = "index.php?cmssw_version=$cmssw_version&sample=$sample&validator=$validator&keywords=$item";
+			$link = "index.php?cmssw_version=$cmssw_version&amp;sample=$sample&amp;validator=$validator&amp;keywords=$item";
 ?>
  <table class="thumbnail">
   <tr><th><?=$item?></th></tr>
@@ -192,14 +193,14 @@
 <?
 		}
 		elseif ( count($images) >= 2 ) {
-			$n = 2*((count($images)+1)/2);
+			$n = 2*floor(count($images)/2);
 			for ($i=0; $i<$n; $i+=2) {
 				$item1 = $images[$i];
 				$item2 = $images[$i+1];
 				$img1  = "data/$cmssw_version/$sample/$validator/$item1.gif";
 				$img2  = "data/$cmssw_version/$sample/$validator/$item2.gif";
-				$link1 = "index.php?cmssw_version=$cmssw_version&sample=$sample&validator=$validator&keywords=$item1";
-				$link2 = "index.php?cmssw_version=$cmssw_version&sample=$sample&validator=$validator&keywords=$item2";
+				$link1 = "index.php?cmssw_version=$cmssw_version&amp;sample=$sample&amp;validator=$validator&amp;keywords=$item1";
+				$link2 = "index.php?cmssw_version=$cmssw_version&amp;sample=$sample&amp;validator=$validator&amp;keywords=$item2";
 ?>
    <tr><th><?=$item1?></th><th><?=$item2?></th></tr>
    <tr><td><a href="<?=$link1?>"><img src="<?=$img1?>" alt="<?=$item1?>"/></a></td>
@@ -207,6 +208,18 @@
    <tr><td><pre><?if (is_file("$workArea/$item1.txt")) readfile("$workArea/$item1.txt")?></pre></td>
        <td><pre><?if (is_file("$workArea/$item2.txt")) readfile("$workArea/$item2.txt")?></pre></td></tr>
 <? 
+			}
+			if ($n != count($images) ) {
+                                $item1 = $images[$n];
+                                $img1  = "data/$cmssw_version/$sample/$validator/$item1.gif";
+                                $link1 = "index.php?cmssw_version=$cmssw_version&amp;sample=$sample&amp;validator=$validator&amp;keywords=$item1";
+?>
+   <tr><th><?=$item1?></th><th>&nbsp;</th></tr>
+   <tr><td><a href="<?=$link1?>"><img src="<?=$img1?>" alt="<?=$item1?>"/></a></td>
+       <td>&nbsp;</td></tr>
+   <tr><td><pre><?if (is_file("$workArea/$item1.txt")) readfile("$workArea/$item1.txt")?></pre></td>
+       <td>&nbsp;</td></tr>
+<?
 			}
 		}
 ?>
@@ -276,12 +289,10 @@
 </div>
 
 <div id="main">
-<form action="index.php">
 <? 
 	} 
 
 	function printTail() { ?>
-</form>
 </div>
 
 <div id="tail">
@@ -292,6 +303,7 @@
  Junghwan Goh (jhgoh@fnal.gov)
 </div>
 
+</form>
 </body>
 
 </html>
