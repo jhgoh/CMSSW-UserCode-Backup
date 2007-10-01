@@ -17,26 +17,28 @@
 <body>
 <form id="subForm" action="<?=$PHP_SELF?>">
 <?
-     $webpath = '/afs/cern.ch/cms/Physics/muon/CMSSW/Performance/RecoMuon/Validation';
+	$webpath = '/afs/cern.ch/cms/Physics/muon/CMSSW/Performance/RecoMuon/Validation';
 
 // Categorization of plots
 //   add your validator and plots here.
-     switch ($validator) {
-     case 'RecoMuonValidator' :
-       $categories = array('efficiency'=>array('GlbSim_effEta', 'StaSim_effEta','SeedSim_effEta','GlbSta_effEta','GlbSeed_effEta','StaSeed_effEta','GlbTk_effEta'),
-			   'resolution'=>array('GlbEtaVsErrQPt_2', 'StaEtaVsErrQPt_2'));
-       break;
-     case 'MultiTrackAnalyzer':
-       $categories = array('efficiency'=>array('effic','efficPt','fakes','fakerate'), 
-			   'Pt resolution'=>array('ptres_vs_eta','ptres_vs_eta_1','ptres_vs_eta_2','ptres_vs_eta_chi2'),
-			   'Pt pull'=>array('ptpull_vs_eta','ptpull_vs_eta_1','ptpull_vs_eta_2','ptpull_vs_eta_chi2'));
-       break;
-     }
+	switch ($validator) {
+	case 'RecoMuonValidator' :
+		$categories = array('efficiency'=>array('GlbSim_effEta', 'StaSim_effEta','SeedSim_effEta','GlbSta_effEta','GlbSeed_effEta','StaSeed_effEta','GlbTk_effEta'),
+				    'resolution'=>array('GlbEtaVsErrQPt_2', 'StaEtaVsErrQPt_2'));
+		break;
+	case 'MultiTrackAnalyzer':
+		$categories = array('efficiency'=>array('effic','efficPt','fakes','fakerate'), 
+				    'Pt resolution'=>array('ptres_vs_eta','ptres_vs_eta_1','ptres_vs_eta_2','ptres_vs_eta_chi2'),
+				    'Pt pull'=>array('ptpull_vs_eta','ptpull_vs_eta_1','ptpull_vs_eta_2','ptpull_vs_eta_chi2'));
+		break;
+	}
 
-$cmssw_versions = array();
-$samples = array();
-$validators = array();
-$selectors = array();
+	$cmssw_versions = array();
+	$samples = array();
+	$validators = array();
+	$selectors = array();
+
+	if ( $view != "twoColumn" ) $view = "thumbnail";
 ?>
 
 <? 
@@ -55,14 +57,14 @@ printHead();
 		if ( $sample != "" and is_dir("$webpath/data/$cmssw_version/$sample") ) {
 			$validators = getListOfDir("$webpath/data/$cmssw_version/$sample");
 			if ( $validator != "" and is_dir("$webpath/data/$cmssw_version/$sample/$validator") ) {
-			  $selectors = getListOfDir("$webpath/data/$cmssw_version/$sample/$validator");
+				$selectors = getListOfDir("$webpath/data/$cmssw_version/$sample/$validator");
 			}
 		}
 	}
 ?>
 <div id="menu">
  <p>
-  Release :
+  <label for="cmssw_version">Release :</label>
   <select name="cmssw_version" onchange="this.form.submit();">
    <option value="">=== CMSSW_VERSION ===</option> 
 <?
@@ -77,7 +79,7 @@ printHead();
 <?
 	if ( $cmssw_version != "" ) { 
 ?>
-  Sample : 
+  <label for="sample">Sample :</label>
   <select name="sample" onchange="this.form.submit();">
    <option value="">=== Sample ===</option> 
 <?
@@ -93,7 +95,7 @@ printHead();
 
 	if ( $cmssw_version != "" and $sample != "" ) {
 ?>
-  Validator :
+  <label for="validator">Validator :</label>
   <select name="validator" onchange="this.form.submit();">
    <option value="">=== Validator ===</option>
 <?
@@ -109,7 +111,7 @@ printHead();
 
 	if ( $cmssw_version != "" and $sample != "" and $validator != "" ) {
 ?>
-  Selector :
+  <label for="selector">Selector :</label>
   <select name="selector" onchange="this.form.submit();">
    <option value="">=== Selector ===</option>
 <?	    
@@ -124,7 +126,7 @@ printHead();
 
 	if ( $cmssw_version != "" and $sample != "" and $validator != "" and $selector != "" ) {
 ?>
-  Category :
+  <label for="category">Category :</label>
   <select name="category" onchange="this.form.submit();">
    <option value="">=== All Plots ===</option>
 <?
@@ -140,8 +142,11 @@ printHead();
 	}
 
 ?>
-  Keyword : <input type="text" name="keywords" value="<?=$keywords?>" class="text"/><br/>
-  Thumbnail <input type="checkbox" name="thumbnail" <? if ($thumbnail != "") { ?>checked="checked"<? } ?> /> <br/>
+  <label for="keywords">Keyword :</label> <input type="text" name="keywords" value="<?=$keywords?>" class="text"/><br/>
+  <label for="view">View</label><br/> 
+   <input type="radio" name="view" value="thumbnail" <? if ($view == 'thumbnail') { ?> checked="checked"<? } ?> /> thumbnail<br/>
+   <input type="radio" name="view" value="twoColumn" <? if ($view == 'twoColumn') { ?> checked="checked"<? } ?> /> twoColumn<br/>
+<!--<input type="checkbox" name="thumbnail" <? if ($thumbnail != "") { ?>checked="checked"<? } ?> /> <br/>-->
   <input type="hidden" name="mode" value="<?=$mode?>"/>
   <input type="submit" name="OK" value="OK"/>
  </p>
@@ -186,10 +191,10 @@ printHead();
 ?>
  <h3>Result (<?=count($images)?> plots)</h3>
 <?
-	if ( $thumbnail != "" ) {
+	if ( $view == "thumbnail" ) {
 		foreach ($images as $item) {
 			$img  = "data/$cmssw_version/$sample/$validator/$selector/$item.gif";
-			$link = "index.php?cmssw_version=$cmssw_version&amp;sample=$sample&amp;validator=$validator&amp;selector=$selector&amp;keywords=$item";
+			$link = "index.php?cmssw_version=$cmssw_version&amp;sample=$sample&amp;validator=$validator&amp;selector=$selector&amp;keywords=$item&amp;view=twoColumn";
 ?>
  <table class="thumbnail">
   <tr><th><?=$item?></th></tr>
@@ -231,9 +236,9 @@ printHead();
 <? 
 			}
 			if ($n != count($images) ) {
-                                $item1 = $images[$n];
-                                $img1  = "data/$cmssw_version/$sample/$validator/$selector/$item1.gif";
-                                $link1 = "index.php?cmssw_version=$cmssw_version&amp;sample=$sample&amp;validator=$validator&amp;selector=$selector&amp;keywords=$item1";
+				$item1 = $images[$n];
+				$img1  = "data/$cmssw_version/$sample/$validator/$selector/$item1.gif";
+				$link1 = "index.php?cmssw_version=$cmssw_version&amp;sample=$sample&amp;validator=$validator&amp;selector=$selector&amp;keywords=$item1";
 ?>
    <tr><th><?=$item1?></th><th>&nbsp;</th></tr>
    <tr><td><a href="<?=$link1?>"><img src="<?=$img1?>" alt="<?=$item1?>"/></a></td>
@@ -268,10 +273,10 @@ printHead();
 	function getListOfDir($path) {
 		$dirList = array();
 		if ( $dh = @opendir($path) ) {
-		        while ( False !== ($f = @readdir($dh) ) ) {
-		                if ( $f != '.' and $f != '..' ) array_push($dirList, $f);
-		        }
-		        @closedir($dh);
+			while ( False !== ($f = @readdir($dh) ) ) {
+				if ( $f != '.' and $f != '..' ) array_push($dirList, $f);
+			}
+			@closedir($dh);
 		}
 		return $dirList;
 	}
