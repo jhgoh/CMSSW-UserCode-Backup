@@ -326,7 +326,7 @@ printHead();
  <a href="http://validator.w3.org/check?uri=referer" target="_blank">XHTML Transitional 1.0</a> /
  <a href="http://jigsaw.w3.org/css-validator/check?uri=referer" target="_blank">CSS</a> / 
  Tested at Mozilla-Firefox<br/>
- Last updated : 2007.Oct.01<br/>
+ Last updated : <?=date('Y M d', filemtime("index.php"))?><br/>
  Junghwan Goh (jhgoh@fnal.gov)
 </div>
 
