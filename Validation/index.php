@@ -155,7 +155,7 @@ printHead();
 <div id="content">
 <?
 	// Print validation plots if we set CMSSW versions correctly
-	if ( $sample == "" or $validator == "" ) {
+	if ( $sample == "" or $validator == "" or $selector == "" ) {
 		if ( $cmssw_version != "" ) {
 ?>
  <h2>Release <span style="color:red"><?=$cmssw_version?></span></h2>
@@ -188,6 +188,7 @@ printHead();
 	else $images = $categories[$category];
 
 	$images = filter($images, explode(' ', $keywords));
+	if ( ! $images ) $images = array();
 ?>
  <h3>Result (<?=count($images)?> plots)</h3>
 <?
