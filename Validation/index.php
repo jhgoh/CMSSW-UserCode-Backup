@@ -17,28 +17,30 @@
 <body>
 <form id="subForm" action="<?=$PHP_SELF?>">
 <?
-	$webpath = '/afs/cern.ch/user/j/jhgoh/public/html/Validation';
-	
-	// Categorization of plots
-	//   add your validator and plots here.
-	switch ($validator) {
-	case 'SingleMuonValidator' :
-		$categories = array('efficiency'=>array('GlbSim_effEta', 'StaSim_effEta'),
-				    'resolution'=>array('GlbEtaVsErrQPt_2', 'StaEtaVsErrQPt_2'));
-		break;
-	case 'MultiTrackAnalyzer':
-		$categories = array('efficiency'=>array('eff'), 
-				    'resolution'=>array('QPtResMean'));
-		break;
-	}
+     $webpath = '/afs/cern.ch/cms/Physics/muon/CMSSW/Performance/RecoMuon/Validation';
 
-	$cmssw_versions = array();
-	$samples = array();
-	$validators = array();
+// Categorization of plots
+//   add your validator and plots here.
+     switch ($validator) {
+     case 'RecoMuonValidator' :
+       $categories = array('efficiency'=>array('GlbSim_effEta', 'StaSim_effEta','SeedSim_effEta','GlbSta_effEta','GlbSeed_effEta','StaSeed_effEta','GlbTk_effEta'),
+			   'resolution'=>array('GlbEtaVsErrQPt_2', 'StaEtaVsErrQPt_2'));
+       break;
+     case 'MultiTrackAnalyzer':
+       $categories = array('efficiency'=>array('effic','efficPt','fakes','fakerate'), 
+			   'Pt resolution'=>array('ptres_vs_eta','ptres_vs_eta_1','ptres_vs_eta_2','ptres_vs_eta_chi2'),
+			   'Pt pull'=>array('ptpull_vs_eta','ptpull_vs_eta_1','ptpull_vs_eta_2','ptpull_vs_eta_chi2'));
+       break;
+     }
+
+$cmssw_versions = array();
+$samples = array();
+$validators = array();
+$selectors = array();
 ?>
 
 <? 
-	printHead(); 
+printHead(); 
 ?>
 
 <?
@@ -52,6 +54,9 @@
 		$samples = getListOfDir("$webpath/data/$cmssw_version");
 		if ( $sample != "" and is_dir("$webpath/data/$cmssw_version/$sample") ) {
 			$validators = getListOfDir("$webpath/data/$cmssw_version/$sample");
+			if ( $validator != "" and is_dir("$webpath/data/$cmssw_version/$sample/$validator") ) {
+			  $selectors = getListOfDir("$webpath/data/$cmssw_version/$sample/$validator");
+			}
 		}
 	}
 ?>
@@ -104,9 +109,24 @@
 
 	if ( $cmssw_version != "" and $sample != "" and $validator != "" ) {
 ?>
+  Selector :
+  <select name="selector" onchange="this.form.submit();">
+   <option value="">=== Selector ===</option>
+<?	    
+		foreach ($selectors as $item)  {
+?>
+   <option id="<?=$item?>" value="<?=$item?>"<? if ($selector==$item) print ' selected="selected"'?>><?=$item?></option>
+<?
+		}
+?>
+</select>
+    <? }
+
+	if ( $cmssw_version != "" and $sample != "" and $validator != "" and $selector != "" ) {
+?>
   Category :
   <select name="category" onchange="this.form.submit();">
-   <option value="">=== Category ===</option>
+   <option value="">=== All Plots ===</option>
 <?
 		reset($categories);
 		foreach (array_keys($categories) as $item)  {
@@ -118,6 +138,7 @@
   </select>
 <?
 	}
+
 ?>
   Keyword : <input type="text" name="keywords" value="<?=$keywords?>" class="text"/><br/>
   Thumbnail <input type="checkbox" name="thumbnail" <? if ($thumbnail != "") { ?>checked="checked"<? } ?> /> <br/>
@@ -152,7 +173,7 @@
  <h3>Summary</h3>
  <pre class="description">
 <?
-	$workArea = "$webpath/data/$cmssw_version/$analyzer/$sample/$validator";
+	$workArea = "$webpath/data/$cmssw_version/$analyzer/$sample/$validator/$selector";
 	if ( is_file("$workArea/description.txt") ) readfile("$workArea/description.txt");
 ?>
  </pre>
@@ -167,8 +188,8 @@
 <?
 	if ( $thumbnail != "" ) {
 		foreach ($images as $item) {
-			$img  = "data/$cmssw_version/$sample/$validator/$item.gif";
-			$link = "index.php?cmssw_version=$cmssw_version&amp;sample=$sample&amp;validator=$validator&amp;keywords=$item";
+			$img  = "data/$cmssw_version/$sample/$validator/$selector/$item.gif";
+			$link = "index.php?cmssw_version=$cmssw_version&amp;sample=$sample&amp;validator=$validator&amp;selector=$selector&amp;keywords=$item";
 ?>
  <table class="thumbnail">
   <tr><th><?=$item?></th></tr>
@@ -185,7 +206,7 @@
 <? 
 		if ( count($images) == 1 ) {
 			$item = $images[0];
-			$img  = "data/$cmssw_version/$sample/$validator/$item.gif";
+			$img  = "data/$cmssw_version/$sample/$validator/$selector/$item.gif";
 ?>
   <tr><th><?=$item?></th></tr>
   <tr><td><img src="<?=$img?>" alt="<?=$item?>"/></td></tr>
@@ -197,10 +218,10 @@
 			for ($i=0; $i<$n; $i+=2) {
 				$item1 = $images[$i];
 				$item2 = $images[$i+1];
-				$img1  = "data/$cmssw_version/$sample/$validator/$item1.gif";
-				$img2  = "data/$cmssw_version/$sample/$validator/$item2.gif";
-				$link1 = "index.php?cmssw_version=$cmssw_version&amp;sample=$sample&amp;validator=$validator&amp;keywords=$item1";
-				$link2 = "index.php?cmssw_version=$cmssw_version&amp;sample=$sample&amp;validator=$validator&amp;keywords=$item2";
+				$img1  = "data/$cmssw_version/$sample/$validator/$selector/$item1.gif";
+				$img2  = "data/$cmssw_version/$sample/$validator/$selector/$item2.gif";
+				$link1 = "index.php?cmssw_version=$cmssw_version&amp;sample=$sample&amp;validator=$validator&amp;selector=$selector&amp;keywords=$item1";
+				$link2 = "index.php?cmssw_version=$cmssw_version&amp;sample=$sample&amp;validator=$validator&amp;selector=$selector&amp;keywords=$item2";
 ?>
    <tr><th><?=$item1?></th><th><?=$item2?></th></tr>
    <tr><td><a href="<?=$link1?>"><img src="<?=$img1?>" alt="<?=$item1?>"/></a></td>
@@ -211,8 +232,8 @@
 			}
 			if ($n != count($images) ) {
                                 $item1 = $images[$n];
-                                $img1  = "data/$cmssw_version/$sample/$validator/$item1.gif";
-                                $link1 = "index.php?cmssw_version=$cmssw_version&amp;sample=$sample&amp;validator=$validator&amp;keywords=$item1";
+                                $img1  = "data/$cmssw_version/$sample/$validator/$selector/$item1.gif";
+                                $link1 = "index.php?cmssw_version=$cmssw_version&amp;sample=$sample&amp;validator=$validator&amp;selector=$selector&amp;keywords=$item1";
 ?>
    <tr><th><?=$item1?></th><th>&nbsp;</th></tr>
    <tr><td><a href="<?=$link1?>"><img src="<?=$img1?>" alt="<?=$item1?>"/></a></td>
@@ -299,7 +320,7 @@
  <a href="http://validator.w3.org/check?uri=referer" target="_blank">XHTML Transitional 1.0</a> /
  <a href="http://jigsaw.w3.org/css-validator/check?uri=referer" target="_blank">CSS</a> / 
  Tested at Mozilla-Firefox<br/>
- Last updated : 2007.Aug.9<br/>
+ Last updated : 2007.Oct.01<br/>
  Junghwan Goh (jhgoh@fnal.gov)
 </div>
 
