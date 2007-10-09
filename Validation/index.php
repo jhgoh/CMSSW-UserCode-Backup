@@ -26,7 +26,7 @@
 		$categories = array('efficiency'=>array('GlbSim_effEta', 'StaSim_effEta','SeedSim_effEta','GlbSta_effEta','GlbSeed_effEta','StaSeed_effEta','GlbTk_effEta'),
 				    'resolution'=>array('GlbEtaVsErrQPt_2', 'StaEtaVsErrQPt_2'));
 		break;
-	case 'MultiTrackAnalyzer':
+	case 'MultiTrackValidator':
 		$categories = array('efficiency'=>array('effic','efficPt','fakes','fakerate'), 
 				    'Pt resolution'=>array('ptres_vs_eta','ptres_vs_eta_1','ptres_vs_eta_2','ptres_vs_eta_chi2'),
 				    'Pt pull'=>array('ptpull_vs_eta','ptpull_vs_eta_1','ptpull_vs_eta_2','ptpull_vs_eta_chi2'));
