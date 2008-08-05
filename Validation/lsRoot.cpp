@@ -7,7 +7,7 @@
  *
  *  lsRoot myfile.root
  *
- *  $Date: 2008/07/19 14:00:38 $
+ *  $Date: 2008/08/05 13:02:41 $
  *  $Revision: 1.1 $
  *
  *  Authors:
@@ -49,7 +49,7 @@ int main(int argc, char** argv)
     return 1;
   }
 
-  process(srcFile, "");
+  process(srcFile, "/");
 
   if ( srcFile ) {
     srcFile->Close();
@@ -74,7 +74,7 @@ void process(TObject* obj, TString path)
 
     TString newPath = path;
     if ( ! TString(dir->GetName()).EndsWith(".root") ) {
-      newPath=path+"/"+dir->GetName();
+      newPath=path+dir->GetName()+"/";
     }
 
     // Loop over all objects in this directory
