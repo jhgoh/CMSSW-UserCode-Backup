@@ -12,7 +12,7 @@
  *
  *  dumpRoot myfile.root:/my/directory/ ./out
  *
- *  $Date: 2008/07/19 19:26:00 $
+ *  $Date: 2008/07/19 14:00:38 $
  *  $Revision: 1.1 $
  *
  *  Authors:
@@ -32,20 +32,76 @@
 #include "TKey.h"
 #include "Riostream.h"
 
+#include <boost/program_options.hpp>
+#include <boost/algorithm/string/classification.hpp>
+#include <boost/algorithm/string/split.hpp>
+
 using namespace std;
+
+vector<string> exts;
 
 void process(TObject* obj, TString outPath);
 
 int main(int argc, char** argv)
 {
-  if ( argc != 3 ) {
-    cout << "Usage : " << argv[0] << " source.root destination_directory\n";
-    cout << "        " << argv[0] << " source.root:/my/sub/directory ./my/output/directory\n";
+  using namespace boost;
+
+  program_options::options_description desc("Options for dumpRoot");
+  desc.add_options()("infile,i", program_options::value<string>(), "Input file name")
+                    ("outdir,o", program_options::value<string>(), "output directory (current directory by default)")
+                    ("help,h", "Print this message")
+                    ("ext,x", program_options::value<string>(), "output extensions (gif by default)");
+
+  stringstream ss_usage;
+  ss_usage << "Usage : " << argv[0] << " -i source.root -o destination_directory\n"
+           << "        " << argv[0] << " -i source.root:/my/sub/directory\n"
+           << "        " << argv[0] << " -i srouce.root:/my/dir -x gif,pdf\n"
+           << "Options : \n"
+           << "   --ext=gif,png,pdf,... : List up output extensions (gif turned on by default)\n";
+  const string usage = ss_usage.str();
+
+  program_options::positional_options_description pos;
+  program_options::variables_map vmap;
+
+  try {
+    program_options::store(program_options::command_line_parser(argc, argv).options(desc).positional(pos).run(), vmap);
+  }
+  catch ( program_options::error const& x ) {
+    cerr << "Unable to parse options:\n" << x.what() << "\n\n"
+         << desc << usage << endl;
     return 1;
   }
 
-  string srcName(argv[1]);
-  string outDirName(argv[2]);
+  program_options::notify(vmap);
+  if ( vmap.count("help") ) {
+    cout << desc << usage << endl;
+    return 0;
+  }
+
+  string srcName;
+  if ( vmap.count("infile") ) {
+    srcName = vmap["infile"].as<string>();
+  }
+  else {
+    cout << desc << usage << endl;
+    return 0;
+  }
+
+  string outDirName;
+  if ( vmap.count("outdir") ) {
+    outDirName = vmap["outdir"].as<string>();
+  }
+  else {
+    outDirName = ".";
+  }
+
+  if ( !vmap.count("ext") ) {
+    exts.push_back("gif");
+  }
+  else {
+    string expopts = vmap["ext"].as<string>();
+    algorithm::split(exts, expopts, algorithm::is_any_of(","));
+  }
 
   // Set source root file and TDirectory
   TFile* srcFile = 0;
@@ -94,12 +150,16 @@ void process(TObject* obj, TString outPath)
     // Draw histograms to an image file
     TCanvas canvas(TString(obj->GetName())+"_canvas", obj->GetTitle());
     obj->Draw();
-    canvas.Print(outPath+"/"+obj->GetName()+".gif");
+    for(int i=0; i<exts.size(); i++) {
+      canvas.Print(outPath+"/"+obj->GetName()+"."+exts[i].c_str());
+    }
   }
   else if ( objInfo->InheritsFrom("TCanvas") ) {
     // If stored object is TCanvas, just draw it
     TCanvas* canvas = dynamic_cast<TCanvas*>(obj);
-    canvas->Print(outPath+"/"+canvas->GetName()+".gif");
+    for(int i=0; i<exts.size(); i++) {
+      canvas->Print(outPath+"/"+obj->GetName()+"."+exts[i].c_str());
+    }
   }
   else if ( objInfo->InheritsFrom("TDirectory") ) {
     // Make new directory and loop over all objects under this directory
