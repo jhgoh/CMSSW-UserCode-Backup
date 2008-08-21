@@ -1,325 +1,333 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 
 <head>
 
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
-<title>Validation Plots</title>
+<title>Validation Plots</title>	 
 <link rel="stylesheet" type="text/css" href="screen.css" />
 <style type="text/css">@import url('screen.css');</style>
 
-<script type="text/javascript">
+<?
+	@include('/users/jhgoh/public_html/CMS/Validation/functions.php');
+
+	#Initialize variables
+
+	$CGIPATH = '/~jhgoh/python/rootView.py';
+	$DATAPATH = '/users/jhgoh/public_html/CMS/Validation/data';
+
+	$notify_msg = '';
+
+	# Fill CMSSW_RELEASES by reading directory content under $DATADIR
+	$releases_src = Array();
+	if ( $dh = @opendir($DATAPATH) ){
+		while ( False != ($f = @readdir($dh)) ){
+			if ( $f == '.' or $f == '..' ) continue;
+			if ( is_dir("$DATAPATH/$f") ) $releases_src[] = $f;
+		}
+		@closedir($dh);
+	}
+	else {
+		$notify_msg .= "Alert : Cannot find data directory\n";
+	}
+
+	$validators_src = getRootObjects('TDirectoryFile', '/DQMData/([a-zA-Z0-9_]*V)$');
+
+	$releases = Array();
+	$subsystems = Array(); 
+
+?>
+
+<script type="text/javascript" language="javascript">
+<!--
+	function toggleHide(objId) {
+		var obj = document.getElementById(objId);
+		if ( obj.style.display == 'none' ) {
+			obj.style.display = 'block';
+		}
+		else {
+			obj.style.display = 'none';
+		}
+	}
+-->
 </script>
 
 </head>
 
-<body>
-<form id="subForm" action="<?=$PHP_SELF?>">
-<?
-	$webpath = '/afs/cern.ch/cms/Physics/muon/CMSSW/Performance/RecoMuon/Validation';
+<body onload="">
 
-// Categorization of plots
-//   add your validator and plots here.
-	switch ($validator) {
-	case 'RecoMuonValidator' :
-		$categories = array('efficiency'=>array('GlbSim_effEta', 'StaSim_effEta','SeedSim_effEta','GlbSta_effEta','GlbSeed_effEta','StaSeed_effEta','GlbTk_effEta'),
-				    'resolution'=>array('GlbEtaVsErrQPt_2', 'StaEtaVsErrQPt_2'));
-		break;
-	case 'MultiTrackValidator':
-		$categories = array('efficiency'=>array('effic','efficPt','fakes','fakerate'), 
-				    'Pt resolution'=>array('ptres_vs_eta','ptres_vs_eta_1','ptres_vs_eta_2','ptres_vs_eta_chi2'),
-				    'Pt pull'=>array('ptpull_vs_eta','ptpull_vs_eta_1','ptpull_vs_eta_2','ptpull_vs_eta_chi2'));
-		break;
-	}
+<?	if ( $notify_msg != "" ) echo "<div id=\"notify\"><?=$notify_msg?></div>" ?>
 
-	$cmssw_versions = array();
-	$samples = array();
-	$validators = array();
-	$selectors = array();
-
-	if ( $view != "twoColumn" ) $view = "thumbnail";
-?>
-
-<? 
-printHead(); 
-?>
-
-<?
-	if ( ($cmssw_versions = getListOfDir($webpath.'/data')) == array() ) {
-		error("Directory $webpath is not ready");
-		printTail();
-		die();
-	}
-	
-	if ( $cmssw_version != "" and is_dir("$webpath/data/$cmssw_version") ) {
-		$samples = getListOfDir("$webpath/data/$cmssw_version");
-		if ( $sample != "" and is_dir("$webpath/data/$cmssw_version/$sample") ) {
-			$validators = getListOfDir("$webpath/data/$cmssw_version/$sample");
-			if ( $validator != "" and is_dir("$webpath/data/$cmssw_version/$sample/$validator") ) {
-				$selectors = getListOfDir("$webpath/data/$cmssw_version/$sample/$validator");
-			}
-		}
-	}
-?>
-<div id="menu">
- <p>
-  <label for="cmssw_version">Release :</label>
-  <select name="cmssw_version" onchange="this.form.submit();">
-   <option value="">=== CMSSW_VERSION ===</option> 
-<?
-	foreach ($cmssw_versions as $item) { 
-?>
-   <option id="<?=$item?>" value="<?=$item?>"<? if ($cmssw_version==$item) print ' selected="selected"'?>><?=$item?></option> 
-<?
- 	}  
-?>
-  </select>
-
-<?
-	if ( $cmssw_version != "" ) { 
-?>
-  <label for="sample">Sample :</label>
-  <select name="sample" onchange="this.form.submit();">
-   <option value="">=== Sample ===</option> 
-<?
-		foreach ($samples as $item) { 
-?> 
-   <option id="<?=$item?>" value="<?=$item?>"<? if ($sample==$item) print ' selected="selected"'?>><?=$item?></option> 
-<?
-		} 
-?> 
-  </select>
-<?
-	}
-
-	if ( $cmssw_version != "" and $sample != "" ) {
-?>
-  <label for="validator">Validator :</label>
-  <select name="validator" onchange="this.form.submit();">
-   <option value="">=== Validator ===</option>
-<?
-		foreach ($validators as $item) { 
-?>
-   <option id="<?=$item?>" value="<?=$item?>"<? if ($validator==$item) print ' selected="selected"'?>><?=$item?></option>
-<?
-		} 
-?>
-  </select>
-<?
-	} 
-
-	if ( $cmssw_version != "" and $sample != "" and $validator != "" ) {
-?>
-  <label for="selector">Selector :</label>
-  <select name="selector" onchange="this.form.submit();">
-   <option value="">=== Selector ===</option>
-<?	    
-		foreach ($selectors as $item)  {
-?>
-   <option id="<?=$item?>" value="<?=$item?>"<? if ($selector==$item) print ' selected="selected"'?>><?=$item?></option>
-<?
-		}
-?>
-</select>
-    <? }
-
-	if ( $cmssw_version != "" and $sample != "" and $validator != "" and $selector != "" ) {
-?>
-  <label for="category">Category :</label>
-  <select name="category" onchange="this.form.submit();">
-   <option value="">=== All Plots ===</option>
-<?
-		reset($categories);
-		foreach (array_keys($categories) as $item)  {
-?>
-   <option id="<?=$item?>" value="<?=$item?>"<? if ($category==$item) print ' selected="selected"'?>><?=$item?></option>
-<?
-		}
-?>
-  </select>
-<?
-	}
-
-?>
-  <label for="keywords">Keyword :</label> <input type="text" name="keywords" value="<?=$keywords?>" class="text"/><br/>
-  <label for="view">View</label><br/> 
-   <input type="radio" name="view" value="thumbnail" <? if ($view == 'thumbnail') { ?> checked="checked"<? } ?> /> thumbnail<br/>
-   <input type="radio" name="view" value="twoColumn" <? if ($view == 'twoColumn') { ?> checked="checked"<? } ?> /> twoColumn<br/>
-<!--<input type="checkbox" name="thumbnail" <? if ($thumbnail != "") { ?>checked="checked"<? } ?> /> <br/>-->
-  <input type="hidden" name="mode" value="<?=$mode?>"/>
-  <input type="submit" name="OK" value="OK"/>
- </p>
-</div>
-
-<div id="content">
-<?
-	// Print validation plots if we set CMSSW versions correctly
-	if ( $sample == "" or $validator == "" or $selector == "" ) {
-		if ( $cmssw_version != "" ) {
-?>
- <h2>Release <span style="color:red"><?=$cmssw_version?></span></h2>
-<?
-			$desc = "$webpath/data/$cmssw_version/description.txt";
-			if ( is_file($desc) ) readfile($desc);
-			print "</div>";
-			printTail();
-			die();
-		}
-		else {
-			error("Please choose menu items");
-			print "</div>";
-			printTail();
-			die();
-		}
-	}
-?>
- <h2>Validation plots of <span style="color:red"><?=$cmssw_version?></span>, <span style="color:red"><?=$sample?></span></h2>
- <h3>Summary</h3>
- <pre class="description">
-<?
-	$workArea = "$webpath/data/$cmssw_version/$analyzer/$sample/$validator/$selector";
-	if ( is_file("$workArea/description.txt") ) readfile("$workArea/description.txt");
-?>
- </pre>
-
-<? 
-	if ( $category == "" ) $images = getListOfImages($workArea);
-	else $images = $categories[$category];
-
-	$images = filter($images, explode(' ', $keywords));
-	if ( ! $images ) $images = array();
-?>
- <h3>Result (<?=count($images)?> plots)</h3>
-<?
-	if ( $view == "thumbnail" ) {
-		foreach ($images as $item) {
-			$img  = "data/$cmssw_version/$sample/$validator/$selector/$item.gif";
-			$link = "index.php?cmssw_version=$cmssw_version&amp;sample=$sample&amp;validator=$validator&amp;selector=$selector&amp;keywords=$item&amp;view=twoColumn";
-?>
- <table class="thumbnail">
-  <tr><th><?=$item?></th></tr>
-  <tr><td>
-    <a href="<?=$link?>"><img src="<?=$img?>" alt="<?=$item?>" /></a>
-  </td></tr>
- </table>
-<?
-		}
-	}
-	else {
-?>
- <table class="fullTable">
-<? 
-		if ( count($images) == 1 ) {
-			$item = $images[0];
-			$img  = "data/$cmssw_version/$sample/$validator/$selector/$item.gif";
-?>
-  <tr><th><?=$item?></th></tr>
-  <tr><td><img src="<?=$img?>" alt="<?=$item?>"/></td></tr>
-  <tr><td><p><?if (is_file("$workArea/$item.txt")) readfile("$workArea/$item.txt")?></p></td></tr>
-<?
-		}
-		elseif ( count($images) >= 2 ) {
-			$n = 2*floor(count($images)/2);
-			for ($i=0; $i<$n; $i+=2) {
-				$item1 = $images[$i];
-				$item2 = $images[$i+1];
-				$img1  = "data/$cmssw_version/$sample/$validator/$selector/$item1.gif";
-				$img2  = "data/$cmssw_version/$sample/$validator/$selector/$item2.gif";
-				$link1 = "index.php?cmssw_version=$cmssw_version&amp;sample=$sample&amp;validator=$validator&amp;selector=$selector&amp;keywords=$item1";
-				$link2 = "index.php?cmssw_version=$cmssw_version&amp;sample=$sample&amp;validator=$validator&amp;selector=$selector&amp;keywords=$item2";
-?>
-   <tr><th><?=$item1?></th><th><?=$item2?></th></tr>
-   <tr><td><a href="<?=$link1?>"><img src="<?=$img1?>" alt="<?=$item1?>"/></a></td>
-       <td><a href="<?=$link2?>"><img src="<?=$img2?>" alt="<?=$item2?>"/></a></td></tr>
-   <tr><td><pre><?if (is_file("$workArea/$item1.txt")) readfile("$workArea/$item1.txt")?></pre></td>
-       <td><pre><?if (is_file("$workArea/$item2.txt")) readfile("$workArea/$item2.txt")?></pre></td></tr>
-<? 
-			}
-			if ($n != count($images) ) {
-				$item1 = $images[$n];
-				$img1  = "data/$cmssw_version/$sample/$validator/$selector/$item1.gif";
-				$link1 = "index.php?cmssw_version=$cmssw_version&amp;sample=$sample&amp;validator=$validator&amp;selector=$selector&amp;keywords=$item1";
-?>
-   <tr><th><?=$item1?></th><th>&nbsp;</th></tr>
-   <tr><td><a href="<?=$link1?>"><img src="<?=$img1?>" alt="<?=$item1?>"/></a></td>
-       <td>&nbsp;</td></tr>
-   <tr><td><pre><?if (is_file("$workArea/$item1.txt")) readfile("$workArea/$item1.txt")?></pre></td>
-       <td>&nbsp;</td></tr>
-<?
-			}
-		}
-?>
- </table>
-<? 
-	}
-?>
-</div>
-<?
-	printTail(); 
-?>
-
-<?//////////////////////////////////Functions///////////////////////?>
-
-<?
-	function error($msg) {
-?>
-<div id="error">
- <h2>Error!!!</h2>
- <p><?=$msg?></p>
-</div>
-<?
-	} 
-
-	function getListOfDir($path) {
-		$dirList = array();
-		if ( $dh = @opendir($path) ) {
-			while ( False !== ($f = @readdir($dh) ) ) {
-				if ( $f != '.' and $f != '..' ) array_push($dirList, $f);
-			}
-			@closedir($dh);
-		}
-		return $dirList;
-	}
-
-	function getListOfImages($path) {
-		$gifList = array();
-		if ( $dh = @opendir($path) ) {
-			while ( False !== ($f = @readdir($dh) ) ) {
-				if ( strlen($f) < 5 ) continue;
-				if ( substr($f, -4) != ".gif") continue;
-				array_push($gifList, substr($f, 0, -4));
-			}
-			@closedir($dh);
-		}
-		return $gifList;
-	}
-
-	function filter($strings, $keywords) {
-		$strList = array();
-		if ( count($strings) == 0 or count($keywords) == 0 ) return $strings;
-		foreach ($strings as $str) {
-			$matchedAll = True;
-			foreach ($keywords as $keyword) {
-				if ( $keyword == "" ) continue;
-				if ( ! stristr($str, $keyword) ) $matchedAll = False;
-			}
-			if ( $matchedAll ) array_push($strList, $str);
-		}
-		return $strList;
-	}
-
-	function printHead() { ?>
 <div id="header">
- <!--<img src="http://cmsdbs.cern.ch/images/CMSLogo.gif" style="width:30px;height:30px;float:left;padding-right:15px;" alt="CMS logo"/>-->
  <h1><a href="index.php">Validation Plots for CMSSW</a></h1>
 </div>
 
 <div id="main">
-<? 
-	} 
+<form id="form" name="form" action="#" method="post">
 
-	function printTail() { ?>
+ <div id="menu">
+  <h2>Presets</h2>
+
+  <h2>Data selection</h2>
+
+  <h3><a href="#" onclick="toggleHide('div_validator')">Validator</a></h3>
+  <div id="div_validator">
+<?
+	foreach ( $validators_src as $validator_src ) {
+?>
+   <input type="radio" name="validator" value="<?=$validator_src?>" onchange="this.form.submit()"<?=radio_postfix('validator', $validator_src)?>><?=$validator_src?></input><br/>
+<?
+	}
+
+	if ( array_key_exists('validator', $_POST) ) {
+		$validator = $_POST['validator'];
+?>
+  </div>
+
+  <h3><a href="#" onclick="toggleHide('div_subsystem')">Subsystem</a></h3>
+  <div id="div_subsystem">
+<?
+		$subsystems_src = getRootObjects('TDirectoryFile', "/DQMData/$validator/([A-Za-z0-9_]*)$");
+		foreach ( $subsystems_src as $subsystem_src ) {
+			if ( array_key_exists('subsystems', $_POST) and 
+				 array_key_exists($subsystem_src, $_POST['subsystems']) ) {
+				$subsystems[$subsystem_src] = Array();
+				$postfix = ' checked="on"';
+			}
+			else {
+				$postfix = '';
+			}
+			echo "<input type=\"checkbox\" name=\"subsystems[$subsystem_src]\"$postfix>$subsystem_src</input><br/>\n";
+
+			$selectors_src = getRootObjects('TDirectoryFile', "DQMData/$validator/$subsystem_src/([A-Za-z0-9_]*)$");
+			foreach ( $selectors_src as $selector_src ) {
+				if ( array_key_exists('selector', $_POST) and
+					 array_key_exists($subsystem_src, $_POST['selector']) and
+					 array_key_exists($selector_src, $_POST['selector'][$subsystem_src]) ) {
+					$subsystems[$subsystem_src][] = $selector_src;
+					$postfix = ' checked="on"';
+				}
+				else {
+					$postfix = '';
+				}
+				$short_name = substr($selector_src, 0, 20);
+				echo "&nbsp;&nbsp;&nbsp;<input type=\"checkbox\" name=\"selector[$subsystem_src][$selector_src]\"$postfix>$short_name...</input><br/>\n";
+			}
+		}
+	}
+?>
+  </div>
+
+  <h3><a href="#" onclick="toggleHide('div_releases')">Releases</a></h3>
+  <div id="div_releases">
+<?
+	foreach ( $releases_src as $release_src ) {
+		if ( array_key_exists('releases', $_POST) and
+			 array_key_exists($release_src, $_POST['releases']) ) {
+			$releases[] = $release_src;
+			$postfix = ' checked="checked"';
+		}
+		else { 
+			$postfix = '';
+		}
+		echo "<input type=\"checkbox\" name=\"releases[$release_src]\"$postfix>$release_src</input><br/>\n";
+	}
+?>
+  </div>
+
+  <h3><a href="#" onclick="toggleHide('div_samples')">Samples</a></h3>
+  <div id="div_samples">
+<?
+	$samples_src = Array('RelValSingleMuPt10', 'RelValSingleMuPt100', 'RelValSingleMuPt1000', 'RelValWM');
+	foreach ( $samples_src as $sample_src ) {
+		if ( array_key_exists('samples', $_POST) and 
+			 array_key_exists($sample_src, $_POST['samples']) ) {
+			$postfix = ' checked="on"';
+		}
+		else {
+			$postfix = '';
+		}
+		echo "<input type=\"checkbox\" name=\"samples[$sample_src]\"$postfix>$sample_src</input><br/>\n";
+	}
+?>
+  </div>
+
+  <br/>
+
+  <h2>Plot styles</h2>
+
+  <label for="display_mode">Display mode</label>
+  <select id="display_mode" name="display_mode">
+   <option id="thumbnail" value="thumbnail"<?=select_postfix('display_mode', 'thumbnail')?>>Thumbnail</option>
+   <option id="2column" value="2column"<?=select_postfix('display_mode', '2column')?>>Double column</option>
+   <option id="1column" value="1column"<?=select_postfix('display_mode', '1column')?>>Single column</option>
+  </select>
+  <br/>
+
+  <label for="collate_mode">Collate by : </label>
+  <select id="collate_mode" name="collate_mode">
+   <option value="none"<?=select_postfix('collate_mode', 'none')?>>None</option>
+   <option value="release"<?=select_postfix('collate_mode', 'release')?>>Release</option>
+   <option value="sample"<?=select_postfix('collate_mode', 'sample')?>>Sample</option>
+  </select>
+  <br/>
+
+<!--
+  <input type="checkbox" id="hide_stat" name="hide_stat"<?=checkbox_postfix('hide_stat')?>>Hide statistics</input><br/>
+
+  <label for="palette">Color palette</label>
+  <select id="palette" name="palette">
+   <option id="Rainbow"<?=select_postfix('palette', 'Rainbow')?>>Rainbow</option>
+  </select>
+  <br/>
+-->
+
+  <label for="2d_style">2-D histogram style</label>
+  <select id="2d_style" name="2d_style">
+   <option id="COLZ" value="COLZ"<?=select_postfix('2d_style', 'COLZ')?>>COLZ</option>
+   <option id="COL" value="COL"<?=select_postfix('2d_style', 'COL')?>>COL</option>
+   <option id="LEGO" value="LEGO"<?=select_postfix('2d_style', 'LEGO')?>>LEGO</option>
+  </select>
+  <br/>
+
+  <input type="submit" action="#" value="Apply"></input>
+ </div>
+
+ <div id="contents">
+<?
+	$validator = array_key_exists('validator', $_POST) ? $_POST['validator'] : '';
+
+//	$subsystems_map = Array();
+//	$selectors_map = Array();
+//	if ( array_key_exists('subsystems', $_POST) ) {
+//		$subsystems_map = $_POST['subsystems'];
+//	}
+	$samples_map = array_key_exists('samples', $_POST) ? $_POST['samples'] : Array();
+
+	$display_mode = array_key_exists('display_mode', $_POST) ? $_POST['display_mode'] : '';
+	$collate_mode = array_key_exists('collate_mode', $_POST) ? $_POST['collate_mode'] : '';
+
+	$glb_opt_str = '';
+
+	if ( $validator && $subsystems ) {
+		foreach ( $subsystems as $subsystem=>$selectors ) {
+			$histograms = getRootObjects('TH', "(/DQMData/$validator/$subsystem/[A-Za-z0-9_]*)$");
+			if ( $collate_mode == 'release' ) {
+				
+				foreach ( $samples_map as $sample=>$onOff ) {
+					echo "  <h3>$subsystem - $sample</h3>";
+					foreach ( $histograms as $histogram ) {
+						$histo_dir_paths = explode('/', $histogram);
+						$last_idx = count($histo_dir_paths)-1;
+						$title = $histo_dir_paths[$last_idx];
+
+						$full_path_list = "";
+						foreach ( $releases as $release ) {
+							$full_path_list .= "$release/$sample.root:$histogram,";
+						}
+						$img_url = "$CGIPATH?h=$full_path_list";
+
+						if ( $display_mode == 'thumbnail' ) showThumbnail($title, $img_url);
+						else showDetail($title, $img_url, '-');
+
+					}
+					foreach ( $selectors as $selector ) {
+						echo "   <h4>$selector</h4>";
+						$selector_histograms = getRootObjects('TH', "(/DQMData/$validator/$subsystem/$selector/[A-Za-z0-9_]*)$");
+						foreach ( $selector_histograms as $sel_histo ) {
+							$histo_dir_paths = explode('/', $sel_histo);
+							$last_idx = count($histo_dir_paths)-1;
+							$title = $histo_dir_paths[$last_idx];
+
+							$full_path_list = "";
+							foreach ( $releases as $release ) {
+								$full_path_list .= "$release/$sample.root:$sel_histo,";
+							}
+							$img_url = "$CGIPATH?h=$full_path_list";
+
+							if ( $display_mode == 'thumbnail' ) showThumbnail($title, $img_url);
+							else showDetail($title, $img_url, '-');
+						}
+					}
+				}
+			}
+			else if ( $collate_mode == 'sample' ) {
+				foreach ( $releases as $release ) {
+					echo "  <h3>$subsystem - $release</h3>";
+					foreach ( $histograms as $histogram ) {
+						$histo_dir_paths = explode('/', $histogram);
+						$last_idx = count($histo_dir_paths)-1;
+						$title = $histo_dir_paths[$last_idx];
+
+						$full_path_list = "";
+						foreach ( $samples_map as $sample=>$onOff ) {
+							$full_path_list .= "$release/$sample.root:$histogram,";
+						}
+						$img_url = "$CGIPATH?h=$full_path_list";
+
+						if ( $display_mode == 'thumbnail' ) showThumbnail($title, $img_url);
+						else showDetail($title, $img_url, '-');
+					}
+					foreach ( $selectors as $selector ) {
+						echo "   <h4>$selector</h4>";
+						$selector_histograms = getRootObjects('TH', "(/DQMData/$validator/$subsystem/$selector/[A-Za-z0-9_]*)$");
+						foreach ( $selector_histograms as $sel_histo ) {
+							$histo_dir_paths = explode('/', $sel_histo);
+							$last_idx = count($histo_dir_paths)-1;
+							$title = $histo_dir_paths[$last_idx];
+
+							$full_path_list = "";
+							foreach ( $samples_map as $sample=>$onOff ) {
+								$full_path_list .= "$release/$sample.root:$sel_histo,";
+							}
+							$img_url = "$CGIPATH?h=$full_path_list";
+
+							if ( $display_mode == 'thumbnail' ) showThumbnail($title, $img_url);
+							else showDetail($title, $img_url, '-');
+						}
+					}
+				}
+			}
+			else {
+				foreach ( $releases as $release ) {
+					foreach ( $samples_map as $sample=>$onOff ) {
+						echo "  <h3>$subsystem - $release - $sample</h3>";
+						foreach ( $histograms as $histogram ) {
+							$histo_dir_paths = explode('/', $histogram);
+							$last_idx = count($histo_dir_paths)-1;
+							$title = $histo_dir_paths[$last_idx];
+
+							$full_path_list = "$release/$sample.root:$histogram";
+							$img_url = "$CGIPATH?h=$full_path_list";
+
+							if ( $display_mode == 'thumbnail' ) showThumbnail($title, $img_url);
+							else showDetail($title, $img_url, '-');
+						}
+						foreach ( $selectors as $selector ) {
+							echo "   <h4>$selector</h4>";
+							$selector_histograms = getRootObjects('TH', "(/DQMData/$validator/$subsystem/$selector/[A-Za-z0-9_]*)$");
+							foreach ( $selector_histograms as $sel_histo ) {
+								$histo_dir_paths = explode('/', $sel_histo);
+								$last_idx = count($histo_dir_paths)-1;
+								$title = $histo_dir_paths[$last_idx];
+
+								$full_path_list = "$release/$sample.root:$sel_histo,";
+								$img_url = "$CGIPATH?h=$full_path_list";
+
+								if ( $display_mode == 'thumbnail' ) showThumbnail($title, $img_url);
+								else showDetail($title, $img_url, '-');
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+?>
+ </div>
+
+</form>
 </div>
 
 <div id="tail">
@@ -330,11 +338,6 @@ printHead();
  Junghwan Goh (jhgoh@fnal.gov)
 </div>
 
-</form>
 </body>
 
 </html>
-<? 
-	} 
-?>
-
