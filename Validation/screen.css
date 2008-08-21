@@ -6,9 +6,12 @@ h2 { font-size:14pt; margin-bottom:15px;}
 h3 { font-size:13pt; border-bottom:1px dotted; padding-left:10px; }
 
 img { border:0; }
-a { color:#CDF; }
 h1 a { text-decoration:none; color:white;}
 h1 a:hover { text-decoration:underline; }
+
+#notify {
+	background-color:#FFC;
+}
 
 #header {
 	padding:5px;
@@ -17,29 +20,28 @@ h1 a:hover { text-decoration:underline; }
 }
 
 #menu {
-	width:150px;
-	border:1px dotted;
-	margin:15px;
-	padding:5px;
+	width:250px;
 	float:left;
 }
 
-#menu select { width:150px; }
-#menu input[type="text"] { width:150px; }
+#menu a { color:black; }
+#menu input[type="text"] { width:200px; }
 
-#content {
-	min-height:200px;
-	margin-left:180px;
+#contents {
+	border-left:1px dotted;
+	min-height:400px;
+	margin-left:250px;
 	padding:15px;
 }
 
 #main {
 	border-top:3px solid #B00;
-	border-bottom:3px solid #FCC;
 	top:100px;
 }
 
 #tail {
+	border-top:3px solid #FCC;
+	clear:both;
 	font-size:9pt;
 	text-align:right;
 	padding:5px;
