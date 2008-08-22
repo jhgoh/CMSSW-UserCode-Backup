@@ -6,41 +6,14 @@
 
 #include "FWCore/ParameterSet/interface/InputTag.h"
 
-//#include "DataFormats/Common/interface/Ref.h"
-//#include "DataFormats/TrackReco/interface/Track.h"
 #include "DataFormats/TrackReco/interface/TrackFwd.h"
-//#include "DataFormats/TrackReco/interface/TrackExtraFwd.h"
 
-//#include "TrackingTools/GeomPropagators/interface/Propagator.h"
+#include "TrackingTools/TrajectoryState/interface/TrajectoryStateOnSurface.h"
 #include "TrackingTools/TransientTrack/interface/TransientTrackBuilder.h"
 #include "TrackingTools/Records/interface/TransientTrackRecord.h"
-//#include "TrackingTools/Records/interface/TrackingComponentsRecord.h"
-//#include "DataFormats/DTRecHit/interface/DTRecHitCollection.h"
 #include "DataFormats/RPCRecHit/interface/RPCRecHitCollection.h"
 
 #include "RecoMuon/TrackingTools/interface/MuonServiceProxy.h"
-
-//
-/*
-#include "DataFormats/MuonReco/interface/MuonTrackLinks.h"
-#include "DataFormats/MuonReco/interface/MuonFwd.h"
-#include "DataFormats/MuonReco/interface/Muon.h"
-#include "DataFormats/Candidate/interface/Candidate.h"
-
-#include "TrackingTools/TransientTrack/interface/TransientTrack.h"
-#include "TrackingTools/TrajectoryState/interface/FreeTrajectoryState.h"
-#include "TrackingTools/TrajectoryState/interface/TrajectoryStateTransform.h"
-
-#include "RecoMuon/DetLayers/interface/MuonDetLayerGeometry.h"
-#include "RecoMuon/Records/interface/MuonRecoGeometryRecord.h"
-#include "RecoMuon/TransientTrackingRecHit/interface/MuonTransientTrackingRecHit.h"
-
-#include "Geometry/TrackerGeometryBuilder/interface/TrackerGeometry.h"
-#include "Geometry/CommonDetUnit/interface/GeomDetType.h"
-#include "Geometry/RPCGeometry/interface/RPCRoll.h"
-#include "Geometry/DTGeometry/interface/DTLayer.h"
-*/
-//
 
 #include <TMath.h>
 #include <TH1F.h>
@@ -54,6 +27,8 @@ using namespace std;
 using namespace reco;
 
 string analyzerName = "MuonTrackAnalyzer";
+
+typedef TrajectoryStateOnSurface TSOS;
 
 class HistogramGroup
 {
@@ -100,17 +75,80 @@ class HistogramGroup
       hRPCHits_X_Y_ = dir_.make<TH2F>("RecHitsRPCX_Y", "y vs x of RPC recHits", nBinsPos, minX, maxX, nBinsPos, minY, maxY);
       hRPCHits_Z_ = dir_.make<TH1F>("RecHitsRPCZ", "z of RPC recHits", nBinsPos, minZ, maxZ);
 
-      hRPCHitsMatched_X_Y_ = dir_.make<TH2F>("RecHitsMatchedX_Y", "y vs x of matched RPC recHits", nBinsPos, minX, maxX, nBinsPos, minY, maxY);
-      hRPCHitsMatched_Z_ = dir_.make<TH1F>("RecHitsMatchedZ", "z of matched RPC recHits", nBinsPos, minZ, maxZ);
+      hMatchedRPCHits_X_Y_ = dir_.make<TH2F>("RecHitsMatchedX_Y", "y vs x of matched RPC recHits", nBinsPos, minX, maxX, nBinsPos, minY, maxY);
+      hMatchedRPCHits_Z_ = dir_.make<TH1F>("RecHitsMatchedZ", "z of matched RPC recHits", nBinsPos, minZ, maxZ);
 
-      const int maxClusterSize = 5;
+      const int maxClusterSize = 10;
       hRPCClusterSize_ = dir_.make<TH1F>("RPCClusterSize", "cluster size of recHits", maxClusterSize, 0, maxClusterSize);
-      hRPCClusterSize_Eta_ = dir_.make<TH2F>("RPCClusterSize_Eta", "#eta vs cluster size of recHits", maxClusterSize, 0, maxClusterSize, nBinsEta, minEta, maxEta);
-      hRPCClusterSize_Phi_ = dir_.make<TH2F>("RPCClusterSize_Phi", "#phi vs cluster size of recHits", maxClusterSize, 0, maxClusterSize, nBins, minPhi, maxPhi);
+      hRPC_Eta_ClusterSize_ = dir_.make<TH2F>("RPCEta_ClusterSize", "#eta vs cluster size of recHits", nBinsEta, minEta, maxEta, maxClusterSize, 0, maxClusterSize);
+      hRPC_Phi_ClusterSize_ = dir_.make<TH2F>("RPCPhi_ClusterSize", "#phi vs cluster size of recHits",  nBins, minPhi, maxPhi, maxClusterSize, 0, maxClusterSize);
 
-      hRPCClusterSizeMatched_R_ = dir_.make<TH2F>("RPCClusterSizeMatched_R", "matched cluster size of recHits vs hit distance", maxClusterSize, 0, maxClusterSize, nBins, 0, 20);
-      hRPCClusterSizeMatched_Eta_ = dir_.make<TH2F>("RPCClusterSizeMatched_Eta", "matched cluster size of recHits vs eta", maxClusterSize, 0, maxClusterSize, nBinsEta, minEta, maxEta);
-      hRPCClusterSizeMatched_Phi_ = dir_.make<TH2F>("RPCCLusterSizeMatched_Phi", "matched cluster size of recHits vs phi", maxClusterSize, 0, maxClusterSize, nBinsEta, minPhi, maxPhi);
+//      hMatchedRPC_R_ClusterSize_ = dir_.make<TH2F>("MatchedRPC_R_ClusterSize", "matched cluster size of recHits vs hit distance", maxClusterSize, 0, maxClusterSize, nBins, 0, 20);
+      hMatchedRPC_Eta_ClusterSize_ = dir_.make<TH2F>("MatchedRPC_Eta_ClusterSize", "matched cluster size of recHits vs eta", nBinsEta, minEta, maxEta, maxClusterSize, 0, maxClusterSize);
+      hMatchedRPC_Phi_ClusterSize_ = dir_.make<TH2F>("RPCCLusterSizeMatched_Phi", "matched cluster size of recHits vs phi", nBinsEta, minPhi, maxPhi, maxClusterSize, 0, maxClusterSize);
+
+      hMatchedRPC_LocalAngle_ClusterSize_ = dir_.make<TH2F>("MatchedRPC_LocalAngle_ClusterSize", "matched cluster size of rechits vs local angle", nBins, -1, 1, maxClusterSize, 0, maxClusterSize);
+      hMatchedRPC_Eta_LocalAngle_ = dir_.make<TH2F>("MatchedRPC_Eta_LocalAngle", "matched RPC recHits' eta vs local angle", nBins, -1, 1, nBinsEta, minEta, maxEta);
+      hMatchedRPC_Phi_LocalAngle_ = dir_.make<TH2F>("MatchedRPC_Phi_LocalAngle", "matched RPC recHits' phi vs local angle", nBins, -1, 1, nBins, minPhi, maxPhi);
+
+      hN_->GetXaxis()->SetTitle("Number of tracks");
+      hAlgo_->GetXaxis()->SetTitle("Tracking algorithm #");
+
+      hQ_->GetXaxis()->SetTitle("Track charge");
+      hEta_Phi_->GetXaxis()->SetTitle("#eta");
+      hEta_Phi_->GetYaxis()->SetTitle("#phi");
+
+      hNValidHits_->GetXaxis()->SetTitle("Number of valid hits");
+      hChi2NDof_->GetXaxis()->SetTitle("Number of D.o.F");
+      hChi2Norm_->GetXaxis()->SetTitle("Normalized #Chi^{2}");
+      hChi2Prob_->GetXaxis()->SetTitle("#Chi^{2} probability");
+
+      hInnerX_Y_->GetXaxis()->SetTitle("X position (cm)"); 
+      hInnerX_Y_->GetYaxis()->SetTitle("Y position (cm)"); 
+      hInnerZ_->GetXaxis()->SetTitle("Z position (cm)");
+
+      hOuterX_Y_->GetXaxis()->SetTitle("X position (cm)"); 
+      hOuterX_Y_->GetYaxis()->SetTitle("Y position (cm)"); 
+      hOuterZ_->GetXaxis()->SetTitle("Z position (cm)");
+
+      hAllHits_X_Y_->GetXaxis()->SetTitle("X position (cm)");
+      hAllHits_X_Y_->GetYaxis()->SetTitle("Y position (cm)");
+      hAllHits_Z_->GetXaxis()->SetTitle("Z position (cm)");
+
+      hDTHits_X_Y_->GetXaxis()->SetTitle("X position (cm)");
+      hDTHits_X_Y_->GetYaxis()->SetTitle("Y position (cm)");
+      hDTHits_Z_->GetXaxis()->SetTitle("Z position (cm)");
+
+      hCSCHits_X_Y_->GetXaxis()->SetTitle("X position (cm)");
+      hCSCHits_X_Y_->GetYaxis()->SetTitle("Y position (cm)");
+      hCSCHits_Z_->GetXaxis()->SetTitle("Z position (cm)");
+
+      hRPCHits_X_Y_->GetXaxis()->SetTitle("X position (cm)");
+      hRPCHits_X_Y_->GetYaxis()->SetTitle("Y position (cm)");
+      hRPCHits_Z_->GetXaxis()->SetTitle("Z position (cm)");
+
+      hMatchedRPCHits_X_Y_->GetXaxis()->SetTitle("X position (cm)");
+      hMatchedRPCHits_X_Y_->GetYaxis()->SetTitle("Y position (cm)");
+      hMatchedRPCHits_Z_->GetXaxis()->SetTitle("Z position (cm)");
+
+//      hMatchedRPC_R_ClusterSize_->GetXaxis()->SetTitle("trackHit-RPCHit distance");
+//      hMatchedRPC_R_ClusterSize_->GetYaxis()->SetTitle("#eta");
+
+      hMatchedRPC_Eta_ClusterSize_->GetXaxis()->SetTitle("#eta");
+      hMatchedRPC_Eta_ClusterSize_->GetYaxis()->SetTitle("Cluster size");
+
+      hMatchedRPC_Phi_ClusterSize_->GetXaxis()->SetTitle("#phi");
+      hMatchedRPC_Phi_ClusterSize_->GetYaxis()->SetTitle("Cluster size");
+
+      hMatchedRPC_LocalAngle_ClusterSize_->GetXaxis()->SetTitle("cosine of local direction");
+      hMatchedRPC_LocalAngle_ClusterSize_->GetYaxis()->SetTitle("Cluster size");
+
+      hMatchedRPC_Eta_LocalAngle_->GetXaxis()->SetTitle("#eta");
+      hMatchedRPC_Eta_LocalAngle_->GetYaxis()->SetTitle("cosine of local angle");
+
+      hMatchedRPC_Phi_LocalAngle_->GetXaxis()->SetTitle("#phi");
+      hMatchedRPC_Phi_LocalAngle_->GetYaxis()->SetTitle("cosine of local angle");
+
     };
 
     TFileDirectory dir_;
@@ -136,14 +174,17 @@ class HistogramGroup
     TH2FP hDTHits_X_Y_, hRPCHits_X_Y_, hCSCHits_X_Y_;
     TH1FP hDTHits_Z_, hCSCHits_Z_, hRPCHits_Z_;
 
-    TH2FP hRPCHitsMatched_X_Y_;
-    TH1FP hRPCHitsMatched_Z_;
+    TH2FP hMatchedRPCHits_X_Y_;
+    TH1FP hMatchedRPCHits_Z_;
 
     TH1FP hRPCClusterSize_;
-    TH2FP hRPCClusterSize_Eta_, hRPCClusterSize_Phi_;
+    TH2FP hRPC_Eta_ClusterSize_, hRPC_Phi_ClusterSize_;
 
-    TH2FP hRPCClusterSizeMatched_R_;
-    TH2FP hRPCClusterSizeMatched_Eta_, hRPCClusterSizeMatched_Phi_;
+//    TH2FP hMatchedRPC_R_ClusterSize_;
+    TH2FP hMatchedRPC_Eta_ClusterSize_, hMatchedRPC_Phi_ClusterSize_;
+
+    TH2FP hMatchedRPC_LocalAngle_ClusterSize_;
+    TH2FP hMatchedRPC_Eta_LocalAngle_, hMatchedRPC_Phi_LocalAngle_;
 };
 
 MuonTrackAnalyzer::MuonTrackAnalyzer(const ParameterSet& pset)
@@ -225,8 +266,7 @@ void MuonTrackAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& 
     hTrk_->hInnerZ_->Fill(outerPosition.Z());
     hTrk_->hOuterZ_->Fill(outerPosition.Z());
 
-    //for(TrackingRecHitRefVector::const_iterator iHit = iTrk->recHitsBegin();
-    for(trackingRecHit_iterator iHit = iTrk->recHitsBegin();
+    for(TrackingRecHitRefVector::const_iterator iHit = iTrk->recHitsBegin();
         iHit != iTrk->recHitsEnd(); ++iHit) 
     {
       if ( !((*iHit)->isValid()) ) continue;
@@ -241,6 +281,9 @@ void MuonTrackAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& 
 
       hTrk_->hAllHits_X_Y_->Fill(trkX, trkY);
       hTrk_->hAllHits_Z_->Fill(trkZ);
+
+      const reco::TransientTrack transTrk = transTrkBuilder->build(*iTrk);
+      const FreeTrajectoryState fts = transTrk.initialFreeState();
 
       if ( detId.det() == DetId::Muon ) 
       {
@@ -258,41 +301,44 @@ void MuonTrackAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& 
         {
           // Find RPC hits from RPCRecHitCollection
           //  Dynamic casting of TrackingRecHit* to RPCRecHit* not working (link error)
-          //  const RPCRecHit* rpcRecHit = dynamic_cast<const RPCRecHit*>(hit);
-          for(RPCRecHitCollection::const_iterator iRPCHit = rpcHitColl->begin();
-              iRPCHit != rpcHitColl->end(); ++iRPCHit)
+          const RPCRecHit* rpcHit = dynamic_cast<const RPCRecHit*>(hit);
+          if ( !rpcHit ) continue;
+
+          hTrk_->hRPCHits_X_Y_->Fill(trkX, trkY);
+          hTrk_->hRPCHits_Z_->Fill(trkZ);
+
+          const int clusterSize = rpcHit->clusterSize();
+          hTrk_->hRPCClusterSize_->Fill(clusterSize);
+          hTrk_->hRPC_Eta_ClusterSize_->Fill(iTrk->eta(), clusterSize);
+          hTrk_->hRPC_Phi_ClusterSize_->Fill(iTrk->phi(), clusterSize);
+
+          const GlobalPoint& rpcPoint = trkGeometry->idToDet(detId)->surface().toGlobal(rpcHit->localPosition());
+          const double rpcX = rpcPoint.x(), rpcY = rpcPoint.y();
+
+          const double distance = hypot(trkX-rpcX, trkY-rpcY);
+          if ( distance < 15 ) 
           {
-            if ( iRPCHit->geographicalId() != hit->geographicalId() ) continue;
+            hTrk_->hMatchedRPCHits_X_Y_->Fill(trkX, trkY);
+              hTrk_->hMatchedRPCHits_Z_->Fill(trkZ);
 
-            hTrk_->hRPCHits_X_Y_->Fill(trkX, trkY);
-            hTrk_->hRPCHits_Z_->Fill(trkZ);
+//              hTrk_->hMatchedRPC_R_ClusterSize_->Fill(distance, clusterSize);
+              hTrk_->hMatchedRPC_Eta_ClusterSize_->Fill(iTrk->eta(), clusterSize);
+              hTrk_->hMatchedRPC_Phi_ClusterSize_->Fill(iTrk->phi(), clusterSize);
 
-            const int clusterSize = iRPCHit->clusterSize();
-            hTrk_->hRPCClusterSize_->Fill(clusterSize);
-            hTrk_->hRPCClusterSize_Eta_->Fill(clusterSize, iTrk->eta());
-            hTrk_->hRPCClusterSize_Phi_->Fill(clusterSize, iTrk->phi());
+              TSOS tsosAtDet(fts, trkGeometry->idToDet(detId)->surface());
+              LocalVector trjDir = tsosAtDet.localDirection();
 
-            const GlobalPoint& rpcPoint = trkGeometry->idToDet(detId)->surface().toGlobal(iRPCHit->localPosition());
-            const double rpcX = rpcPoint.x(), rpcY = rpcPoint.y();
+              double localAngle = cos(atan(trjDir.z())/hypot(trjDir.x(), trjDir.y()));
 
-            const double distance = hypot(trkX-rpcX, trkY-rpcY);
-            if ( distance < 15 ) 
-            {
-              hTrk_->hRPCHitsMatched_X_Y_->Fill(trkX, trkY);
-              hTrk_->hRPCHitsMatched_Z_->Fill(trkZ);
-
-              hTrk_->hRPCClusterSizeMatched_R_->Fill(clusterSize, distance);
-              hTrk_->hRPCClusterSizeMatched_Eta_->Fill(clusterSize, iTrk->eta());
-              hTrk_->hRPCClusterSizeMatched_Phi_->Fill(clusterSize, iTrk->phi());
-            }
+              hTrk_->hMatchedRPC_LocalAngle_ClusterSize_->Fill(localAngle, clusterSize);
+              hTrk_->hMatchedRPC_Eta_LocalAngle_->Fill(iTrk->eta(), localAngle);
+              hTrk_->hMatchedRPC_Phi_LocalAngle_->Fill(iTrk->phi(), localAngle);
           }
         }
       }
     }
 
 /*
-    const reco::TransientTrack transTrk = transTrkBuilder->build(*iTrk);
-    const FreeTrajectoryState fts = transTrk.initialFreeState();
     const GlobalTrajectoryParameters trajParam = fts.parameters();
 */
 /*
@@ -308,3 +354,5 @@ void MuonTrackAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& 
 */
   }
 }
+
+/* vim:set ts=2 sts=2 sw=2 expandtab: */
