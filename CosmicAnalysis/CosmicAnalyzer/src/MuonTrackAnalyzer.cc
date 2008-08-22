@@ -47,8 +47,8 @@ class HistogramGroup
       hQ_ = dir_.make<TH1F>("charge", "Track charge", 5, -2, 3);
       hEta_Phi_ = dir_.make<TH2F>("Eta_Phi", "#eta vs #phi", nBinsEta, minEta, maxEta, nBins, minPhi, maxPhi);
 
-      hNValidHits_ = dir_.make<TH1F>("nHits", "Number of hits", 100, 0, 100); //FIXME : set # of bins correctly
-      hChi2NDof_ = dir_.make<TH1F>("Chi2NDof", "Number of DoF", 20, 0, 20);
+      hNValidHits_ = dir_.make<TH1F>("nHits", "Number of hits", 60, 0, 60);
+      hChi2NDof_ = dir_.make<TH1F>("Chi2NDof", "Number of DoF", 60, 0, 60);
       hChi2Norm_ = dir_.make<TH1F>("Chi2Norm", "Normalized #Chi^{2}", nBins, 0, 10);
       hChi2Prob_ = dir_.make<TH1F>("Chi2Prob", "#Chi^{2} probability", nBins, 0, 1);
 
@@ -88,8 +88,8 @@ class HistogramGroup
       hMatchedRPC_Phi_ClusterSize_ = dir_.make<TH2F>("RPCCLusterSizeMatched_Phi", "matched cluster size of recHits vs phi", nBinsEta, minPhi, maxPhi, maxClusterSize, 0, maxClusterSize);
 
       hMatchedRPC_LocalAngle_ClusterSize_ = dir_.make<TH2F>("MatchedRPC_LocalAngle_ClusterSize", "matched cluster size of rechits vs local angle", nBins, -1, 1, maxClusterSize, 0, maxClusterSize);
-      hMatchedRPC_Eta_LocalAngle_ = dir_.make<TH2F>("MatchedRPC_Eta_LocalAngle", "matched RPC recHits' eta vs local angle", nBins, -1, 1, nBinsEta, minEta, maxEta);
-      hMatchedRPC_Phi_LocalAngle_ = dir_.make<TH2F>("MatchedRPC_Phi_LocalAngle", "matched RPC recHits' phi vs local angle", nBins, -1, 1, nBins, minPhi, maxPhi);
+      hMatchedRPC_Eta_LocalAngle_ = dir_.make<TH2F>("MatchedRPC_Eta_LocalAngle", "matched RPC recHits' eta vs local angle", nBinsEta, minEta, maxEta, nBins, -1, 1);
+      hMatchedRPC_Phi_LocalAngle_ = dir_.make<TH2F>("MatchedRPC_Phi_LocalAngle", "matched RPC recHits' phi vs local angle", nBins, minPhi, maxPhi, nBins, -1, 1);
 
       hN_->GetXaxis()->SetTitle("Number of tracks");
       hAlgo_->GetXaxis()->SetTitle("Tracking algorithm #");
@@ -191,7 +191,7 @@ MuonTrackAnalyzer::MuonTrackAnalyzer(const ParameterSet& pset)
 {
   trkLabel_ = pset.getUntrackedParameter<InputTag>("track");
 //  cscHitLabel_ = pset.getUntrackedParameter<InputTag>("CSCHits");
-  rpcHitLabel_ = pset.getUntrackedParameter<InputTag>("RPCHits");
+//  rpcHitLabel_ = pset.getUntrackedParameter<InputTag>("RPCHits");
 
   edm::Service<TFileService> fs;
   hTrk_ = new HistogramGroup("CosmicBarrel", fs);
@@ -232,8 +232,8 @@ void MuonTrackAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& 
 //  Handle<CSCRecHit2DCollection> cscHitColl;
 //  event.getByLabel(cscHitLabel_, cscHitColl);
 
-  Handle<RPCRecHitCollection> rpcHitColl;
-  event.getByLabel(rpcHitLabel_, rpcHitColl);
+//  Handle<RPCRecHitCollection> rpcHitColl;
+//  event.getByLabel(rpcHitLabel_, rpcHitColl);
 
 //  ESHandle<MagneticField> bField;
 //  eventSetup.get<IdealMagneticFieldRecord>().get(bField);
