@@ -83,9 +83,8 @@ class HistogramGroup
       hRPC_Eta_ClusterSize_ = dir_.make<TH2F>("RPCEta_ClusterSize", "#eta vs cluster size of recHits", nBinsEta, minEta, maxEta, maxClusterSize, 0, maxClusterSize);
       hRPC_Phi_ClusterSize_ = dir_.make<TH2F>("RPCPhi_ClusterSize", "#phi vs cluster size of recHits",  nBins, minPhi, maxPhi, maxClusterSize, 0, maxClusterSize);
 
-//      hMatchedRPC_R_ClusterSize_ = dir_.make<TH2F>("MatchedRPC_R_ClusterSize", "matched cluster size of recHits vs hit distance", maxClusterSize, 0, maxClusterSize, nBins, 0, 20);
       hMatchedRPC_Eta_ClusterSize_ = dir_.make<TH2F>("MatchedRPC_Eta_ClusterSize", "matched cluster size of recHits vs eta", nBinsEta, minEta, maxEta, maxClusterSize, 0, maxClusterSize);
-      hMatchedRPC_Phi_ClusterSize_ = dir_.make<TH2F>("RPCCLusterSizeMatched_Phi", "matched cluster size of recHits vs phi", nBinsEta, minPhi, maxPhi, maxClusterSize, 0, maxClusterSize);
+      hMatchedRPC_Phi_ClusterSize_ = dir_.make<TH2F>("RPCCLusterSizeMatched_Phi", "matched cluster size of recHits vs phi", nBins, minPhi, maxPhi, maxClusterSize, 0, maxClusterSize);
 
       hMatchedRPC_LocalAngle_ClusterSize_ = dir_.make<TH2F>("MatchedRPC_LocalAngle_ClusterSize", "matched cluster size of rechits vs local angle", nBins, -1, 1, maxClusterSize, 0, maxClusterSize);
       hMatchedRPC_Eta_LocalAngle_ = dir_.make<TH2F>("MatchedRPC_Eta_LocalAngle", "matched RPC recHits' eta vs local angle", nBinsEta, minEta, maxEta, nBins, -1, 1);
@@ -127,12 +126,12 @@ class HistogramGroup
       hRPCHits_X_Y_->GetYaxis()->SetTitle("Y position (cm)");
       hRPCHits_Z_->GetXaxis()->SetTitle("Z position (cm)");
 
+      hRPC_Phi_ClusterSize_->GetXaxis()->SetTitle("#phi");
+      hRPC_Phi_ClusterSize_->GetYaxis()->SetTitle("Cluster size");
+
       hMatchedRPCHits_X_Y_->GetXaxis()->SetTitle("X position (cm)");
       hMatchedRPCHits_X_Y_->GetYaxis()->SetTitle("Y position (cm)");
       hMatchedRPCHits_Z_->GetXaxis()->SetTitle("Z position (cm)");
-
-//      hMatchedRPC_R_ClusterSize_->GetXaxis()->SetTitle("trackHit-RPCHit distance");
-//      hMatchedRPC_R_ClusterSize_->GetYaxis()->SetTitle("#eta");
 
       hMatchedRPC_Eta_ClusterSize_->GetXaxis()->SetTitle("#eta");
       hMatchedRPC_Eta_ClusterSize_->GetYaxis()->SetTitle("Cluster size");
@@ -180,7 +179,6 @@ class HistogramGroup
     TH1FP hRPCClusterSize_;
     TH2FP hRPC_Eta_ClusterSize_, hRPC_Phi_ClusterSize_;
 
-//    TH2FP hMatchedRPC_R_ClusterSize_;
     TH2FP hMatchedRPC_Eta_ClusterSize_, hMatchedRPC_Phi_ClusterSize_;
 
     TH2FP hMatchedRPC_LocalAngle_ClusterSize_;
@@ -300,7 +298,6 @@ void MuonTrackAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& 
         else if ( detId.subdetId() == 3 ) // RPC hits
         {
           // Find RPC hits from RPCRecHitCollection
-          //  Dynamic casting of TrackingRecHit* to RPCRecHit* not working (link error)
           const RPCRecHit* rpcHit = dynamic_cast<const RPCRecHit*>(hit);
           if ( !rpcHit ) continue;
 
@@ -312,28 +309,22 @@ void MuonTrackAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& 
           hTrk_->hRPC_Eta_ClusterSize_->Fill(iTrk->eta(), clusterSize);
           hTrk_->hRPC_Phi_ClusterSize_->Fill(iTrk->phi(), clusterSize);
 
-          const GlobalPoint& rpcPoint = trkGeometry->idToDet(detId)->surface().toGlobal(rpcHit->localPosition());
-          const double rpcX = rpcPoint.x(), rpcY = rpcPoint.y();
+          hTrk_->hMatchedRPCHits_X_Y_->Fill(trkX, trkY);
+          hTrk_->hMatchedRPCHits_Z_->Fill(trkZ);
 
-          const double distance = hypot(trkX-rpcX, trkY-rpcY);
-          if ( distance < 15 ) 
-          {
-            hTrk_->hMatchedRPCHits_X_Y_->Fill(trkX, trkY);
-              hTrk_->hMatchedRPCHits_Z_->Fill(trkZ);
+          hTrk_->hMatchedRPC_Eta_ClusterSize_->Fill(iTrk->eta(), clusterSize);
+          hTrk_->hMatchedRPC_Phi_ClusterSize_->Fill(iTrk->phi(), clusterSize);
 
-//              hTrk_->hMatchedRPC_R_ClusterSize_->Fill(distance, clusterSize);
-              hTrk_->hMatchedRPC_Eta_ClusterSize_->Fill(iTrk->eta(), clusterSize);
-              hTrk_->hMatchedRPC_Phi_ClusterSize_->Fill(iTrk->phi(), clusterSize);
+          TSOS tsosAtDet(fts, trkGeometry->idToDet(detId)->surface());
+          LocalVector trjDir = tsosAtDet.localDirection();
 
-              TSOS tsosAtDet(fts, trkGeometry->idToDet(detId)->surface());
-              LocalVector trjDir = tsosAtDet.localDirection();
+          const double lz = trjDir.z();
+          const double lr = hypot(trjDir.x(), trjDir.y());
+          const double localAngle = lr/hypot(lz, lr);
 
-              double localAngle = cos(atan(trjDir.z())/hypot(trjDir.x(), trjDir.y()));
-
-              hTrk_->hMatchedRPC_LocalAngle_ClusterSize_->Fill(localAngle, clusterSize);
-              hTrk_->hMatchedRPC_Eta_LocalAngle_->Fill(iTrk->eta(), localAngle);
-              hTrk_->hMatchedRPC_Phi_LocalAngle_->Fill(iTrk->phi(), localAngle);
-          }
+          hTrk_->hMatchedRPC_LocalAngle_ClusterSize_->Fill(localAngle, clusterSize);
+          hTrk_->hMatchedRPC_Eta_LocalAngle_->Fill(iTrk->eta(), localAngle);
+          hTrk_->hMatchedRPC_Phi_LocalAngle_->Fill(iTrk->phi(), localAngle);
         }
       }
     }
