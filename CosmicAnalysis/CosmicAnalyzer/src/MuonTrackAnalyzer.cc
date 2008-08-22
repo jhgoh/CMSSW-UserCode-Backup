@@ -108,7 +108,7 @@ class HistogramGroup
       hRPCClusterSize_Eta_ = dir_.make<TH2F>("RPCClusterSize_Eta", "#eta vs cluster size of recHits", maxClusterSize, 0, maxClusterSize, nBinsEta, minEta, maxEta);
       hRPCClusterSize_Phi_ = dir_.make<TH2F>("RPCClusterSize_Phi", "#phi vs cluster size of recHits", maxClusterSize, 0, maxClusterSize, nBins, minPhi, maxPhi);
 
-      hRPCClusterSizeMatched_R_ = dir_.make<TH2F>("RPCClusterSizeMathced_R", "matched cluster size of recHits vs hit distance", maxClusterSize, 0, maxClusterSize, nBins, 0, 20);
+      hRPCClusterSizeMatched_R_ = dir_.make<TH2F>("RPCClusterSizeMatched_R", "matched cluster size of recHits vs hit distance", maxClusterSize, 0, maxClusterSize, nBins, 0, 20);
       hRPCClusterSizeMatched_Eta_ = dir_.make<TH2F>("RPCClusterSizeMatched_Eta", "matched cluster size of recHits vs eta", maxClusterSize, 0, maxClusterSize, nBinsEta, minEta, maxEta);
       hRPCClusterSizeMatched_Phi_ = dir_.make<TH2F>("RPCCLusterSizeMatched_Phi", "matched cluster size of recHits vs phi", maxClusterSize, 0, maxClusterSize, nBinsEta, minPhi, maxPhi);
     };
@@ -236,20 +236,23 @@ void MuonTrackAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& 
       const DetId& detId = hit->geographicalId();
       const GlobalPoint& point = trkGeometry->idToDet(detId)->surface().toGlobal(hit->localPosition());
 
-      hTrk_->hAllHits_X_Y_->Fill(point.x(), point.y());
-      hTrk_->hAllHits_Z_->Fill(point.z());
+      const double trkX = point.x(), trkY = point.y();
+      const double trkZ = point.z();
+
+      hTrk_->hAllHits_X_Y_->Fill(trkX, trkY);
+      hTrk_->hAllHits_Z_->Fill(trkZ);
 
       if ( detId.det() == DetId::Muon ) 
       {
         if ( detId.subdetId() == 1 ) // DT hits
         {
-          hTrk_->hDTHits_X_Y_->Fill(point.x(), point.y());
-          hTrk_->hDTHits_Z_->Fill(point.z());
+          hTrk_->hDTHits_X_Y_->Fill(trkX, trkY);
+          hTrk_->hDTHits_Z_->Fill(trkZ);
         }
         else if ( detId.subdetId() == 2 ) // CSC hits
         {
-          hTrk_->hCSCHits_X_Y_->Fill(point.x(), point.y());
-          hTrk_->hCSCHits_Z_->Fill(point.z());
+          hTrk_->hCSCHits_X_Y_->Fill(trkX, trkY);
+          hTrk_->hCSCHits_Z_->Fill(trkZ);
         }
         else if ( detId.subdetId() == 3 ) // RPC hits
         {
@@ -261,9 +264,8 @@ void MuonTrackAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& 
           {
             if ( iRPCHit->geographicalId() != hit->geographicalId() ) continue;
 
-            const double trkX = point.x(), trkY = point.y();
             hTrk_->hRPCHits_X_Y_->Fill(trkX, trkY);
-            hTrk_->hRPCHits_Z_->Fill(trkX, trkY);
+            hTrk_->hRPCHits_Z_->Fill(trkZ);
 
             const int clusterSize = iRPCHit->clusterSize();
             hTrk_->hRPCClusterSize_->Fill(clusterSize);
@@ -277,7 +279,7 @@ void MuonTrackAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& 
             if ( distance < 15 ) 
             {
               hTrk_->hRPCHitsMatched_X_Y_->Fill(trkX, trkY);
-              hTrk_->hRPCHitsMatched_Z_->Fill(trkX, trkY);
+              hTrk_->hRPCHitsMatched_Z_->Fill(trkZ);
 
               hTrk_->hRPCClusterSizeMatched_R_->Fill(clusterSize, distance);
               hTrk_->hRPCClusterSizeMatched_Eta_->Fill(clusterSize, iTrk->eta());
