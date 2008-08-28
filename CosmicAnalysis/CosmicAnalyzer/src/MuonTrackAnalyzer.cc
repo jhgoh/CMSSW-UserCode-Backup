@@ -86,9 +86,11 @@ class HistogramGroup
       hMatchedRPC_Eta_ClusterSize_ = dir_.make<TH2F>("MatchedRPC_Eta_ClusterSize", "matched cluster size of recHits vs eta", nBinsEta, minEta, maxEta, maxClusterSize, 0, maxClusterSize);
       hMatchedRPC_Phi_ClusterSize_ = dir_.make<TH2F>("RPCCLusterSizeMatched_Phi", "matched cluster size of recHits vs phi", nBins, minPhi, maxPhi, maxClusterSize, 0, maxClusterSize);
 
-      hMatchedRPC_LocalAngle_ClusterSize_ = dir_.make<TH2F>("MatchedRPC_LocalAngle_ClusterSize", "matched cluster size of rechits vs local angle", nBins, -1, 1, maxClusterSize, 0, maxClusterSize);
       hMatchedRPC_Eta_LocalAngle_ = dir_.make<TH2F>("MatchedRPC_Eta_LocalAngle", "matched RPC recHits' eta vs local angle", nBinsEta, minEta, maxEta, nBins, -1, 1);
       hMatchedRPC_Phi_LocalAngle_ = dir_.make<TH2F>("MatchedRPC_Phi_LocalAngle", "matched RPC recHits' phi vs local angle", nBins, minPhi, maxPhi, nBins, -1, 1);
+
+      hMatchedRPC_CosLocalAngle_ClusterSize_ = dir_.make<TH2F>("MatchedRPC_CosLocalAngle_ClusterSize", "matched cluster size of rechits vs cos(local angle)", nBins, -1, 1, maxClusterSize, 0, maxClusterSize);
+      hMatchedRPC_LocalAngle_ClusterSize_ = dir_.make<TH2F>("MatchedRPC_LocalAngle_ClusterSize", "matched cluster size of rechits vs local angle", nBins, -TMath::Pi(), TMath::Pi(), maxClusterSize, 0, maxClusterSize);
 
       hN_->GetXaxis()->SetTitle("Number of tracks");
       hAlgo_->GetXaxis()->SetTitle("Tracking algorithm #");
@@ -139,8 +141,11 @@ class HistogramGroup
       hMatchedRPC_Phi_ClusterSize_->GetXaxis()->SetTitle("#phi");
       hMatchedRPC_Phi_ClusterSize_->GetYaxis()->SetTitle("Cluster size");
 
-      hMatchedRPC_LocalAngle_ClusterSize_->GetXaxis()->SetTitle("cosine of local direction");
+      hMatchedRPC_LocalAngle_ClusterSize_->GetXaxis()->SetTitle("angle of local direction");
       hMatchedRPC_LocalAngle_ClusterSize_->GetYaxis()->SetTitle("Cluster size");
+
+      hMatchedRPC_CosLocalAngle_ClusterSize_->GetXaxis()->SetTitle("cosine of local direction");
+      hMatchedRPC_CosLocalAngle_ClusterSize_->GetYaxis()->SetTitle("Cluster size");  
 
       hMatchedRPC_Eta_LocalAngle_->GetXaxis()->SetTitle("#eta");
       hMatchedRPC_Eta_LocalAngle_->GetYaxis()->SetTitle("cosine of local angle");
@@ -182,6 +187,7 @@ class HistogramGroup
     TH2FP hMatchedRPC_Eta_ClusterSize_, hMatchedRPC_Phi_ClusterSize_;
 
     TH2FP hMatchedRPC_LocalAngle_ClusterSize_;
+    TH2FP hMatchedRPC_CosLocalAngle_ClusterSize_;
     TH2FP hMatchedRPC_Eta_LocalAngle_, hMatchedRPC_Phi_LocalAngle_;
 };
 
@@ -320,9 +326,11 @@ void MuonTrackAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& 
 
           const double lz = trjDir.z();
           const double lr = hypot(trjDir.x(), trjDir.y());
-          const double localAngle = lr/hypot(lz, lr);
+          const double cosLocalAngle = lr/hypot(lz, lr);
+          const double localAngle = atan(lz/lr);
 
           hTrk_->hMatchedRPC_LocalAngle_ClusterSize_->Fill(localAngle, clusterSize);
+          hTrk_->hMatchedRPC_CosLocalAngle_ClusterSize_->Fill(cosLocalAngle, clusterSize);
           hTrk_->hMatchedRPC_Eta_LocalAngle_->Fill(iTrk->eta(), localAngle);
           hTrk_->hMatchedRPC_Phi_LocalAngle_->Fill(iTrk->phi(), localAngle);
         }
