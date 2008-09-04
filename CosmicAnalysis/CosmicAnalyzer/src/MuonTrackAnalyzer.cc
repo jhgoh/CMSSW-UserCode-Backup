@@ -12,6 +12,7 @@
 #include "TrackingTools/TransientTrack/interface/TransientTrackBuilder.h"
 #include "TrackingTools/Records/interface/TransientTrackRecord.h"
 #include "DataFormats/RPCRecHit/interface/RPCRecHitCollection.h"
+#include "Geometry/RPCGeometry/interface/RPCRoll.h"
 
 #include "RecoMuon/TrackingTools/interface/MuonServiceProxy.h"
 
@@ -89,8 +90,12 @@ class HistogramGroup
       hMatchedRPC_Eta_LocalAngle_ = dir_.make<TH2F>("MatchedRPC_Eta_LocalAngle", "matched RPC recHits' eta vs local angle", nBinsEta, minEta, maxEta, nBins, -1, 1);
       hMatchedRPC_Phi_LocalAngle_ = dir_.make<TH2F>("MatchedRPC_Phi_LocalAngle", "matched RPC recHits' phi vs local angle", nBins, minPhi, maxPhi, nBins, -1, 1);
 
-      hMatchedRPC_CosLocalAngle_ClusterSize_ = dir_.make<TH2F>("MatchedRPC_CosLocalAngle_ClusterSize", "matched cluster size of rechits vs cos(local angle)", nBins, -1, 1, maxClusterSize, 0, maxClusterSize);
-      hMatchedRPC_LocalAngle_ClusterSize_ = dir_.make<TH2F>("MatchedRPC_LocalAngle_ClusterSize", "matched cluster size of rechits vs local angle", nBins, -TMath::Pi(), TMath::Pi(), maxClusterSize, 0, maxClusterSize);
+      hMatchedRPC_CosLocalAngle_ClusterSize_ = dir_.make<TH2F>("MatchedRPC_CosLocalAngle_ClusterSize", "matched cluster size of rechits vs cos(local angle)", nBins, 0, 1, maxClusterSize, 0, maxClusterSize);
+      hMatchedRPC_CosLocalAngleX_ClusterSize_ = dir_.make<TH2F>("MatchedRPC_CosLocalAngleX_ClusterSize", "matched cluster size of rechits vsx/(x^2+z^2)", nBins, -1, 1, maxClusterSize, 0, maxClusterSize);
+      hMatchedRPC_CosLocalAngleY_ClusterSize_ = dir_.make<TH2F>("MatchedRPC_CosLocalAngleY_ClusterSize", "matched cluster size of rechits vsy/(y^2+z^2)", nBins, -1, 1, maxClusterSize, 0, maxClusterSize);
+
+      hMatchedRPC_NStrips_ = dir_.make<TH1F>("MatchedRPC_NStrip", "Reminder of # of strip", nBins, 0, 1);
+      hMatchedRPC_NStrips_ClusterSize_ = dir_.make<TH2F>("MatchedRPC_NStrips_ClusterSize", "matched cluster size of rechits vs Reminder of # of strip", nBins, 0, 1, maxClusterSize, 0, maxClusterSize);
 
       hN_->GetXaxis()->SetTitle("Number of tracks");
       hAlgo_->GetXaxis()->SetTitle("Tracking algorithm #");
@@ -141,11 +146,14 @@ class HistogramGroup
       hMatchedRPC_Phi_ClusterSize_->GetXaxis()->SetTitle("#phi");
       hMatchedRPC_Phi_ClusterSize_->GetYaxis()->SetTitle("Cluster size");
 
-      hMatchedRPC_LocalAngle_ClusterSize_->GetXaxis()->SetTitle("angle of local direction");
-      hMatchedRPC_LocalAngle_ClusterSize_->GetYaxis()->SetTitle("Cluster size");
-
       hMatchedRPC_CosLocalAngle_ClusterSize_->GetXaxis()->SetTitle("cosine of local direction");
       hMatchedRPC_CosLocalAngle_ClusterSize_->GetYaxis()->SetTitle("Cluster size");  
+
+      hMatchedRPC_CosLocalAngleX_ClusterSize_->GetXaxis()->SetTitle("cosine of local direction");
+      hMatchedRPC_CosLocalAngleX_ClusterSize_->GetYaxis()->SetTitle("Cluster size");  
+
+      hMatchedRPC_CosLocalAngleY_ClusterSize_->GetXaxis()->SetTitle("cosine of local direction");
+      hMatchedRPC_CosLocalAngleY_ClusterSize_->GetYaxis()->SetTitle("Cluster size");  
 
       hMatchedRPC_Eta_LocalAngle_->GetXaxis()->SetTitle("#eta");
       hMatchedRPC_Eta_LocalAngle_->GetYaxis()->SetTitle("cosine of local angle");
@@ -153,6 +161,9 @@ class HistogramGroup
       hMatchedRPC_Phi_LocalAngle_->GetXaxis()->SetTitle("#phi");
       hMatchedRPC_Phi_LocalAngle_->GetYaxis()->SetTitle("cosine of local angle");
 
+      hMatchedRPC_NStrips_->GetXaxis()->SetTitle("nStrip");
+      hMatchedRPC_NStrips_ClusterSize_->GetXaxis()->SetTitle("nStrip");
+      hMatchedRPC_NStrips_ClusterSize_->GetYaxis()->SetTitle("cluster size");
     };
 
     TFileDirectory dir_;
@@ -186,9 +197,13 @@ class HistogramGroup
 
     TH2FP hMatchedRPC_Eta_ClusterSize_, hMatchedRPC_Phi_ClusterSize_;
 
-    TH2FP hMatchedRPC_LocalAngle_ClusterSize_;
     TH2FP hMatchedRPC_CosLocalAngle_ClusterSize_;
+    TH2FP hMatchedRPC_CosLocalAngleX_ClusterSize_;
+    TH2FP hMatchedRPC_CosLocalAngleY_ClusterSize_;
     TH2FP hMatchedRPC_Eta_LocalAngle_, hMatchedRPC_Phi_LocalAngle_;
+
+    TH1FP hMatchedRPC_NStrips_;
+    TH2FP hMatchedRPC_NStrips_ClusterSize_;
 };
 
 MuonTrackAnalyzer::MuonTrackAnalyzer(const ParameterSet& pset)
@@ -278,7 +293,8 @@ void MuonTrackAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& 
       const TrackingRecHit* hit = iHit->get();
 
       const DetId& detId = hit->geographicalId();
-      const GlobalPoint& point = trkGeometry->idToDet(detId)->surface().toGlobal(hit->localPosition());
+      const GeomDet* detector = trkGeometry->idToDet(detId);
+      const GlobalPoint& point = detector->surface().toGlobal(hit->localPosition());
 
       const double trkX = point.x(), trkY = point.y();
       const double trkZ = point.z();
@@ -321,36 +337,31 @@ void MuonTrackAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& 
           hTrk_->hMatchedRPC_Eta_ClusterSize_->Fill(iTrk->eta(), clusterSize);
           hTrk_->hMatchedRPC_Phi_ClusterSize_->Fill(iTrk->phi(), clusterSize);
 
-          TSOS tsosAtDet(fts, trkGeometry->idToDet(detId)->surface());
+          TSOS tsosAtDet(fts, detector->surface());
           LocalVector trjDir = tsosAtDet.localDirection();
 
+          const double lx = trjDir.x();
+          const double ly = trjDir.y();
           const double lz = trjDir.z();
-          const double lr = hypot(trjDir.x(), trjDir.y());
-          const double cosLocalAngle = lr/hypot(lz, lr);
-          const double localAngle = atan(lz/lr);
+          const double lr = hypot(lx, ly);
 
-          hTrk_->hMatchedRPC_LocalAngle_ClusterSize_->Fill(localAngle, clusterSize);
-          hTrk_->hMatchedRPC_CosLocalAngle_ClusterSize_->Fill(cosLocalAngle, clusterSize);
-          hTrk_->hMatchedRPC_Eta_LocalAngle_->Fill(iTrk->eta(), localAngle);
-          hTrk_->hMatchedRPC_Phi_LocalAngle_->Fill(iTrk->phi(), localAngle);
+          hTrk_->hMatchedRPC_CosLocalAngle_ClusterSize_->Fill(lr/hypot(lr, lz), clusterSize);
+          hTrk_->hMatchedRPC_CosLocalAngleX_ClusterSize_->Fill(lx/hypot(lx, lz), clusterSize);
+          hTrk_->hMatchedRPC_CosLocalAngleY_ClusterSize_->Fill(ly/hypot(ly, lz), clusterSize);
+
+          const RPCRoll* rpcRoll = dynamic_cast<const RPCRoll*>(detector);
+          if ( rpcRoll ) 
+          {
+//            const float predictedStrip = rpcRoll->strip(tsosAtDet.localPosition());
+            const float nStrips = rpcRoll->nstrips();
+            const float remNStrips = nStrips - floor(nStrips);
+cout << nStrips << endl;
+            hTrk_->hMatchedRPC_NStrips_->Fill(remNStrips);
+            hTrk_->hMatchedRPC_NStrips_ClusterSize_->Fill(remNStrips, clusterSize);
+          }
         }
       }
     }
-
-/*
-    const GlobalTrajectoryParameters trajParam = fts.parameters();
-*/
-/*
-    TrackDetMatchInfo trkDetMatchInfo = theTrkDetAssociator.associate(event, eventSetup, fts, trkDetAssocParams_);
-
-    for(vector<TAMuonChamberMatch>::const_iterator iChamber = trkDetMatchInfo.chambers.begin();
-        iChamber != trkDetMatchInfo.chambers.end(); ++iChamber) {
-      const GeomDet* detector = trkGeometry->idToDet(iChamber->id);
-
-      const DTLayer* dtLayer = dynamic_cast<const DTLayer*>(detector);
-      const RPCRoll* rpcRoll = dynamic_cast<const RPCRoll*>(detector);
-    }
-*/
   }
 }
 
