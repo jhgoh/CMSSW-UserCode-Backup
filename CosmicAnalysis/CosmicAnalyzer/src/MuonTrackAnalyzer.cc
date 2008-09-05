@@ -97,6 +97,9 @@ class HistogramGroup
       hMatchedRPC_NStrips_ = dir_.make<TH1F>("MatchedRPC_NStrip", "Reminder of # of strip", nBins, 0, 1);
       hMatchedRPC_NStrips_ClusterSize_ = dir_.make<TH2F>("MatchedRPC_NStrips_ClusterSize", "matched cluster size of rechits vs Reminder of # of strip", nBins, 0, 1, maxClusterSize, 0, maxClusterSize);
 
+      hMatchedRPC_PredictedStrip_ = dir_.make<TH1F>("MatchedRPC_PredictedStrip", "Predicted strip", nBins, 0, 1);
+      hMatchedRPC_PredictedStrip_ClusterSize_ = dir_.make<TH2F>("MatchedRPC_PredictedStrip_ClusterSize", "matched cluster size of rechits vs Reminder of predicted strip", nBins, 0, 1, maxClusterSize, 0, maxClusterSize);
+
       hN_->GetXaxis()->SetTitle("Number of tracks");
       hAlgo_->GetXaxis()->SetTitle("Tracking algorithm #");
 
@@ -204,6 +207,9 @@ class HistogramGroup
 
     TH1FP hMatchedRPC_NStrips_;
     TH2FP hMatchedRPC_NStrips_ClusterSize_;
+
+    TH1FP hMatchedRPC_PredictedStrip_;
+    TH2FP hMatchedRPC_PredictedStrip_ClusterSize_;
 };
 
 MuonTrackAnalyzer::MuonTrackAnalyzer(const ParameterSet& pset)
@@ -352,12 +358,17 @@ void MuonTrackAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& 
           const RPCRoll* rpcRoll = dynamic_cast<const RPCRoll*>(detector);
           if ( rpcRoll ) 
           {
-//            const float predictedStrip = rpcRoll->strip(tsosAtDet.localPosition());
+            const float predictedStrip = rpcRoll->strip(tsosAtDet.localPosition());
             const float nStrips = rpcRoll->nstrips();
+
+            const float remPredictedStrip = predictedStrip - floor(predictedStrip);
             const float remNStrips = nStrips - floor(nStrips);
-cout << nStrips << endl;
+
             hTrk_->hMatchedRPC_NStrips_->Fill(remNStrips);
             hTrk_->hMatchedRPC_NStrips_ClusterSize_->Fill(remNStrips, clusterSize);
+
+            hTrk_->hMatchedRPC_PredictedStrip_->Fill(remPredictedStrip);
+            hTrk_->hMatchedRPC_PredictedStrip_ClusterSize_->Fill(remPredictedStrip, clusterSize);
           }
         }
       }
