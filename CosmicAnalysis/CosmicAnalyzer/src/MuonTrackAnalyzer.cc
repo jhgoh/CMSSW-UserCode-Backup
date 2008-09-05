@@ -64,28 +64,28 @@ class HistogramGroup
       hInnerZ_ = dir_.make<TH1F>("innerZ", "z of inner position", nBinsPos, minZ, maxZ);
       hOuterZ_ = dir_.make<TH1F>("outerZ", "z of outer position", nBinsPos, minZ, maxZ);
 
-      hAllHits_X_Y_ = dir_.make<TH2F>("RecHitsX_Y", "y vs x of recHits", nBinsPos, minX, maxX, nBinsPos, minY, maxY);
-      hAllHits_Z_ = dir_.make<TH1F>("RecHitsZ", "z of recHits", nBinsPos, minZ, maxZ);
+      hAllHits_X_Y_ = dir_.make<TH2F>("AllHitsX_Y", "y vs x of recHits", nBinsPos, minX, maxX, nBinsPos, minY, maxY);
+      hAllHits_Z_ = dir_.make<TH1F>("AllHitsZ", "z of recHits", nBinsPos, minZ, maxZ);
 
-      hDTHits_X_Y_ = dir_.make<TH2F>("RecHitsDTX_Y", "y vs x of DT recHits", nBinsPos, minX, maxX, nBinsPos, minY, maxY);
-      hDTHits_Z_ = dir_.make<TH1F>("RecHitsDTZ", "z of DT recHits", nBinsPos, minZ, maxZ);
+      hDTHits_X_Y_ = dir_.make<TH2F>("DTHits_X_Y", "y vs x of DT recHits", nBinsPos, minX, maxX, nBinsPos, minY, maxY);
+      hDTHits_Z_ = dir_.make<TH1F>("DTHits_Z", "z of DT recHits", nBinsPos, minZ, maxZ);
 
-      hCSCHits_X_Y_ = dir_.make<TH2F>("RecHitsCSCX_Y", "y vs x of CSC recHits", nBinsPos, minX, maxX, nBinsPos, minY, maxY);
-      hCSCHits_Z_ = dir_.make<TH1F>("RecHitsCSCZ", "z of CSC recHits", nBinsPos, minZ, maxZ);
+      hCSCHits_X_Y_ = dir_.make<TH2F>("CSCHits_X_Y", "y vs x of CSC recHits", nBinsPos, minX, maxX, nBinsPos, minY, maxY);
+      hCSCHits_Z_ = dir_.make<TH1F>("CSCHits_Z", "z of CSC recHits", nBinsPos, minZ, maxZ);
 
-      hRPCHits_X_Y_ = dir_.make<TH2F>("RecHitsRPCX_Y", "y vs x of RPC recHits", nBinsPos, minX, maxX, nBinsPos, minY, maxY);
-      hRPCHits_Z_ = dir_.make<TH1F>("RecHitsRPCZ", "z of RPC recHits", nBinsPos, minZ, maxZ);
+      hRPCHits_X_Y_ = dir_.make<TH2F>("RPCHits_X_Y", "y vs x of RPC recHits", nBinsPos, minX, maxX, nBinsPos, minY, maxY);
+      hRPCHits_Z_ = dir_.make<TH1F>("RPCHits_Z", "z of RPC recHits", nBinsPos, minZ, maxZ);
 
-      hMatchedRPCHits_X_Y_ = dir_.make<TH2F>("RecHitsMatchedX_Y", "y vs x of matched RPC recHits", nBinsPos, minX, maxX, nBinsPos, minY, maxY);
-      hMatchedRPCHits_Z_ = dir_.make<TH1F>("RecHitsMatchedZ", "z of matched RPC recHits", nBinsPos, minZ, maxZ);
+      hMatchedRPCHits_X_Y_ = dir_.make<TH2F>("MatchedRPCHits_X_Y", "y vs x of matched RPC recHits", nBinsPos, minX, maxX, nBinsPos, minY, maxY);
+      hMatchedRPCHits_Z_ = dir_.make<TH1F>("MatchedRPCHits_Z", "z of matched RPC recHits", nBinsPos, minZ, maxZ);
 
       const int maxClusterSize = 10;
       hRPCClusterSize_ = dir_.make<TH1F>("RPCClusterSize", "cluster size of recHits", maxClusterSize, 0, maxClusterSize);
-      hRPC_Eta_ClusterSize_ = dir_.make<TH2F>("RPCEta_ClusterSize", "#eta vs cluster size of recHits", nBinsEta, minEta, maxEta, maxClusterSize, 0, maxClusterSize);
-      hRPC_Phi_ClusterSize_ = dir_.make<TH2F>("RPCPhi_ClusterSize", "#phi vs cluster size of recHits",  nBins, minPhi, maxPhi, maxClusterSize, 0, maxClusterSize);
+      hRPC_Eta_ClusterSize_ = dir_.make<TH2F>("RPC_Eta_ClusterSize", "#eta vs cluster size of recHits", nBinsEta, minEta, maxEta, maxClusterSize, 0, maxClusterSize);
+      hRPC_Phi_ClusterSize_ = dir_.make<TH2F>("RPC_Phi_ClusterSize", "#phi vs cluster size of recHits",  nBins, minPhi, maxPhi, maxClusterSize, 0, maxClusterSize);
 
       hMatchedRPC_Eta_ClusterSize_ = dir_.make<TH2F>("MatchedRPC_Eta_ClusterSize", "matched cluster size of recHits vs eta", nBinsEta, minEta, maxEta, maxClusterSize, 0, maxClusterSize);
-      hMatchedRPC_Phi_ClusterSize_ = dir_.make<TH2F>("RPCCLusterSizeMatched_Phi", "matched cluster size of recHits vs phi", nBins, minPhi, maxPhi, maxClusterSize, 0, maxClusterSize);
+      hMatchedRPC_Phi_ClusterSize_ = dir_.make<TH2F>("MatchedRPC_Phi_ClusterSize", "matched cluster size of recHits vs phi", nBins, minPhi, maxPhi, maxClusterSize, 0, maxClusterSize);
 
       hMatchedRPC_Eta_LocalAngle_ = dir_.make<TH2F>("MatchedRPC_Eta_LocalAngle", "matched RPC recHits' eta vs local angle", nBinsEta, minEta, maxEta, nBins, -1, 1);
       hMatchedRPC_Phi_LocalAngle_ = dir_.make<TH2F>("MatchedRPC_Phi_LocalAngle", "matched RPC recHits' phi vs local angle", nBins, minPhi, maxPhi, nBins, -1, 1);
@@ -167,6 +167,10 @@ class HistogramGroup
       hMatchedRPC_NStrips_->GetXaxis()->SetTitle("nStrip");
       hMatchedRPC_NStrips_ClusterSize_->GetXaxis()->SetTitle("nStrip");
       hMatchedRPC_NStrips_ClusterSize_->GetYaxis()->SetTitle("cluster size");
+
+      hMatchedRPC_PredictedStrip_->GetXaxis()->SetTitle("Reminder of predicted strip number");
+      hMatchedRPC_PredictedStrip_ClusterSize_->GetXaxis()->SetTitle("Reminder of predicted strip number");
+      hMatchedRPC_PredictedStrip_ClusterSize_->GetYaxis()->SetTitle("cluster size");
     };
 
     TFileDirectory dir_;
