@@ -18,6 +18,7 @@ public:
   HPtcl(const std::string namePrefix, const std::string titleSuffix)
   {
     edm::Service<TFileService> fs;
+    hPt_ = hEta_ = 0;
 
     hPt_ = fs->make<TH1D>(("h"+namePrefix+"Pt").c_str(), ("p_{T} of "+titleSuffix).c_str(), 50, 0, 100);
     hEta_ = fs->make<TH1D>(("h"+namePrefix+"Eta").c_str(), ("#eta of "+titleSuffix).c_str(), 50, -2.5, 2.5);
@@ -40,8 +41,9 @@ struct HTT
 public:
   HTT(const std::string namePrefix, const std::string titleSuffix) {
     edm::Service<TFileService> fs;
-    
-    hM_ = fs->make<TH1D>(("h"+namePrefix+"M").c_str(), ("Mass of "+titleSuffix).c_str(), 50, 0, 100);
+    hM_ = hPt_ = hEta_ = 0;    
+
+    hM_ = fs->make<TH1D>(("h"+namePrefix+"M").c_str(), ("Mass of "+titleSuffix).c_str(), 50, 50, 200);
     hPt_ = fs->make<TH1D>(("h"+namePrefix+"Pt").c_str(), ("p_{T} of "+titleSuffix).c_str(), 50, 0, 100);
     hEta_ = fs->make<TH1D>(("h"+namePrefix+"Eta").c_str(), ("#eta of "+titleSuffix).c_str(), 50, -2.5, 2.5);
   };
@@ -49,6 +51,8 @@ public:
   typedef std::pair<HepMC::GenParticle*, HepMC::GenParticle*> PtclPair;
   void operator()(PtclPair pPair)
   {
+    if ( !hM_ || !hPt_ || !hEta_ ) return;
+
     const HepMC::FourVector p1 = pPair.first->momentum();
     const HepMC::FourVector p2 = pPair.second->momentum();
     

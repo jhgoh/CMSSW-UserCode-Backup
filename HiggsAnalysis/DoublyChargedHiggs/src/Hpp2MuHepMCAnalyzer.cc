@@ -48,8 +48,8 @@ Hpp2MuHepMCAnalyzer::Hpp2MuHepMCAnalyzer(const ParameterSet& pset):
   hHpp_("Hpp", "Higgs"),
   hHppMu_("HppMu", "muons from Higgs decay"),
   hHppGoodMu_("HppGoodMu", "good muons from Higgs decay"),
-  hDimuonPP_("DimuonPP", "Mass of Mu^{+}Mu^{+}"),
-  hDimuonMM_("DimuonMM", "Mass of Mu^{-}Mu^{-}")
+  hDimuonPP_("DimuonPP", "Mu^{+}Mu^{+}"),
+  hDimuonMM_("DimuonMM", "Mu^{-}Mu^{-}")
 {
 }
 
@@ -120,7 +120,7 @@ void Hpp2MuHepMCAnalyzer::analyze(const Event& event, const EventSetup& eventSet
     vector<HepMC::GenParticle*> higgsGoodMuPs, higgsGoodMuMs;
 
     for(HepMC::GenVertex::particle_iterator iDesc = genVtx->particles_begin(HepMC::descendants);
-	iDesc != genVtx->particles_end(HepMC::descendants); ++iDesc) {
+        iDesc != genVtx->particles_end(HepMC::descendants); ++iDesc) {
       HepMC::GenParticle* desc = *iDesc;
 
       if ( desc->status() != 1 ) continue;
