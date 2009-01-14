@@ -19,6 +19,10 @@ process.source = cms.Source("PoolSource",
 )
 process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
 
+process.TFileService = cms.Service("TFileService",
+    fileName = cms.string('Result.root')
+)
+
 process.hepMCAnalyzer = cms.EDAnalyzer("Hpp2MuHepMCAnalyzer")
 process.analyzer_step = cms.Path(process.hepMCAnalyzer)
 process.schedule = cms.Schedule(process.analyzer_step);
