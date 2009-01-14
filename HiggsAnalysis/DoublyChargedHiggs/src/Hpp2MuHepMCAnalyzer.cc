@@ -47,9 +47,12 @@ Hpp2MuHepMCAnalyzer::Hpp2MuHepMCAnalyzer(const ParameterSet& pset):
   hGoodMu_("GoodMu", "good muons"),
   hHpp_("Hpp", "Higgs"),
   hHppMu_("HppMu", "muons from Higgs decay"),
-  hHppGoodMu_("HppGoodMu", "good muons from Higgs decay"),
-  hDimuonPP_("DimuonPP", "Mu^{+}Mu^{+}"),
-  hDimuonMM_("DimuonMM", "Mu^{-}Mu^{-}")
+  hHppGoodMuP_("HppGoodMuP", "good #mu^{+} from Higgs decay"),
+  hHppGoodMuM_("HppGoodMuM", "good #mu^{-} from Higgs decay"),
+  hDimuonPP_("DimuonPP", "#mu^{+}#mu^{+}"),
+  hDimuonMM_("DimuonMM", "#mu^{-}#mu^{-}"),
+  hGoodDimuonPP_("GoodDimuonPP", "Good #mu^{+}#mu^{+}"),
+  hGoodDimuonMM_("GoodDimuonMM", "Good #mu^{-}#mu^{-}")
 {
 }
 
@@ -128,13 +131,21 @@ void Hpp2MuHepMCAnalyzer::analyze(const Event& event, const EventSetup& eventSet
       if ( isMuM(desc) ) higgsMuMs.push_back(desc);
       else if ( isMuP(desc) ) higgsMuPs.push_back(desc);
       
-      if ( isGoodMuM(desc) ) higgsGoodMuMs.push_back(desc);
-      else if ( isGoodMuP(desc) ) higgsGoodMuPs.push_back(desc);
+      if ( isGoodMuM(desc) ) {
+        higgsGoodMuMs.push_back(desc);
+        hHppGoodMuM_(desc);
+      }
+      else if ( isGoodMuP(desc) ) {
+        higgsGoodMuPs.push_back(desc);
+        hHppGoodMuP_(desc);
+      }
     }
 
     if ( higgsMuPs.size() == 2 ) hDimuonPP_(make_pair(higgsMuPs[0], higgsMuPs[1]));
     if ( higgsMuMs.size() == 2 ) hDimuonMM_(make_pair(higgsMuMs[0], higgsMuMs[1]));
 
+    if ( higgsGoodMuPs.size() == 2 ) hGoodDimuonPP_(make_pair(higgsGoodMuPs[0], higgsMuPs[1]));
+    if ( higgsGoodMuMs.size() == 2 ) hGoodDimuonMM_(make_pair(higgsGoodMuMs[0], higgsMuMs[1]));
   }
 
 }

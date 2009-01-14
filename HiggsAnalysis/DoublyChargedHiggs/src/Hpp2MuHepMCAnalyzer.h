@@ -20,7 +20,7 @@ public:
     edm::Service<TFileService> fs;
     hPt_ = hEta_ = 0;
 
-    hPt_ = fs->make<TH1D>(("h"+namePrefix+"Pt").c_str(), ("p_{T} of "+titleSuffix).c_str(), 50, 0, 100);
+    hPt_ = fs->make<TH1D>(("h"+namePrefix+"Pt").c_str(), ("p_{T} of "+titleSuffix).c_str(), 50, 0, 200);
     hEta_ = fs->make<TH1D>(("h"+namePrefix+"Eta").c_str(), ("#eta of "+titleSuffix).c_str(), 50, -2.5, 2.5);
   };
 
@@ -44,7 +44,7 @@ public:
     hM_ = hPt_ = hEta_ = 0;    
 
     hM_ = fs->make<TH1D>(("h"+namePrefix+"M").c_str(), ("Mass of "+titleSuffix).c_str(), 50, 50, 200);
-    hPt_ = fs->make<TH1D>(("h"+namePrefix+"Pt").c_str(), ("p_{T} of "+titleSuffix).c_str(), 50, 0, 100);
+    hPt_ = fs->make<TH1D>(("h"+namePrefix+"Pt").c_str(), ("p_{T} of "+titleSuffix).c_str(), 50, 0, 200);
     hEta_ = fs->make<TH1D>(("h"+namePrefix+"Eta").c_str(), ("#eta of "+titleSuffix).c_str(), 50, -2.5, 2.5);
   };
 
@@ -78,12 +78,13 @@ class Hpp2MuHepMCAnalyzer : public edm::EDAnalyzer
   void endJob();
 
  private:
-  typedef TH1D* H1P;
   HPtcl hTrk_, hMu_, hGoodMu_;
   HPtcl hHpp_;
-  HPtcl hHppMu_, hHppGoodMu_;
+  HPtcl hHppMu_;
+  HPtcl hHppGoodMuP_, hHppGoodMuM_;
 
   HTT hDimuonPP_, hDimuonMM_;
+  HTT hGoodDimuonPP_, hGoodDimuonMM_;
 };
 
 
