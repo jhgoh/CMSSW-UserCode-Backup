@@ -1,12 +1,7 @@
 #include "HiggsAnalysis/DoublyChargedHiggs/src/Hpp2MuHepMCAnalyzer.h"
 
 #include "DataFormats/Common/interface/Handle.h"
-#include "SimDataFormats/HepMCProduct/interface/HepMCProduct.h"
 
-#include "FWCore/ServiceRegistry/interface/Service.h"
-#include "PhysicsTools/UtilAlgos/interface/TFileService.h"
-
-#include "TH1D.h"
 #include "TMath.h"
 
 #include <iostream>
@@ -14,16 +9,48 @@
 using namespace std;
 using namespace edm;
 
-Hpp2MuHepMCAnalyzer::Hpp2MuHepMCAnalyzer(const ParameterSet& pset)
+class MuonFilter
 {
-  string outputFileName = pset.getUntrackedParameter<string>("outputFileName");
+public:
+  MuonFilter(const double minPt, const double maxEta, const int charge=0):
+    minPt_(minPt), maxEta_(maxEta), charge_(charge)
+  {
+  };
+  // charge = 0 for charge conjugation
+  bool operator()(const HepMC::GenParticle* ptcl)
+  {
+    if ( ptcl->status() != 1 ) return false;
 
-  edm::Service<TFileService> fs;
+    const int pdg_id = ptcl->pdg_id();
+    if ( abs(pdg_id) != 13 ) return false;
 
-  hMuPt_ = fs->make<TH1D>("hMuPt", "Muon p_{T} from H++", 50, 0, 200);
-  hMuEta_ = fs->make<TH1D>("hMuEta", "Muon #eta from H++", 50, -5.0, 5.0);
-  hMuMuM_ = fs->make<TH1D>("hMuMuM", "Dimuon mass", 100, 50, 300);
-  
+    const int charge = pdg_id/-13;
+    if ( charge*charge_ == -1 ) return false;
+
+    const double pt = ptcl->momentum().perp();
+    const double eta = ptcl->momentum().eta();
+
+    if ( pt < minPt_ || fabs(eta) > maxEta_ ) return false;
+
+    return true;
+  };
+
+  const double minPt_, maxEta_;
+  const int charge_;
+};
+
+
+
+Hpp2MuHepMCAnalyzer::Hpp2MuHepMCAnalyzer(const ParameterSet& pset):
+  hTrk_("Trk", "all tracks"),
+  hMu_("Mu", "all muons"),
+  hGoodMu_("GoodMu", "good muons"),
+  hHpp_("Hpp", "Higgs"),
+  hHppMu_("HppMu", "muons from Higgs decay"),
+  hHppGoodMu_("HppGoodMu", "good muons from Higgs decay"),
+  hDimuonPP_("DimuonPP", "Mass of Mu^{+}Mu^{+}"),
+  hDimuonMM_("DimuonMM", "Mass of Mu^{-}Mu^{-}")
+{
 }
 
 Hpp2MuHepMCAnalyzer::~Hpp2MuHepMCAnalyzer()
@@ -40,6 +67,28 @@ void Hpp2MuHepMCAnalyzer::analyze(const Event& event, const EventSetup& eventSet
   event.getByLabel("source", genEvtHandle);
   const HepMC::GenEvent* genEvt = genEvtHandle->GetEvent();
 
+  vector<HepMC::GenParticle*> muPs;
+  vector<HepMC::GenParticle*> muMs;
+
+  MuonFilter isMuon(0, 999), isMuM(0, 999, 13), isMuP(0, 999, -13);
+  MuonFilter isGoodMuon(20, 2.0), isGoodMuP(20, 2.0, -13), isGoodMuM(20, 2.0, 13);
+
+  // Fill distributions for all tracks
+  for(HepMC::GenEvent::particle_const_iterator iGenPtcl = genEvt->particles_begin();
+      iGenPtcl != genEvt->particles_end(); ++iGenPtcl) {
+    HepMC::GenParticle* genPtcl = *iGenPtcl;
+
+    if ( genPtcl->status() != 1 ) continue;
+
+    hTrk_(genPtcl);
+
+    if ( isMuP(genPtcl) ) muPs.push_back(genPtcl);
+    else if ( isMuM(genPtcl) ) muMs.push_back(genPtcl);
+
+    if ( isMuon(genPtcl) ) hMu_(genPtcl);
+    if ( isGoodMuon(genPtcl) ) hGoodMu_(genPtcl);
+  }
+
   vector<HepMC::GenVertex*> higgsVtxs;
 
   for(HepMC::GenEvent::particle_const_iterator iGenPtcl = genEvt->particles_begin();
@@ -49,7 +98,10 @@ void Hpp2MuHepMCAnalyzer::analyze(const Event& event, const EventSetup& eventSet
     if ( abs(genPtcl->pdg_id()) == 9900041 ||
          abs(genPtcl->pdg_id()) == 9900042 ) {
       HepMC::GenVertex* higgsDecVtx = genPtcl->end_vertex();
+
       higgsVtxs.push_back(higgsDecVtx);
+
+      hHpp_(genPtcl);
     }
   }
 
@@ -58,21 +110,33 @@ void Hpp2MuHepMCAnalyzer::analyze(const Event& event, const EventSetup& eventSet
     return;
   }
 
-  vector<HepMC::GenParticle*> stableHiggsDescs;
   for(vector<HepMC::GenVertex*>::const_iterator iGenVtx = higgsVtxs.begin();
       iGenVtx != higgsVtxs.end(); ++iGenVtx) {
     HepMC::GenVertex* genVtx = *iGenVtx;
     if ( genVtx == 0 ) continue;
 
+//     //vector<HepMC::GenParticle*> higgsTrks;
+    vector<HepMC::GenParticle*> higgsMuPs, higgsMuMs;
+    vector<HepMC::GenParticle*> higgsGoodMuPs, higgsGoodMuMs;
+
     for(HepMC::GenVertex::particle_iterator iDesc = genVtx->particles_begin(HepMC::descendants);
-        iDesc != genVtx->particles_end(HepMC::descendants); ++iDesc) {
+	iDesc != genVtx->particles_end(HepMC::descendants); ++iDesc) {
       HepMC::GenParticle* desc = *iDesc;
 
-      if ( desc->status() == 1 ) {
-        stableHiggsDescs.push_back(desc);
-      }
+      if ( desc->status() != 1 ) continue;
+
+      if ( isMuM(desc) ) higgsMuMs.push_back(desc);
+      else if ( isMuP(desc) ) higgsMuPs.push_back(desc);
+      
+      if ( isGoodMuM(desc) ) higgsGoodMuMs.push_back(desc);
+      else if ( isGoodMuP(desc) ) higgsGoodMuPs.push_back(desc);
     }
+
+    if ( higgsMuPs.size() == 2 ) hDimuonPP_(make_pair(higgsMuPs[0], higgsMuPs[1]));
+    if ( higgsMuMs.size() == 2 ) hDimuonMM_(make_pair(higgsMuMs[0], higgsMuMs[1]));
+
   }
+
 }
 
 void Hpp2MuHepMCAnalyzer::endJob()

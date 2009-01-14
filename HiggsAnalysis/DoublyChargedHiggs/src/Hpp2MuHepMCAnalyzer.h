@@ -4,7 +4,64 @@
 #include "FWCore/Framework/interface/EDAnalyzer.h"
 #include "FWCore/Framework/interface/Event.h"
 
-class TH1D;
+#include "SimDataFormats/HepMCProduct/interface/HepMCProduct.h"
+
+#include "FWCore/ServiceRegistry/interface/Service.h"
+#include "PhysicsTools/UtilAlgos/interface/TFileService.h"
+#include "TH1D.h"
+
+#include <string>
+
+struct HPtcl
+{
+public:
+  HPtcl(const std::string namePrefix, const std::string titleSuffix)
+  {
+    edm::Service<TFileService> fs;
+
+    hPt_ = fs->make<TH1D>(("h"+namePrefix+"Pt").c_str(), ("p_{T} of "+titleSuffix).c_str(), 50, 0, 100);
+    hEta_ = fs->make<TH1D>(("h"+namePrefix+"Eta").c_str(), ("#eta of "+titleSuffix).c_str(), 50, -2.5, 2.5);
+  };
+
+  void operator()(HepMC::GenParticle* ptcl)
+  {
+    if ( !hPt_ || !hEta_ ) return;
+    hPt_->Fill(ptcl->momentum().perp());
+    hEta_->Fill(ptcl->momentum().eta());
+  };
+
+private:
+  TH1D * hPt_, * hEta_;
+
+};
+
+struct HTT
+{
+public:
+  HTT(const std::string namePrefix, const std::string titleSuffix) {
+    edm::Service<TFileService> fs;
+    
+    hM_ = fs->make<TH1D>(("h"+namePrefix+"M").c_str(), ("Mass of "+titleSuffix).c_str(), 50, 0, 100);
+    hPt_ = fs->make<TH1D>(("h"+namePrefix+"Pt").c_str(), ("p_{T} of "+titleSuffix).c_str(), 50, 0, 100);
+    hEta_ = fs->make<TH1D>(("h"+namePrefix+"Eta").c_str(), ("#eta of "+titleSuffix).c_str(), 50, -2.5, 2.5);
+  };
+
+  typedef std::pair<HepMC::GenParticle*, HepMC::GenParticle*> PtclPair;
+  void operator()(PtclPair pPair)
+  {
+    const HepMC::FourVector p1 = pPair.first->momentum();
+    const HepMC::FourVector p2 = pPair.second->momentum();
+    
+    HepMC::FourVector p(p1.px()+p2.px(), p1.py()+p2.py(), p1.pz()+p2.pz(), p1.e()+p2.e());
+
+    hM_->Fill(p.m());
+    hPt_->Fill(p.perp());
+    hEta_->Fill(p.eta());
+  };
+
+private:
+  TH1D * hM_, * hPt_, * hEta_;
+};
 
 class Hpp2MuHepMCAnalyzer : public edm::EDAnalyzer
 {
@@ -18,9 +75,13 @@ class Hpp2MuHepMCAnalyzer : public edm::EDAnalyzer
 
  private:
   typedef TH1D* H1P;
-  H1P hMuPt_, hMuEta_;
-  H1P hMuMuM_;
+  HPtcl hTrk_, hMu_, hGoodMu_;
+  HPtcl hHpp_;
+  HPtcl hHppMu_, hHppGoodMu_;
+
+  HTT hDimuonPP_, hDimuonMM_;
 };
+
 
 #endif
 
