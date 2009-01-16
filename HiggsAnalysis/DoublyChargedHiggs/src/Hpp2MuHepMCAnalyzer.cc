@@ -12,6 +12,9 @@ using namespace edm;
 class MuonFilter
 {
 public:
+  const static int Minus = -1;
+  const static int Plus = 1;
+
   MuonFilter(const double minPt, const double maxEta, const int charge=0):
     minPt_(minPt), maxEta_(maxEta), charge_(charge)
   {
@@ -54,6 +57,14 @@ Hpp2MuHepMCAnalyzer::Hpp2MuHepMCAnalyzer(const ParameterSet& pset):
   hGoodDimuonPP_("GoodDimuonPP", "Good #mu^{+}#mu^{+}"),
   hGoodDimuonMM_("GoodDimuonMM", "Good #mu^{-}#mu^{-}")
 {
+  edm::Service<TFileService> fs;
+  
+  hNMuP_ = fs->make<TH1D>("hNMuP", "# of #mu^{+}", 10, 0, 10);
+  hNMuM_ = fs->make<TH1D>("hNMuM", "# of #mu^{-}", 10, 0, 10);
+  hNGoodMuP_ = fs->make<TH1D>("hNGoodMuP", "# of good #mu^{+}", 10, 0, 10);
+  hNGoodMuM_ = fs->make<TH1D>("hNGoodMuM", "# of good #mu^{-}", 10, 0, 10);
+  hNHiggsMu_ = fs->make<TH1D>("hNHiggsMu", "# of #mu from Higgs", 10, 0, 10);
+  hNHiggsGoodMu_ = fs->make<TH1D>("hNHiggsGoodMu", "# of Good #mu from Higgs", 10, 0, 10);
 }
 
 Hpp2MuHepMCAnalyzer::~Hpp2MuHepMCAnalyzer()
@@ -73,10 +84,11 @@ void Hpp2MuHepMCAnalyzer::analyze(const Event& event, const EventSetup& eventSet
   vector<HepMC::GenParticle*> muPs;
   vector<HepMC::GenParticle*> muMs;
 
-  MuonFilter isMuon(0, 999), isMuM(0, 999, 13), isMuP(0, 999, -13);
-  MuonFilter isGoodMuon(20, 2.0), isGoodMuP(20, 2.0, -13), isGoodMuM(20, 2.0, 13);
+  MuonFilter isMuon(0, 999), isMuM(0, 999, MuonFilter::Minus), isMuP(0, 999, MuonFilter::Plus);
+  MuonFilter isGoodMuon(20, 2.0), isGoodMuP(20, 2.0, MuonFilter::Plus), isGoodMuM(20, 2.0, MuonFilter::Minus);
 
   // Fill distributions for all tracks
+  int nGoodMuP = 0, nGoodMuM = 0;
   for(HepMC::GenEvent::particle_const_iterator iGenPtcl = genEvt->particles_begin();
       iGenPtcl != genEvt->particles_end(); ++iGenPtcl) {
     HepMC::GenParticle* genPtcl = *iGenPtcl;
@@ -90,7 +102,14 @@ void Hpp2MuHepMCAnalyzer::analyze(const Event& event, const EventSetup& eventSet
 
     if ( isMuon(genPtcl) ) hMu_(genPtcl);
     if ( isGoodMuon(genPtcl) ) hGoodMu_(genPtcl);
+
+    if ( isGoodMuM(genPtcl) ) ++nGoodMuM;
+    if ( isGoodMuP(genPtcl) ) ++nGoodMuP;
   }
+  hNMuP_->Fill(muPs.size());
+  hNMuM_->Fill(muMs.size());
+  hNGoodMuP_->Fill(nGoodMuP);
+  hNGoodMuM_->Fill(nGoodMuM);
 
   vector<HepMC::GenVertex*> higgsVtxs;
 
@@ -118,7 +137,6 @@ void Hpp2MuHepMCAnalyzer::analyze(const Event& event, const EventSetup& eventSet
     HepMC::GenVertex* genVtx = *iGenVtx;
     if ( genVtx == 0 ) continue;
 
-//     //vector<HepMC::GenParticle*> higgsTrks;
     vector<HepMC::GenParticle*> higgsMuPs, higgsMuMs;
     vector<HepMC::GenParticle*> higgsGoodMuPs, higgsGoodMuMs;
 
@@ -146,6 +164,9 @@ void Hpp2MuHepMCAnalyzer::analyze(const Event& event, const EventSetup& eventSet
 
     if ( higgsGoodMuPs.size() == 2 ) hGoodDimuonPP_(make_pair(higgsGoodMuPs[0], higgsMuPs[1]));
     if ( higgsGoodMuMs.size() == 2 ) hGoodDimuonMM_(make_pair(higgsGoodMuMs[0], higgsMuMs[1]));
+
+    hNHiggsMu_->Fill(higgsMuPs.size()+higgsMuMs.size());
+    hNHiggsGoodMu_->Fill(higgsGoodMuPs.size()+higgsGoodMuMs.size());
   }
 
 }

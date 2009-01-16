@@ -78,6 +78,7 @@ class Hpp2MuHepMCAnalyzer : public edm::EDAnalyzer
   void endJob();
 
  private:
+  typedef TH1D* H1P;
   HPtcl hTrk_, hMu_, hGoodMu_;
   HPtcl hHpp_;
   HPtcl hHppMu_;
@@ -85,6 +86,9 @@ class Hpp2MuHepMCAnalyzer : public edm::EDAnalyzer
 
   HTT hDimuonPP_, hDimuonMM_;
   HTT hGoodDimuonPP_, hGoodDimuonMM_;
+
+  H1P hNMuP_, hNMuM_, hNGoodMuP_, hNGoodMuM_;
+  H1P hNHiggsMu_, hNHiggsGoodMu_;
 };
 
 
