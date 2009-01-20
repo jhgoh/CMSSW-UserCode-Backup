@@ -1,13 +1,65 @@
 #include "HiggsAnalysis/DoublyChargedHiggs/src/Hpp2MuHepMCAnalyzer.h"
-
 #include "DataFormats/Common/interface/Handle.h"
-
 #include "TMath.h"
-
 #include <iostream>
 
 using namespace std;
 using namespace edm;
+
+struct HPtcl
+{
+public:
+  HPtcl(const std::string namePrefix, const std::string titleSuffix)
+  {
+    edm::Service<TFileService> fs;
+    hPt_ = hEta_ = 0;
+
+    hPt_ = fs->make<TH1D>(("h"+namePrefix+"Pt").c_str(), ("p_{T} of "+titleSuffix).c_str(), 50, 0, 200);
+    hEta_ = fs->make<TH1D>(("h"+namePrefix+"Eta").c_str(), ("#eta of "+titleSuffix).c_str(), 50, -2.5, 2.5);
+  };
+
+  void operator()(HepMC::GenParticle* ptcl)
+  {
+    if ( !hPt_ || !hEta_ ) return;
+    hPt_->Fill(ptcl->momentum().perp());
+    hEta_->Fill(ptcl->momentum().eta());
+  };
+
+private:
+  TH1D * hPt_, * hEta_;
+
+};
+
+struct HTT
+{
+public:
+  HTT(const std::string namePrefix, const std::string titleSuffix) {
+    edm::Service<TFileService> fs;
+    hM_ = hPt_ = hEta_ = 0;    
+
+    hM_ = fs->make<TH1D>(("h"+namePrefix+"M").c_str(), ("Mass of "+titleSuffix).c_str(), 50, 50, 200);
+    hPt_ = fs->make<TH1D>(("h"+namePrefix+"Pt").c_str(), ("p_{T} of "+titleSuffix).c_str(), 50, 0, 200);
+    hEta_ = fs->make<TH1D>(("h"+namePrefix+"Eta").c_str(), ("#eta of "+titleSuffix).c_str(), 50, -2.5, 2.5);
+  };
+
+  typedef std::pair<HepMC::GenParticle*, HepMC::GenParticle*> PtclPair;
+  void operator()(PtclPair pPair)
+  {
+    if ( !hM_ || !hPt_ || !hEta_ ) return;
+
+    const HepMC::FourVector p1 = pPair.first->momentum();
+    const HepMC::FourVector p2 = pPair.second->momentum();
+    
+    HepMC::FourVector p(p1.px()+p2.px(), p1.py()+p2.py(), p1.pz()+p2.pz(), p1.e()+p2.e());
+
+    hM_->Fill(p.m());
+    hPt_->Fill(p.perp());
+    hEta_->Fill(p.eta());
+  };
+
+private:
+  TH1D * hM_, * hPt_, * hEta_;
+};
 
 class MuonFilter
 {
@@ -44,20 +96,21 @@ public:
 
 
 
-Hpp2MuHepMCAnalyzer::Hpp2MuHepMCAnalyzer(const ParameterSet& pset):
-  hTrk_("Trk", "all tracks"),
-  hMu_("Mu", "all muons"),
-  hGoodMu_("GoodMu", "good muons"),
-  hHpp_("Hpp", "Higgs"),
-  hHppMu_("HppMu", "muons from Higgs decay"),
-  hHppGoodMuP_("HppGoodMuP", "good #mu^{+} from Higgs decay"),
-  hHppGoodMuM_("HppGoodMuM", "good #mu^{-} from Higgs decay"),
-  hDimuonPP_("DimuonPP", "#mu^{+}#mu^{+}"),
-  hDimuonMM_("DimuonMM", "#mu^{-}#mu^{-}"),
-  hGoodDimuonPP_("GoodDimuonPP", "Good #mu^{+}#mu^{+}"),
-  hGoodDimuonMM_("GoodDimuonMM", "Good #mu^{-}#mu^{-}")
+Hpp2MuHepMCAnalyzer::Hpp2MuHepMCAnalyzer(const ParameterSet& pset)
 {
   edm::Service<TFileService> fs;
+
+  hTrk_ = new HPtcl("Trk", "all tracks");
+  hMu_ = new HPtcl("Mu", "all muons");
+  hGoodMu_ = new HPtcl("GoodMu", "good muons");
+  hHpp_ = new HPtcl("Hpp", "Higgs");
+  hHppMu_ = new HPtcl("HppMu", "muons from Higgs decay");
+  hHppGoodMuP_ = new HPtcl("HppGoodMuP", "good #mu^{+} from Higgs decay");
+  hHppGoodMuM_ = new HPtcl("HppGoodMuM", "good #mu^{-} from Higgs decay");
+  hDimuonPP_ = new HTT("DimuonPP", "#mu^{+}#mu^{+}");
+  hDimuonMM_ = new HTT("DimuonMM", "#mu^{-}#mu^{-}");
+  hGoodDimuonPP_ = new HTT("GoodDimuonPP", "Good #mu^{+}#mu^{+}");
+  hGoodDimuonMM_ = new HTT("GoodDimuonMM", "Good #mu^{-}#mu^{-}");
   
   hNMuP_ = fs->make<TH1D>("hNMuP", "# of #mu^{+}", 10, 0, 10);
   hNMuM_ = fs->make<TH1D>("hNMuM", "# of #mu^{-}", 10, 0, 10);
@@ -69,6 +122,19 @@ Hpp2MuHepMCAnalyzer::Hpp2MuHepMCAnalyzer(const ParameterSet& pset):
 
 Hpp2MuHepMCAnalyzer::~Hpp2MuHepMCAnalyzer()
 {
+  if ( hTrk_    ) delete hTrk_   ;
+  if ( hMu_     ) delete hMu_    ;
+  if ( hGoodMu_ ) delete hGoodMu_;
+
+  if ( hHpp_    ) delete hHpp_   ;
+  if ( hHppMu_  ) delete hHppMu_ ;
+  if ( hHppGoodMuP_ ) delete hHppGoodMuP_;
+  if ( hHppGoodMuM_ ) delete hHppGoodMuM_;
+
+  if ( hDimuonPP_ ) delete hDimuonPP_;
+  if ( hDimuonMM_ ) delete hDimuonMM_;
+  if ( hGoodDimuonPP_ ) delete hGoodDimuonPP_;
+  if ( hGoodDimuonMM_ ) delete hGoodDimuonMM_;
 }
 
 void Hpp2MuHepMCAnalyzer::beginJob(const EventSetup& eventSetup)
@@ -87,6 +153,15 @@ void Hpp2MuHepMCAnalyzer::analyze(const Event& event, const EventSetup& eventSet
   MuonFilter isMuon(0, 999), isMuM(0, 999, MuonFilter::Minus), isMuP(0, 999, MuonFilter::Plus);
   MuonFilter isGoodMuon(20, 2.0), isGoodMuP(20, 2.0, MuonFilter::Plus), isGoodMuM(20, 2.0, MuonFilter::Minus);
 
+  HPtcl& hTrk = *hTrk_;
+  HPtcl& hMu = *hMu_;
+  HPtcl& hGoodMu = *hGoodMu_;
+  HPtcl& hHpp = *hHpp_;
+  HPtcl& hHppGoodMuP = *hHppGoodMuP_, hHppGoodMuM = *hHppGoodMuM_;
+  
+  HTT& hDimuonPP = *hDimuonPP_, hDimuonMM = *hDimuonMM_;
+  HTT& hGoodDimuonPP = *hGoodDimuonPP_, hGoodDimuonMM = *hGoodDimuonMM_;
+
   // Fill distributions for all tracks
   int nGoodMuP = 0, nGoodMuM = 0;
   for(HepMC::GenEvent::particle_const_iterator iGenPtcl = genEvt->particles_begin();
@@ -95,13 +170,13 @@ void Hpp2MuHepMCAnalyzer::analyze(const Event& event, const EventSetup& eventSet
 
     if ( genPtcl->status() != 1 ) continue;
 
-    hTrk_(genPtcl);
+    hTrk(genPtcl);
 
     if ( isMuP(genPtcl) ) muPs.push_back(genPtcl);
     else if ( isMuM(genPtcl) ) muMs.push_back(genPtcl);
 
-    if ( isMuon(genPtcl) ) hMu_(genPtcl);
-    if ( isGoodMuon(genPtcl) ) hGoodMu_(genPtcl);
+    if ( isMuon(genPtcl) ) hMu(genPtcl);
+    if ( isGoodMuon(genPtcl) ) hGoodMu(genPtcl);
 
     if ( isGoodMuM(genPtcl) ) ++nGoodMuM;
     if ( isGoodMuP(genPtcl) ) ++nGoodMuP;
@@ -123,7 +198,7 @@ void Hpp2MuHepMCAnalyzer::analyze(const Event& event, const EventSetup& eventSet
 
       higgsVtxs.push_back(higgsDecVtx);
 
-      hHpp_(genPtcl);
+      hHpp(genPtcl);
     }
   }
 
@@ -151,19 +226,19 @@ void Hpp2MuHepMCAnalyzer::analyze(const Event& event, const EventSetup& eventSet
       
       if ( isGoodMuM(desc) ) {
         higgsGoodMuMs.push_back(desc);
-        hHppGoodMuM_(desc);
+        hHppGoodMuM(desc);
       }
       else if ( isGoodMuP(desc) ) {
         higgsGoodMuPs.push_back(desc);
-        hHppGoodMuP_(desc);
+        hHppGoodMuP(desc);
       }
     }
 
-    if ( higgsMuPs.size() == 2 ) hDimuonPP_(make_pair(higgsMuPs[0], higgsMuPs[1]));
-    if ( higgsMuMs.size() == 2 ) hDimuonMM_(make_pair(higgsMuMs[0], higgsMuMs[1]));
+    if ( higgsMuPs.size() == 2 ) hDimuonPP(make_pair(higgsMuPs[0], higgsMuPs[1]));
+    if ( higgsMuMs.size() == 2 ) hDimuonMM(make_pair(higgsMuMs[0], higgsMuMs[1]));
 
-    if ( higgsGoodMuPs.size() == 2 ) hGoodDimuonPP_(make_pair(higgsGoodMuPs[0], higgsMuPs[1]));
-    if ( higgsGoodMuMs.size() == 2 ) hGoodDimuonMM_(make_pair(higgsGoodMuMs[0], higgsMuMs[1]));
+    if ( higgsGoodMuPs.size() == 2 ) hGoodDimuonPP(make_pair(higgsGoodMuPs[0], higgsMuPs[1]));
+    if ( higgsGoodMuMs.size() == 2 ) hGoodDimuonMM(make_pair(higgsGoodMuMs[0], higgsMuMs[1]));
 
     hNHiggsMu_->Fill(higgsMuPs.size()+higgsMuMs.size());
     hNHiggsGoodMu_->Fill(higgsGoodMuPs.size()+higgsGoodMuMs.size());
