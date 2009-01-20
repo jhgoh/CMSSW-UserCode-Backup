@@ -6,16 +6,32 @@
 using namespace std;
 using namespace edm;
 
-struct HPtcl
+class HPtcl
 {
 public:
-  HPtcl(const std::string namePrefix, const std::string titleSuffix)
+  struct BinCfg
+  {
+    BinCfg(const unsigned int nBinPt, const double minPt, const double maxPt,
+	   const unsigned int nBinEta, const double minEta, const double maxEta):
+      nBinPt_(nBinPt), nBinEta_(nBinEta),
+      minPt_(minPt), maxPt_(maxPt),
+      minEta_(minEta), maxEta_(maxEta)
+    { };
+    
+    const unsigned int nBinPt_, nBinEta_;
+    const double minPt_, maxPt_;
+    const double minEta_, maxEta_;
+  };
+
+public:
+  HPtcl(const std::string namePrefix, const std::string titleSuffix,
+	BinCfg cfg)
   {
     edm::Service<TFileService> fs;
     hPt_ = hEta_ = 0;
 
-    hPt_ = fs->make<TH1D>(("h"+namePrefix+"Pt").c_str(), ("p_{T} of "+titleSuffix).c_str(), 50, 0, 200);
-    hEta_ = fs->make<TH1D>(("h"+namePrefix+"Eta").c_str(), ("#eta of "+titleSuffix).c_str(), 50, -2.5, 2.5);
+    hPt_ = fs->make<TH1D>(("h"+namePrefix+"Pt").c_str(), ("p_{T} of "+titleSuffix).c_str(), cfg.nBinPt_, cfg.minPt_, cfg.maxPt_);
+    hEta_ = fs->make<TH1D>(("h"+namePrefix+"Eta").c_str(), ("#eta of "+titleSuffix).c_str(), cfg.nBinEta_, cfg.minEta_, cfg.maxEta_);
   };
 
   void operator()(HepMC::GenParticle* ptcl)
@@ -30,16 +46,37 @@ private:
 
 };
 
-struct HTT
+class HTT
 {
 public:
-  HTT(const std::string namePrefix, const std::string titleSuffix) {
+  struct BinCfg
+  {
+    BinCfg(const unsigned int nBinM, const double minM, const double maxM,
+	   const unsigned int nBinPt, const double minPt, const double maxPt,
+	   const unsigned int nBinEta, const double minEta, const double maxEta):
+      nBinM_(nBinM), nBinPt_(nBinPt), nBinEta_(nBinEta),
+      minM_(minM), maxM_(maxM),
+      minPt_(minPt), maxPt_(maxPt),
+      minEta_(minEta), maxEta_(maxEta)
+    {
+    };
+    
+    const unsigned int nBinM_, nBinPt_, nBinEta_;
+    const double minM_, maxM_;
+    const double minPt_, maxPt_;
+    const double minEta_, maxEta_;
+  };
+
+public:
+  HTT(const std::string namePrefix, const std::string titleSuffix,
+      BinCfg cfg)
+  {
     edm::Service<TFileService> fs;
     hM_ = hPt_ = hEta_ = 0;    
 
-    hM_ = fs->make<TH1D>(("h"+namePrefix+"M").c_str(), ("Mass of "+titleSuffix).c_str(), 50, 50, 200);
-    hPt_ = fs->make<TH1D>(("h"+namePrefix+"Pt").c_str(), ("p_{T} of "+titleSuffix).c_str(), 50, 0, 200);
-    hEta_ = fs->make<TH1D>(("h"+namePrefix+"Eta").c_str(), ("#eta of "+titleSuffix).c_str(), 50, -2.5, 2.5);
+    hM_ = fs->make<TH1D>(("h"+namePrefix+"M").c_str(), ("Mass of "+titleSuffix).c_str(), cfg.nBinM_, cfg.minM_, cfg.maxM_);
+    hPt_ = fs->make<TH1D>(("h"+namePrefix+"Pt").c_str(), ("p_{T} of "+titleSuffix).c_str(), cfg.nBinPt_, cfg.minPt_, cfg.maxPt_);
+    hEta_ = fs->make<TH1D>(("h"+namePrefix+"Eta").c_str(), ("#eta of "+titleSuffix).c_str(), cfg.nBinEta_, cfg.minEta_, cfg.maxEta_);
   };
 
   typedef std::pair<HepMC::GenParticle*, HepMC::GenParticle*> PtclPair;
@@ -100,17 +137,37 @@ Hpp2MuHepMCAnalyzer::Hpp2MuHepMCAnalyzer(const ParameterSet& pset)
 {
   edm::Service<TFileService> fs;
 
-  hTrk_ = new HPtcl("Trk", "all tracks");
-  hMu_ = new HPtcl("Mu", "all muons");
-  hGoodMu_ = new HPtcl("GoodMu", "good muons");
-  hHpp_ = new HPtcl("Hpp", "Higgs");
-  hHppMu_ = new HPtcl("HppMu", "muons from Higgs decay");
-  hHppGoodMuP_ = new HPtcl("HppGoodMuP", "good #mu^{+} from Higgs decay");
-  hHppGoodMuM_ = new HPtcl("HppGoodMuM", "good #mu^{-} from Higgs decay");
-  hDimuonPP_ = new HTT("DimuonPP", "#mu^{+}#mu^{+}");
-  hDimuonMM_ = new HTT("DimuonMM", "#mu^{-}#mu^{-}");
-  hGoodDimuonPP_ = new HTT("GoodDimuonPP", "Good #mu^{+}#mu^{+}");
-  hGoodDimuonMM_ = new HTT("GoodDimuonMM", "Good #mu^{-}#mu^{-}");
+  const unsigned int nBinPt = pset.getUntrackedParameter<unsigned int>("nBinPt");
+  const unsigned int nBinEta = pset.getUntrackedParameter<unsigned int>("nBinEta");
+  const unsigned int nBinM = pset.getUntrackedParameter<unsigned int>("nBinM");
+
+  const double minTrkPt = pset.getUntrackedParameter<double>("minTrkPt");
+  const double maxTrkPt = pset.getUntrackedParameter<double>("maxTrkPt");
+
+  const double minHiggsPt = pset.getUntrackedParameter<double>("minHiggsPt");
+  const double maxHiggsPt = pset.getUntrackedParameter<double>("maxHiggsPt");
+  
+  const double minEta = pset.getUntrackedParameter<double>("minEta");
+  const double maxEta = pset.getUntrackedParameter<double>("maxEta");
+
+  const double minM = pset.getUntrackedParameter<double>("minM");
+  const double maxM = pset.getUntrackedParameter<double>("maxM");
+
+  const HPtcl::BinCfg trkBinCfg(nBinPt, minTrkPt, maxTrkPt, nBinEta, minEta, maxEta);
+  const HPtcl::BinCfg higgsBinCfg(nBinPt, minHiggsPt, maxHiggsPt, nBinEta, minEta, maxEta);
+  const HTT::BinCfg dimuonBinCfg(nBinM, minM, maxM, nBinPt, minHiggsPt, maxHiggsPt, nBinEta, minEta, maxEta);
+
+  hTrk_ = new HPtcl("Trk", "all tracks", trkBinCfg);
+  hMu_ = new HPtcl("Mu", "all muons", trkBinCfg);
+  hGoodMu_ = new HPtcl("GoodMu", "good muons", trkBinCfg);
+  hHpp_ = new HPtcl("Hpp", "Higgs", higgsBinCfg);
+  hHppMu_ = new HPtcl("HppMu", "muons from Higgs decay", trkBinCfg);
+  hHppGoodMuP_ = new HPtcl("HppGoodMuP", "good #mu^{+} from Higgs decay", trkBinCfg);
+  hHppGoodMuM_ = new HPtcl("HppGoodMuM", "good #mu^{-} from Higgs decay", trkBinCfg);
+  hDimuonPP_ = new HTT("DimuonPP", "#mu^{+}#mu^{+}", dimuonBinCfg);
+  hDimuonMM_ = new HTT("DimuonMM", "#mu^{-}#mu^{-}", dimuonBinCfg);
+  hGoodDimuonPP_ = new HTT("GoodDimuonPP", "Good #mu^{+}#mu^{+}", dimuonBinCfg);
+  hGoodDimuonMM_ = new HTT("GoodDimuonMM", "Good #mu^{-}#mu^{-}", dimuonBinCfg);
   
   hNMuP_ = fs->make<TH1D>("hNMuP", "# of #mu^{+}", 10, 0, 10);
   hNMuM_ = fs->make<TH1D>("hNMuM", "# of #mu^{-}", 10, 0, 10);
@@ -157,6 +214,7 @@ void Hpp2MuHepMCAnalyzer::analyze(const Event& event, const EventSetup& eventSet
   HPtcl& hMu = *hMu_;
   HPtcl& hGoodMu = *hGoodMu_;
   HPtcl& hHpp = *hHpp_;
+  HPtcl& hHppMu = *hHppMu_;
   HPtcl& hHppGoodMuP = *hHppGoodMuP_, hHppGoodMuM = *hHppGoodMuM_;
   
   HTT& hDimuonPP = *hDimuonPP_, hDimuonMM = *hDimuonMM_;
@@ -220,6 +278,8 @@ void Hpp2MuHepMCAnalyzer::analyze(const Event& event, const EventSetup& eventSet
       HepMC::GenParticle* desc = *iDesc;
 
       if ( desc->status() != 1 ) continue;
+
+      if ( isMuon(desc) ) hHppMu(desc);
 
       if ( isMuM(desc) ) higgsMuMs.push_back(desc);
       else if ( isMuP(desc) ) higgsMuPs.push_back(desc);
