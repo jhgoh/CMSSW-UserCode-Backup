@@ -1,6 +1,10 @@
 import FWCore.ParameterSet.Config as cms
 
-hppMass = 160.0
+import os
+if 'HPPMASS' in os.environ.keys():
+    hppMass = os.environ['HPPMASS']
+else :
+    hppMass = '130.0'
 
 from Configuration.Generator.PythiaUESettings_cfi import *
 source = cms.Source("PythiaSource",
@@ -11,8 +15,8 @@ source = cms.Source("PythiaSource",
     PythiaParameters = cms.PSet(
         pythiaUESettingsBlock,
         processParameters = cms.vstring(
-            'PMAS(353,1)=%f          !mass of H_L' % hppMass, 
-            'PMAS(354,1)=%f          !mass of H_R' % hppMass, 
+            'PMAS(353,1)=%s          !mass of H_L' % hppMass, 
+            'PMAS(354,1)=%s          !mass of H_R' % hppMass, 
             'MSEL=0                  !(D=1) to select between full user control (0, then use MSUB) and some preprogrammed alternative: QCD hight pT processes (1, then ISUB=11, 12, 13, 28, 53, 68), QCD low pT processes (2, then ISUB=11, 12, 13, 28, 53, 68, 91, 92, 94, 95)', 
             'MSUB(349)=1             !H_L H_L', 
             'MSUB(350)=1             !H_R H_R', 
