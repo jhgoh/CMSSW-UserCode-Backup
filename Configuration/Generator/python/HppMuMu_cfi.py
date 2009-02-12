@@ -1,8 +1,8 @@
 import FWCore.ParameterSet.Config as cms
 
 import os
-if 'HPPMASS' in os.environ.keys():
-    hppMass = os.environ['HPPMASS']
+if 'PMAS' in os.environ.keys():
+    hppMass = os.environ['PMAS']
 else :
     hppMass = '130.0'
 
