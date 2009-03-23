@@ -1,13 +1,14 @@
 import FWCore.ParameterSet.Config as cms
 
 pythiaUESettingsBlock = cms.PSet(
-    pythiaUESettings = cms.vstring('MSTJ(11)=3     ! Choice of the fragmentation function', 
+    pythiaUESettings = cms.vstring(
+        'MSTJ(11)=3     ! Choice of the fragmentation function', 
         'MSTJ(22)=2     ! Decay those unstable particles', 
         'PARJ(71)=10 .  ! for which ctau  10 mm', 
         'MSTP(2)=1      ! which order running alphaS', 
         'MSTP(33)=0     ! no K factors in hard cross sections', 
         'MSTP(51)=10042 ! structure function chosen (external PDF CTEQ6L1)',
-	'MSTP(52)=2     ! work with LHAPDF',
+        'MSTP(52)=2     ! work with LHAPDF',
         'MSTP(81)=1     ! multiple parton interactions 1 is Pythia default', 
         'MSTP(82)=4     ! Defines the multi-parton model', 
         'MSTU(21)=1     ! Check on possible errors during program execution', 
@@ -25,4 +26,3 @@ pythiaUESettingsBlock = cms.PSet(
         'PARP(91)=2.1   ! kt distribution', 
         'PARP(93)=15.0  ! ')
 )
-
