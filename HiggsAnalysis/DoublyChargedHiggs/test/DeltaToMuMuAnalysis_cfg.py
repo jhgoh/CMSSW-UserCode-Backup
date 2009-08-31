@@ -4,7 +4,8 @@ import FWCore.ParameterSet.Config as cms
 import os
 CMSSWVersion = os.environ['CMSSW_VERSION']
 dataTier = 'GEN-SIM-DIGI-RECO'
-globalTag = 'STARTUP_V12'
+#globalTag = 'STARTUP_V12'
+globalTag = 'IDEAL_V12'
 if 'SAMPLENAME' in os.environ:
         sampleName = os.environ['SAMPLENAME']
 else:

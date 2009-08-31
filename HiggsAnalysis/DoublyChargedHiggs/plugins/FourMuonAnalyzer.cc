@@ -65,11 +65,11 @@ FourMuonAnalyzer::FourMuonAnalyzer(const edm::ParameterSet& pset)
     // Book histograms
     h1_[H1::posDelta_pt] = fs->make<TH1F>("posDelta_pt", "#Delta^{++} p_{T};Transverse momentum [GeV/c]", 100, 0, 500);
     h1_[H1::posDelta_eta] = fs->make<TH1F>("posDelta_eta", "#Delta^{++} #eta;Pseudorapidity [Radian]", 100, -2.4, 2.4);
-    h1_[H1::posDelta_mass] = fs->make<TH1F>("posDelta_mass", "#Delta^{++} mass;Mass [GeV/c^{2}]", 100, 0, 300);
+    h1_[H1::posDelta_mass] = fs->make<TH1F>("posDelta_mass", "#Delta^{++} mass;Mass [GeV/c^{2}]", 100, 0, 400);
 
     h1_[H1::negDelta_pt] = fs->make<TH1F>("negDelta_pt", "#Delta^{--} p_{T};Transverse momentum [GeV/c]", 100, 0, 500);
     h1_[H1::negDelta_eta] = fs->make<TH1F>("negDelta_eta", "#Delta^{--} #eta;Pseudorapidity [Radian]", 100, -2.4, 2.4);
-    h1_[H1::negDelta_mass] = fs->make<TH1F>("negDelta_mass", "#Delta^{--} mass;Mass [GeV/c^{2}]", 100, 0, 300);
+    h1_[H1::negDelta_mass] = fs->make<TH1F>("negDelta_mass", "#Delta^{--} mass;Mass [GeV/c^{2}]", 100, 0, 400);
 
     h1_[H1::posDelta_dZ] = fs->make<TH1F>("posDelta_dZ", "#Delta^{++} dimuon #Delta z;#Delta z [cm]", 100, 0, 1);
     h1_[H1::posDelta_dPhi] = fs->make<TH1F>("posDelta_dPhi", "#Delta^{++} dimuon #Delta#phi;#Delta#phi [Radian]", 100, 0, TMath::Pi());
