@@ -55,7 +55,7 @@ void DimuonProducer::produce(edm::Event& event, const edm::EventSetup& eventSetu
   // B-field information for vertex fit
   edm::ESHandle<MagneticField> magneticField;
   eventSetup.get<IdealMagneticFieldRecord>().get(magneticField);
-  kvFitter_->set(magneticField.product());
+  if ( kvFitter_ ) kvFitter_->set(magneticField.product());
 
   // Manually combine two muons
   auto_ptr<pat::CompositeCandidateCollection> dimuonCands(new pat::CompositeCandidateCollection);
