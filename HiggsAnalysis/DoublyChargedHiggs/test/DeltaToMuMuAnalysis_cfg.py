@@ -4,12 +4,12 @@ import FWCore.ParameterSet.Config as cms
 import os
 CMSSWVersion = os.environ['CMSSW_VERSION']
 dataTier = 'GEN-SIM-DIGI-RECO'
-globalTag = 'STARTUP_V12'
+#globalTag = 'STARTUP_V12'
+globalTag = 'IDEAL_V12'
 if 'SAMPLENAME' in os.environ:
         sampleName = os.environ['SAMPLENAME']
 else:
 	sampleName = 'Hpp130MuMu_FastSim'
-dataBase = '/pnfs/cms/MC/%s/%s/%s/%s' % (CMSSWVersion, sampleName, dataTier, globalTag)
 
 # Load Standard CMSSW process initial configurations
 process = cms.Process("Ana")
@@ -26,8 +26,7 @@ process.source = cms.Source("PoolSource",
 )
 
 # Set datafiles
-for f in filter(lambda x: x[-5:]=='.root', os.listdir(dataBase)):
-    process.source.fileNames.append('file:%s/%s' % (dataBase, f))
+process.source.fileNames.append('file:/pnfs/jhgoh/DoublyChargedHiggs/%s/%s_%s.root' % (CMSSWVersion, sampleName, globalTag))
 
 process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(-1))
 
@@ -59,15 +58,19 @@ process.negMuons = cms.EDProducer("PATMuonCandSelector",
 process.posDeltaToMuMu = cms.EDProducer("DimuonProducer",
     muon1 = cms.InputTag("posMuons"),
     muon2 = cms.InputTag("posMuons"),
-    fitterType = cms.string("KalmanVertexFitter"),
-    vertexFitSet = cms.PSet()
+    fitterType = cms.string("None"), #KalmanVertexFitter"),
+    vertexFitSet = cms.PSet(
+        maxDistance = cms.double(10.0)
+    )
 )
 
 process.negDeltaToMuMu = cms.EDProducer("DimuonProducer",
     muon1 = cms.InputTag("negMuons"),
     muon2 = cms.InputTag("negMuons"),
-    fitterType = cms.string("KalmanVertexFitter"),
-    vertexFitSet = cms.PSet()
+    fitterType = cms.string("iNone"), #KalmanVertexFitter"),
+    vertexFitSet = cms.PSet(
+        maxDistance = cms.double(10.0)
+    )
 )
 
 # User analysis block
@@ -92,6 +95,5 @@ process.negDeltaSeq = cms.Sequence(process.negMuons*process.negDeltaToMuMu)
 process.deltaCombineSeq = cms.Sequence(process.posDeltaSeq+process.negDeltaSeq)
 process.deltaAnalysisSeq = cms.Sequence(process.fourMuonAnalyzer)
 
-process.p = cms.Path(process.patDefaultSequence*
-                     process.deltaCombineSeq*
+process.p = cms.Path(process.deltaCombineSeq*
                      process.deltaAnalysisSeq)
