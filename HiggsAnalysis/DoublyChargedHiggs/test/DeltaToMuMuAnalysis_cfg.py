@@ -25,6 +25,8 @@ process.source = cms.Source("PoolSource",
     secondaryFileNames = cms.untracked.vstring()
 )
 
+process.MessageLogger.cerr.FwkReport.reportEvery = 100
+
 # Set datafiles
 process.source.fileNames.append('file:/pnfs/jhgoh/DoublyChargedHiggs/%s/%s_%s.root' % (CMSSWVersion, sampleName, globalTag))
 
@@ -55,21 +57,31 @@ process.negMuons = cms.EDProducer("PATMuonCandSelector",
 )
 
 # Candidate production
-process.posDeltaToMuMu = cms.EDProducer("DimuonProducer",
-    muon1 = cms.InputTag("posMuons"),
-    muon2 = cms.InputTag("posMuons"),
-    fitterType = cms.string("None"), #KalmanVertexFitter"),
+process.posDeltaToMuMu = cms.EDProducer("DileptonProducer",
+    lepton1 = cms.PSet(
+        src = cms.InputTag("posMuons"),
+        type = cms.string("muon")
+    ),
+    lepton2 = cms.PSet(
+        src = cms.InputTag("posMuons"),
+        type = cms.string("muon")
+    ),
+    fitterType = cms.string("None"),
     vertexFitSet = cms.PSet(
-        maxDistance = cms.double(10.0)
     )
 )
 
-process.negDeltaToMuMu = cms.EDProducer("DimuonProducer",
-    muon1 = cms.InputTag("negMuons"),
-    muon2 = cms.InputTag("negMuons"),
-    fitterType = cms.string("iNone"), #KalmanVertexFitter"),
+process.negDeltaToMuMu = cms.EDProducer("DileptonProducer",
+    lepton1 = cms.PSet(
+        src = cms.InputTag("negMuons"),
+        type = cms.string("muon")
+    ),
+    lepton2 = cms.PSet(
+        src = cms.InputTag("negMuons"),
+        type = cms.string("muon")
+    ),
+    fitterType = cms.string("None"),
     vertexFitSet = cms.PSet(
-        maxDistance = cms.double(10.0)
     )
 )
 
