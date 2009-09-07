@@ -10,7 +10,7 @@ if 'SAMPLENAME' in os.environ:
         sampleName = os.environ['SAMPLENAME']
 else:
 	sampleName = 'Hpp130MuMu_FastSim'
-dataBase = '/pnfs/cms/MC/%s/%s/%s/%s' % (CMSSWVersion, sampleName, dataTier, globalTag)
+sampleBase = '/pnfs/cms/MC/%s/%s/%s/%s' % (CMSSWVersion, sampleName, dataTier, globalTag)
 
 
 process = cms.Process("PAT")
@@ -37,8 +37,8 @@ process.GlobalTag.globaltag = cms.string('%s::All' % globalTag)
 process.load("Configuration.StandardSequences.MagneticField_cff")
 
 # Set datafiles
-for f in filter(lambda x: x[-5:]=='.root', os.listdir(dataBase)):
-    process.source.fileNames.append('file:%s/%s' % (dataBase, f))
+for f in filter(lambda x: x[-5:]=='.root', os.listdir(sampleBase)):
+    process.source.fileNames.append('file:%s/%s' % (sampleBase, f))
 
 process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(-1))
 
