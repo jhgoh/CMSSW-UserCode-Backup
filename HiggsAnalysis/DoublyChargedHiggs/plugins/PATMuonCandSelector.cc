@@ -9,7 +9,7 @@ using namespace std;
 
 PATMuonCandSelector::PATMuonCandSelector(const edm::ParameterSet& pset)
 {
-  muonLabel_ = pset.getParameter<edm::InputTag>("muon");
+  muonLabel_ = pset.getParameter<edm::InputTag>("src");
 
   edm::ParameterSet muonCutSet = pset.getParameter<edm::ParameterSet>("muonCutSet");
   charge_ = muonCutSet.getUntrackedParameter<int>("charge");
