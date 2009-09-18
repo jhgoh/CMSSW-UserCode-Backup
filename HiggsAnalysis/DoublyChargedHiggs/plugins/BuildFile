@@ -10,7 +10,6 @@
 <use name="PhysicsTools/UtilAlgos">
 <use name="PhysicsTools/RecoUtils">
 <use name="RecoVertex/VertexTools">
-<use name="SimDataFormats/HepMCProduct">
 
 <use name="root">
 

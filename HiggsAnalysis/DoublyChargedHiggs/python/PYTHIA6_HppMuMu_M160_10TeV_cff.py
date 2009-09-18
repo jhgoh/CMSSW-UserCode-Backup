@@ -1,15 +1,17 @@
 import FWCore.ParameterSet.Config as cms
 
-from Configuration.Generator.PythiaUESettings_cfi import *
+source = cms.Source("EmptySource")
 
 hppMass = '160.0'
 
-source = cms.Source("PythiaSource",
+from Configuration.GenProduction.PythiaUESettings_cfi import *
+generator = cms.EDFilter("Pythia6GeneratorFilter",
     pythiaHepMCVerbosity = cms.untracked.bool(False),
     maxEventsToPrint = cms.untracked.int32(0),
     pythiaPylistVerbosity = cms.untracked.int32(0),
-    filterEfficiency = cms.untracked.double(1.0),
-    comEnergy = cms.untracked.double(10000.0),
+    filterEfficiency = cms.untracked.double(1.),
+    comEnergy = cms.double(10000.0),
+#    crossSection = cms.untracked.double(7.1),
     PythiaParameters = cms.PSet(
         pythiaUESettingsBlock,
         processParameters = cms.vstring(
@@ -32,10 +34,20 @@ source = cms.Source("PythiaSource",
             'PARP(188)= 0.0          !H++ coupling with taumu', 
             'PARP(189)= 0.0          !H++ coupling with taumutau', 
             'PARP(190)= 0.0          !H++_L coupling with W', 
-            'PARP(191)= 0.0          !H++_R coupling with W'),
+            'PARP(191)= 0.0          !H++_R coupling with W'
+         ),
         # This is a vector of ParameterSet names to be read, in this order
         parameterSets = cms.vstring('pythiaUESettings', 
             'processParameters')
     )
 )
+
+ProductionFilterSequence = cms.Sequence(generator)
+
+configurationMetadata = cms.untracked.PSet(
+    version = cms.untracked.string('$Revision: 1.4 $'),
+    name = cms.untracked.string('$Source: /local/projects/CMSSW/rep/CMSSW/Configuration/GenProduction/python/PYTHIA6_EWK_ZZ_10TeV_cff.py,v $'),
+    annotation = cms.untracked.string('PYTHIA6-H++ to MuMu at 10TeV')
+)
+
 

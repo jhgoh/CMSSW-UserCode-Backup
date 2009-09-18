@@ -10,7 +10,7 @@
 #include "DataFormats/PatCandidates/interface/CompositeCandidate.h"
 #include "DataFormats/PatCandidates/interface/Muon.h"
 
-#include "PhysicsTools/Utilities/interface/PtComparator.h"
+#include "CommonTools/Utils/interface/PtComparator.h"
 #include "DataFormats/Math/interface/deltaPhi.h"
 #include "PhysicsTools/CandUtils/interface/AddFourMomenta.h"
 
