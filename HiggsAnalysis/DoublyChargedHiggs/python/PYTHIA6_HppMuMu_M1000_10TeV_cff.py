@@ -4,7 +4,7 @@ source = cms.Source("EmptySource")
 
 hppMass = '1000.0'
 
-from Configuration.GenProduction.PythiaUESettings_cfi import *
+from Configuration.Generator.PythiaUESettings_cfi import *
 generator = cms.EDFilter("Pythia6GeneratorFilter",
     pythiaHepMCVerbosity = cms.untracked.bool(False),
     maxEventsToPrint = cms.untracked.int32(0),
@@ -45,8 +45,8 @@ generator = cms.EDFilter("Pythia6GeneratorFilter",
 ProductionFilterSequence = cms.Sequence(generator)
 
 configurationMetadata = cms.untracked.PSet(
-    version = cms.untracked.string('$Revision: 1.4 $'),
-    name = cms.untracked.string('$Source: /local/projects/CMSSW/rep/CMSSW/Configuration/GenProduction/python/PYTHIA6_EWK_ZZ_10TeV_cff.py,v $'),
+    version = cms.untracked.string('$Revision: 1.1 $'),
+    name = cms.untracked.string('$Source: /cvs_server/repositories/CMSSW/UserCode/JHGoh/HiggsAnalysis/DoublyChargedHiggs/python/PYTHIA6_HppMuMu_M1000_10TeV_cff.py,v $'),
     annotation = cms.untracked.string('PYTHIA6-H++ to MuMu at 10TeV')
 )
 
