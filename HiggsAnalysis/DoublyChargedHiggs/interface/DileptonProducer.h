@@ -10,9 +10,6 @@
 #include "FWCore/ParameterSet/interface/InputTag.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 
-#include "RecoVertex/KalmanVertexFit/interface/KalmanVertexFitter.h"
-#include "PhysicsTools/RecoUtils/interface/CandCommonVertexFitter.h"
-
 class DileptonProducer : public edm::EDProducer
 {
 public:
@@ -25,24 +22,25 @@ protected:
   virtual void endJob();
 
   template<typename LeptonIter, typename OutCollection> 
-  void combineLeptons(const LeptonIter lepton_begin, const LeptonIter lepton_end,
-                      OutCollection& dileptonCands);
-  template <typename LeptonIter, typename OutCollection>
-  void combineLeptons(const LeptonIter lepton1_begin, const LeptonIter lepton1_end,
-                      const LeptonIter lepton2_begin, const LeptonIter lepton2_end,
+  void combineLeptons(const LeptonIter begin, const LeptonIter end,
                       OutCollection& dileptonCands);
   template <typename LeptonIter1, typename LeptonIter2, typename OutCollection>
-  void combineLeptons(const LeptonIter1 lepton1_begin, const LeptonIter1 lepton1_end,
-                      const LeptonIter2 lepton2_begin, const LeptonIter2 lepton2_end,
+  void combineLeptons(const LeptonIter1 begin1, const LeptonIter1 end1,
+                      const LeptonIter2 begin2, const LeptonIter2 end2,
                       OutCollection& dileptonCands);
-
 private:
-  edm::InputTag lepton1Label_, lepton2Label_;
+  // Lepton1 source sets
+  edm::InputTag lepton1Label_;
+  int lepton1Type_, lepton1Charge_;
+
+  // Lepton2 source sets
+  edm::InputTag lepton2Label_;
+  int lepton2Type_, lepton2Charge_;
   
-  int lepton1Type_, lepton2Type_;
-  
-  bool isSameCollection_;
-  CandCommonVertexFitter<KalmanVertexFitter>* kvFitter_;
+  // Candidate combination
+  bool chargeConj_, isSameCollection_;
+  int dileptonCharge_;
+
 };
 
 /* vim:set ts=2 sts=2 sw=2 expandtab: */
