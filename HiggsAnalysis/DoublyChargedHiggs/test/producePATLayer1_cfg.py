@@ -1,33 +1,23 @@
 import FWCore.ParameterSet.Config as cms
 
-# Set variables from the os environment
-import os
-CMSSWVersion = os.environ['CMSSW_VERSION']
-dataTier = 'GEN-SIM-DIGI-RECO'
-#globalTag = 'STARTUP_V12'
-globalTag = 'IDEAL_V12'
-if 'SAMPLENAME' in os.environ:
-        sampleName = os.environ['SAMPLENAME']
-else:
-	sampleName = 'Hpp130MuMu_FastSim'
-sampleBase = '/pnfs/cms/MC/%s/%s/%s/%s' % (CMSSWVersion, sampleName, dataTier, globalTag)
-
+globalTag = 'MC_31X_V8'
 
 process = cms.Process("PAT")
 
 # initialize MessageLogger and output report
 process.load("FWCore.MessageLogger.MessageLogger_cfi")
 process.MessageLogger.cerr.threshold = 'INFO'
-process.MessageLogger.categories.append('PATSummaryTables')
-process.MessageLogger.cerr.INFO = cms.untracked.PSet(
-    default          = cms.untracked.PSet( limit = cms.untracked.int32(0)  ),
-    PATSummaryTables = cms.untracked.PSet( limit = cms.untracked.int32(-1) )
-)
+#process.MessageLogger.categories.append('PATSummaryTables')
+#process.MessageLogger.cerr.INFO = cms.untracked.PSet(
+#    default          = cms.untracked.PSet( limit = cms.untracked.int32(0)  ),
+#    PATSummaryTables = cms.untracked.PSet( limit = cms.untracked.int32(-1) )
+#)
 process.options   = cms.untracked.PSet( wantSummary = cms.untracked.bool(True) )
 
 # source
 process.source = cms.Source("PoolSource", 
-    fileNames = cms.untracked.vstring()
+    fileNames = cms.untracked.vstring(),
+    secondaryFileNames = cms.untracked.vstring()
 )
 process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
 
@@ -37,17 +27,13 @@ process.GlobalTag.globaltag = cms.string('%s::All' % globalTag)
 process.load("Configuration.StandardSequences.MagneticField_cff")
 
 # Set datafiles
-for f in filter(lambda x: x[-5:]=='.root', os.listdir(sampleBase)):
-    process.source.fileNames.append('file:%s/%s' % (sampleBase, f))
+process.source.fileNames.append('file:res/step1.root')
+process.source.secondaryFileNames.append('file:res/step2.root')
 
 process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(-1))
 
 # PAT Layer 0+1
 process.load("PhysicsTools.PatAlgos.patSequences_cff")
-#process.content = cms.EDAnalyzer("EventContentAnalyzer")
-# Switch off old trigger matching
-from PhysicsTools.PatAlgos.tools.trigTools import switchOffTriggerMatchingOld
-switchOffTriggerMatchingOld( process )
 
 process.p = cms.Path(
     process.patDefaultSequence  
@@ -73,7 +59,7 @@ patEventContent = [
 ]
 
 process.out = cms.OutputModule("PoolOutputModule",
-    fileName = cms.untracked.string('/pnfs/jhgoh/DoublyChargedHiggs/%s/%s_%s.root' % (CMSSWVersion, sampleName, globalTag)),
+    fileName = cms.untracked.string('PAT.root'),
     # save only events passing the full path
     SelectEvents   = cms.untracked.PSet( SelectEvents = cms.vstring('p') ),
     # save PAT Layer 1 output
@@ -81,5 +67,4 @@ process.out = cms.OutputModule("PoolOutputModule",
     #outputCommands = cms.untracked.vstring('keep *')
 )
 process.outpath = cms.EndPath(process.out)
-
 
