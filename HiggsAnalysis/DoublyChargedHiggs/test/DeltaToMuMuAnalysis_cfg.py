@@ -1,15 +1,7 @@
 import FWCore.ParameterSet.Config as cms
 
 # Set variables from the os environment
-import os
-CMSSWVersion = os.environ['CMSSW_VERSION']
-dataTier = 'GEN-SIM-DIGI-RECO'
-#globalTag = 'STARTUP_V12'
-globalTag = 'IDEAL_V12'
-if 'SAMPLENAME' in os.environ:
-        sampleName = os.environ['SAMPLENAME']
-else:
-	sampleName = 'Hpp130MuMu_FastSim'
+globalTag = 'MC_31X_V8'
 
 # Load Standard CMSSW process initial configurations
 process = cms.Process("Ana")
@@ -28,7 +20,7 @@ process.source = cms.Source("PoolSource",
 process.MessageLogger.cerr.FwkReport.reportEvery = 100
 
 # Set datafiles
-process.source.fileNames.append('file:/pnfs/jhgoh/DoublyChargedHiggs/%s/%s_%s.root' % (CMSSWVersion, sampleName, globalTag))
+process.source.fileNames.append('file:PAT.root')
 
 process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(-1))
 
@@ -37,75 +29,55 @@ process.load("PhysicsTools/PatAlgos/patSequences_cff")
 process.load("PhysicsTools/PatAlgos/patEventContent_cff")
 from PhysicsTools.PatAlgos.patEventContent_cff import patEventContent
 
-# Muon selection
-process.posMuons = cms.EDProducer("PATMuonCandSelector",
-    muon = cms.InputTag("cleanLayer1Muons"),
-    muonCutSet = cms.PSet(
-        charge = cms.untracked.int32(1),
-        useGlobalMuonsOnly = cms.untracked.bool(True),
-        minPt = cms.untracked.double(7)
-    )
-)
-
-process.negMuons = cms.EDProducer("PATMuonCandSelector",
-    muon = cms.InputTag("cleanLayer1Muons"),
-    muonCutSet = cms.PSet(
-        charge = cms.untracked.int32(-1),
-        useGlobalMuonsOnly = cms.untracked.bool(True),
-        minPt = cms.untracked.double(7)
-    )
-)
-
 # Candidate production
 process.posDeltaToMuMu = cms.EDProducer("DileptonProducer",
     lepton1 = cms.PSet(
-        src = cms.InputTag("posMuons"),
+        src = cms.InputTag("cleanLayer1Muons"),
+        charge = cms.int32(1),
         type = cms.string("muon")
     ),
     lepton2 = cms.PSet(
-        src = cms.InputTag("posMuons"),
+        src = cms.InputTag("cleanLayer1Muons"),
+        charge = cms.int32(1),
         type = cms.string("muon")
     ),
-    fitterType = cms.string("None"),
-    vertexFitSet = cms.PSet(
-    )
+    chargeConjugation = cms.bool(False)
 )
 
 process.negDeltaToMuMu = cms.EDProducer("DileptonProducer",
     lepton1 = cms.PSet(
-        src = cms.InputTag("negMuons"),
+        src = cms.InputTag("cleanLayer1Muons"),
+        charge = cms.int32(1),
         type = cms.string("muon")
     ),
     lepton2 = cms.PSet(
-        src = cms.InputTag("negMuons"),
+        src = cms.InputTag("cleanLayer1Muons"),
+        charge = cms.int32(1),
         type = cms.string("muon")
     ),
-    fitterType = cms.string("None"),
-    vertexFitSet = cms.PSet(
-    )
+    chargeConjugation = cms.bool(False)
 )
 
 # User analysis block
-process.fourMuonAnalyzer = cms.EDAnalyzer("FourMuonAnalyzer",
-    posDelta = cms.InputTag("posDeltaToMuMu"),
-    negDelta = cms.InputTag("negDeltaToMuMu"),
-    deltaCutSet = cms.PSet(
-        maxNormalizedChi2 = cms.untracked.double(1000),
-        minPt = cms.untracked.double(7)
-    ),
-    nInterested = cms.untracked.uint32(2)
-)
 
 # File output
-process.TFileService = cms.Service("TFileService",
-    fileName = cms.string('h_%s_%s.root' % (sampleName, globalTag))
+#process.TFileService = cms.Service("TFileService",
+#    fileName = cms.string('hHppMuMu.root')
+#)
+
+process.out = cms.OutputModule("PoolOutputModule",
+    fileName = cms.untracked.string('HppMuMu.root'),
+    # save only events passing the full path
+    SelectEvents   = cms.untracked.PSet( SelectEvents = cms.vstring('p') ),
+    # save PAT Layer 1 output
+    outputCommands = cms.untracked.vstring('drop *', 'keep *_*_*_Ana') # you need a '*' to unpack the list of commands 'patEventContent'
 )
+process.outpath = cms.EndPath(process.out)
 
 # Module sequences and Paths
-process.posDeltaSeq = cms.Sequence(process.posMuons*process.posDeltaToMuMu)
-process.negDeltaSeq = cms.Sequence(process.negMuons*process.negDeltaToMuMu)
-process.deltaCombineSeq = cms.Sequence(process.posDeltaSeq+process.negDeltaSeq)
-process.deltaAnalysisSeq = cms.Sequence(process.fourMuonAnalyzer)
+process.deltaCombineSeq = cms.Sequence(process.posDeltaToMuMu+process.negDeltaToMuMu)
+#process.deltaAnalysisSeq = cms.Sequence(process.fourMuonAnalyzer)
 
-process.p = cms.Path(process.deltaCombineSeq*
-                     process.deltaAnalysisSeq)
+process.p = cms.Path(process.deltaCombineSeq)
+#process.p = cms.Path(process.deltaCombineSeq*
+#                     process.deltaAnalysisSeq)
