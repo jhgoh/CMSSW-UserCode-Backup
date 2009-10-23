@@ -49,6 +49,8 @@ public:
 
   void Run()
   {
+    hDimuonPt_ = new TH1F("hDimuonPt", "Dimuon pt", 10, 0, 1000);
+
     cout << "Starting Run" << endl;
 
     // Set files to be linked with chains
@@ -63,23 +65,23 @@ public:
     cout << "Read up data files" << endl;
 
     // Scan over muon quality
-    hMuonPt_ = new TH1F("hMuonPt", "muon pt", 100, 0, 1000);
-    hMuonPt_->SetBinContent(1, 999);
 
     cout << sigEvent.size() << endl;
     for(sigEvent.toBegin(); !sigEvent.atEnd(); ++sigEvent)
     {
-      cout << "Event!!" << endl;
-
       fwlite::Handle<pat::CompositeCandidateCollection> dimuonHandle;
-      dimuonHandle.getByLabel(sigEvent, "posDeltaToMuMu");
+      dimuonHandle.getByLabel(sigEvent, "deltaToMuMu");
 
       const pat::CompositeCandidateCollection* dimuonCands = dimuonHandle.ptr();
 
-      cout << dimuonCands->size() << endl;
+      for(unsigned int i=0; i<dimuonCands->size(); ++i)
+      {
+        const pat::CompositeCandidate& dimuon = dimuonCands->at(i);
+        hDimuonPt_->Fill(dimuon.pt());
+      }
     }
 
-    hMuonPt_->Draw();
+    hDimuonPt_->Draw();
   };
 
 private:
@@ -92,5 +94,5 @@ private:
   // Drawing histograms
   bool optDraw_;
 
-  TH1F* hMuonPt_;
+  TH1F* hDimuonPt_;
 };
