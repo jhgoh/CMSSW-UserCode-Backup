@@ -29,36 +29,26 @@ process.load("PhysicsTools/PatAlgos/patSequences_cff")
 process.load("PhysicsTools/PatAlgos/patEventContent_cff")
 from PhysicsTools.PatAlgos.patEventContent_cff import patEventContent
 
+# Muon selection
+process.goodPatMuons = cms.EDProducer("PATMuonSelector",
+    src = cms.InputTag("cleanLayer1Muons"),
+    cut = cms.string('pt > 10 & abs(eta) < 2.5 & isGlobalMuon() & charge < 0')
+)
+
 # Candidate production
-process.posDeltaToMuMu = cms.EDProducer("DileptonProducer",
+process.deltaToMuMu = cms.EDProducer("DileptonProducer",
     lepton1 = cms.PSet(
-        src = cms.InputTag("cleanLayer1Muons"),
-        charge = cms.int32(1),
-        type = cms.string("muon")
+        src = cms.InputTag("goodPatMuons"),
+        type = cms.string("muon"),
+        charge = cms.int32(1)
     ),
     lepton2 = cms.PSet(
-        src = cms.InputTag("cleanLayer1Muons"),
-        charge = cms.int32(1),
-        type = cms.string("muon")
+        src = cms.InputTag("goodPatMuons"),
+        type = cms.string("muon"),
+        charge = cms.int32(1)
     ),
-    chargeConjugation = cms.bool(False)
+    chargeConjugation = cms.bool(True)
 )
-
-process.negDeltaToMuMu = cms.EDProducer("DileptonProducer",
-    lepton1 = cms.PSet(
-        src = cms.InputTag("cleanLayer1Muons"),
-        charge = cms.int32(1),
-        type = cms.string("muon")
-    ),
-    lepton2 = cms.PSet(
-        src = cms.InputTag("cleanLayer1Muons"),
-        charge = cms.int32(1),
-        type = cms.string("muon")
-    ),
-    chargeConjugation = cms.bool(False)
-)
-
-# User analysis block
 
 # File output
 #process.TFileService = cms.Service("TFileService",
@@ -67,15 +57,13 @@ process.negDeltaToMuMu = cms.EDProducer("DileptonProducer",
 
 process.out = cms.OutputModule("PoolOutputModule",
     fileName = cms.untracked.string('HppMuMu.root'),
-    # save only events passing the full path
     SelectEvents   = cms.untracked.PSet( SelectEvents = cms.vstring('p') ),
-    # save PAT Layer 1 output
-    outputCommands = cms.untracked.vstring('drop *', 'keep *_*_*_Ana') # you need a '*' to unpack the list of commands 'patEventContent'
+    outputCommands = cms.untracked.vstring('drop *', 'keep *_*_*_Ana')
 )
 process.outpath = cms.EndPath(process.out)
 
 # Module sequences and Paths
-process.deltaCombineSeq = cms.Sequence(process.posDeltaToMuMu+process.negDeltaToMuMu)
+process.deltaCombineSeq = cms.Sequence(process.goodPatMuons * process.deltaToMuMu)
 #process.deltaAnalysisSeq = cms.Sequence(process.fourMuonAnalyzer)
 
 process.p = cms.Path(process.deltaCombineSeq)
