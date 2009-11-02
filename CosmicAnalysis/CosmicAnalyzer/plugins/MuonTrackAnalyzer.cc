@@ -1,4 +1,4 @@
-#include "CosmicAnalysis/CosmicAnalyzer/src/MuonTrackAnalyzer.h"
+#include "CosmicAnalysis/CosmicAnalyzer/interface/MuonTrackAnalyzer.h"
 
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "FWCore/ServiceRegistry/interface/Service.h"
