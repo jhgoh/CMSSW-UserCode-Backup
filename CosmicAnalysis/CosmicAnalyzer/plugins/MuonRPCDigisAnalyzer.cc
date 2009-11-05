@@ -24,6 +24,7 @@
 #include <TMath.h>
 #include <TH1F.h>
 #include <TH2F.h>
+#include <TProfile2D.h>
 
 #include <memory>
 #include <string>
@@ -38,6 +39,15 @@ namespace H1
   };
 }
 
+namespace HPrf2
+{
+  enum Histograms
+  {
+    Strip_XY_Rm2, Strip_XY_Rm1, Strip_XY_R00, Strip_XY_Rp1, Strip_XY_Rp2,
+    Bx_XY_Rm2, Bx_XY_Rm1, Bx_XY_R00, Bx_XY_Rp1, Bx_XY_Rp2
+  };
+}
+
 MuonRPCDigisAnalyzer::MuonRPCDigisAnalyzer(const edm::ParameterSet& pset)
 {
   digiLabel_ = pset.getParameter<edm::InputTag>("digiLabel");
@@ -45,8 +55,22 @@ MuonRPCDigisAnalyzer::MuonRPCDigisAnalyzer(const edm::ParameterSet& pset)
   edm::Service<TFileService> fs;
 
   h1_[H1::Strip] = fs->make<TH1F>("hStrip", "Strip profile", 100, 0, 100);
-  h1_[H1::Bx] = fs->make<TH1F>("hBx", "Bunch crossing", 10, -5.5, -5.5+10);
+  h1_[H1::Bx] = fs->make<TH1F>("hBx", "Bunch crossing", 11, -5.5, 5.5);
   h1_[H1::nDigi] = fs->make<TH1F>("hNDigi", "Number of digi", 100, 0, 100);
+
+  const double xMin = -1000, xMax = 1000, yMin = -1000, yMax = 1000;
+
+  hPrf2_[HPrf2::Strip_XY_Rm2] = fs->make<TProfile2D>("hStrip_XY_Rm2", "Strip profile on XY plane, Ring -2", 100, xMin, xMax, 100, yMin, yMax);
+  hPrf2_[HPrf2::Strip_XY_Rm1] = fs->make<TProfile2D>("hStrip_XY_Rm1", "Strip profile on XY plane, Ring -1", 100, xMin, xMax, 100, yMin, yMax);
+  hPrf2_[HPrf2::Strip_XY_R00] = fs->make<TProfile2D>("hStrip_XY_R00", "Strip profile on XY plane, Ring  0", 100, xMin, xMax, 100, yMin, yMax);
+  hPrf2_[HPrf2::Strip_XY_Rp1] = fs->make<TProfile2D>("hStrip_XY_Rp1", "Strip profile on XY plane, Ring -1", 100, xMin, xMax, 100, yMin, yMax);
+  hPrf2_[HPrf2::Strip_XY_Rp2] = fs->make<TProfile2D>("hStrip_XY_Rp2", "Strip profile on XY plane, Ring -2", 100, xMin, xMax, 100, yMin, yMax);
+
+  hPrf2_[HPrf2::Bx_XY_Rm2] = fs->make<TProfile2D>("hBx_XY_Rm2", "Bunch crossing profile on XY plane, Ring -2", 100, xMin, xMax, 100, yMin, yMax);
+  hPrf2_[HPrf2::Bx_XY_Rm1] = fs->make<TProfile2D>("hBx_XY_Rm1", "Bunch crossing profile on XY plane, Ring -2", 100, xMin, xMax, 100, yMin, yMax);
+  hPrf2_[HPrf2::Bx_XY_R00] = fs->make<TProfile2D>("hBx_XY_R00", "Bunch crossing profile on XY plane, Ring -2", 100, xMin, xMax, 100, yMin, yMax);
+  hPrf2_[HPrf2::Bx_XY_Rp1] = fs->make<TProfile2D>("hBx_XY_Rp1", "Bunch crossing profile on XY plane, Ring -2", 100, xMin, xMax, 100, yMin, yMax);
+  hPrf2_[HPrf2::Bx_XY_Rp2] = fs->make<TProfile2D>("hBx_XY_Rp2", "Bunch crossing profile on XY plane, Ring -2", 100, xMin, xMax, 100, yMin, yMax);
 }
 
 MuonRPCDigisAnalyzer::~MuonRPCDigisAnalyzer()
@@ -84,9 +108,22 @@ void MuonRPCDigisAnalyzer::analyze(const edm::Event& event, const edm::EventSetu
     for ( RPCDigiCollection::const_iterator digiIt = range.first;
           digiIt != range.second; ++digiIt )
     {
-      h1_[H1::Strip]->Fill(digiIt->strip());
-      h1_[H1::Bx]->Fill(digiIt->bx());
       nDigi++;
+
+      const int strip = digiIt->strip();
+      const int bx = digiIt->bx();
+
+      h1_[H1::Strip]->Fill(strip);
+      h1_[H1::Bx]->Fill(bx);
+
+      const GlobalPoint gPoint = roll->toGlobal(roll->centreOfStrip(strip));
+      const double globalX = gPoint.x();
+      const double globalY = gPoint.y();
+      
+      if ( abs(Rsid.ring()) > 2 ) continue;
+
+      hPrf2_[HPrf2::Strip_XY_R00+Rsid.ring()]->Fill(globalX, globalY, strip);
+      hPrf2_[HPrf2::Bx_XY_R00+Rsid.ring()]->Fill(globalX, globalY, bx);
     }
     h1_[H1::nDigi]->Fill(nDigi);
   }
