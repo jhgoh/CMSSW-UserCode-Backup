@@ -9,6 +9,7 @@
 #include <map>
 
 class TH1F;
+class TProfile2D;
 
 class MuonRPCDigisAnalyzer : public edm::EDAnalyzer
 {
@@ -24,6 +25,7 @@ private:
   edm::InputTag digiLabel_;
 
   std::map<int, TH1F*> h1_;
+  std::map<int, TProfile2D*> hPrf2_;
 };
 
 #endif
