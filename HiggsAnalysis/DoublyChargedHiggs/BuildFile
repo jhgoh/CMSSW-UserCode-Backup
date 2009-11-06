@@ -1,15 +1,13 @@
-
-
-<use name=FWCore/Framework>
-<use name=FWCore/PluginManager>
-<use name=FWCore/ParameterSet>
-<use name=PhysicsTools/UtilAlgos>
-<use name=DataFormats/TrackReco>
-<use name=RecoVertex/VertexTools>
-<use name=root>
+<use name="FWCore/Framework">
+<use name="FWCore/PluginManager">
+<use name="FWCore/ParameterSet">
+<use name="PhysicsTools/UtilAlgos">
+<use name="DataFormats/TrackReco">
+<use name="RecoVertex/VertexTools">
+<use name="root">
 <export>
-   <lib name=HiggsAnalysisDoublyChargedHiggs>
-   <use name=FWCore/Framework>
-   <use name=FWCore/PluginManager>
-   <use name=FWCore/ParameterSet>
+   <lib name="HiggsAnalysisDoublyChargedHiggs">
+   <use name="FWCore/Framework">
+   <use name="FWCore/PluginManager">
+   <use name="FWCore/ParameterSet">
 </export>

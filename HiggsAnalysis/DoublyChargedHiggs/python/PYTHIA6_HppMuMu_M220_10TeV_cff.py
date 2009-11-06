@@ -1,7 +1,5 @@
 import FWCore.ParameterSet.Config as cms
 
-source = cms.Source("EmptySource")
-
 hppMass = '220.0'
 
 from Configuration.Generator.PythiaUESettings_cfi import *
@@ -45,7 +43,7 @@ generator = cms.EDFilter("Pythia6GeneratorFilter",
 ProductionFilterSequence = cms.Sequence(generator)
 
 configurationMetadata = cms.untracked.PSet(
-    version = cms.untracked.string('$Revision: 1.2 $'),
+    version = cms.untracked.string('$Revision: 1.3 $'),
     name = cms.untracked.string('$Source: /cvs_server/repositories/CMSSW/UserCode/JHGoh/HiggsAnalysis/DoublyChargedHiggs/python/PYTHIA6_HppMuMu_M220_10TeV_cff.py,v $'),
     annotation = cms.untracked.string('PYTHIA6-H++ to MuMu at 10TeV')
 )
