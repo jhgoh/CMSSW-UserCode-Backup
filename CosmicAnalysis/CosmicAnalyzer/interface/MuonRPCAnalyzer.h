@@ -13,6 +13,7 @@
 #include <map>
 
 class TH1F;
+class TString;
 
 class MuonRPCAnalyzer : public edm::EDAnalyzer
 {
@@ -29,11 +30,11 @@ private:
 
   edm::InputTag digiLabel_;
 
-  std::map<int, TH1F*> h1_;
+  std::map<std::string, TH1F*> h1_;
 
-  std::vector<float> eventNumbers_;
-  std::vector<float> rpcAvgT_, rpcAvgV_, rpcAvgI_;
-  std::vector<float> rpcErrT_, rpcErrV_, rpcErrI_;
+  // Store detector cell names and its average of IOV values
+  typedef std::map<std::string, std::pair<unsigned int, double> > DetIOVMap;
+  DetIOVMap rpcIValues_, rpcVValues_, rpcTValues_;
 };
 
 #endif
