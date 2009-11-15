@@ -19,10 +19,10 @@
 
 #include <TMath.h>
 #include <TH1F.h>
+#include <TProfile.h>
 #include <TString.h>
 
 #include <memory>
-#include <string>
 
 using namespace std;
 
@@ -31,16 +31,24 @@ std::string getSubDetName(const int region, const int ring, const int station)
   return Form("%d_%d_%d", region, ring, station);
 }
 
+bool isValidDetId(const int region, const int ring, const int station)
+{
+  if ( region < RPCDetId::minRegionId || region > RPCDetId::maxRegionId ) return false;
+  if ( ring < RPCDetId::minRingBarrelId || ring > RPCDetId::maxRingBarrelId ) return false;
+  if ( station < RPCDetId::minStationId || station > RPCDetId::maxStationId ) return false;
+  else return true;
+}
+
 MuonRPCAnalyzer::MuonRPCAnalyzer(const edm::ParameterSet& pset)
 {
   digiLabel_ = pset.getParameter<edm::InputTag>("digiLabel");
-  
+
   h1_["strip"] = fs_->make<TH1F>("hStrip", "Strip profile", 100, 0, 100);
   h1_["bx"] = fs_->make<TH1F>("hBx", "Bunch crossing", 11, -5.5, 5.5);
   h1_["nDigi"] = fs_->make<TH1F>("hNDigi", "Number of digi", 100, 0, 100);
 
-  h1_["T"] = fs_->make<TH1F>("hT", "Temperature;Temperature", 100, 15, 30);
-  h1_["I"] = fs_->make<TH1F>("hI", "Current;Current", 100, 0, 1e5);
+  h1_["T"] = fs_->make<TH1F>("hT", "Temperature;Temperature [^#circC]", 100, 15, 25);
+  h1_["I"] = fs_->make<TH1F>("hI", "Current;Current [#muA]", 100, 0, 10);
   h1_["V"] = fs_->make<TH1F>("hV", "Voltage;Voltage", 100, 7000, 10000);
 
   for ( int region = RPCDetId::minRegionId; region <= RPCDetId::maxRegionId; ++region )
@@ -61,8 +69,8 @@ MuonRPCAnalyzer::MuonRPCAnalyzer(const edm::ParameterSet& pset)
     h1_[Form("%d_bx", region)] = regionDir.make<TH1F>("hBx", "Bunch crossing", 11, -5.5, 5.5);
     h1_[Form("%d_nDigi", region)] = regionDir.make<TH1F>("hNDigi", "Number of digi", 100, 0, 100);
 
-    h1_[Form("%d_T", region)] = regionDir.make<TH1F>("hT", "Temperature;Temperature", 100, 15, 30);
-    h1_[Form("%d_I", region)] = regionDir.make<TH1F>("hI", "Current;Current", 100, 0, 1e5);
+    h1_[Form("%d_T", region)] = regionDir.make<TH1F>("hT", "Temperature;Temperature [^#circC]", 100, 15, 25);
+    h1_[Form("%d_I", region)] = regionDir.make<TH1F>("hI", "Current;Current [#muA]", 100, 0, 10);
     h1_[Form("%d_V", region)] = regionDir.make<TH1F>("hV", "Voltage;Voltage", 100, 7000, 10000);
 
     for ( int ring = minRingId; ring <= maxRingId; ++ring )
@@ -72,8 +80,10 @@ MuonRPCAnalyzer::MuonRPCAnalyzer(const edm::ParameterSet& pset)
         const string subDetName = getSubDetName(region, ring ,station);
         TFileDirectory subDir = regionDir.mkdir(subDetName, subDetName);
 
-        h1_[subDetName+"_T"] = subDir.make<TH1F>("hT", "Temperature;Temperature", 100, 15, 30);
-        h1_[subDetName+"_I"] = subDir.make<TH1F>("hI", "Current;Current", 100, 0, 1e5);
+        cout << "Building histograms for " << subDetName << endl;
+
+        h1_[subDetName+"_T"] = subDir.make<TH1F>("hT", "Temperature;Temperature [^#circC]", 100, 15, 25);
+        h1_[subDetName+"_I"] = subDir.make<TH1F>("hI", "Current;Current [#muA]", 100, 0, 10);
         h1_[subDetName+"_V"] = subDir.make<TH1F>("hV", "Voltage;Voltage", 100, 7000, 10000);
 
         rpcIValues_[subDetName] = std::make_pair(0,0);
@@ -171,6 +181,7 @@ void MuonRPCAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
   {
     const double rpcI = imon->value;
     const RPCObPVSSmap::Item pvss = pvssMap[imon->dpid];
+    if ( !isValidDetId(pvss.region, pvss.ring, pvss.station) ) continue;
 
     const string subDetName = getSubDetName(pvss.region, pvss.ring, pvss.station);
     rpcIValues_[subDetName].first++;
@@ -182,6 +193,7 @@ void MuonRPCAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
   {
     const double rpcV = vmon->value;
     const RPCObPVSSmap::Item pvss = pvssMap[vmon->dpid];
+    if ( !isValidDetId(pvss.region, pvss.ring, pvss.station) ) continue;
 
     const string subDetName = getSubDetName(pvss.region, pvss.ring, pvss.station);
     rpcVValues_[subDetName].first++;
@@ -193,6 +205,7 @@ void MuonRPCAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
   {
     const double rpcT = tmon->value;
     const RPCObPVSSmap::Item pvss = pvssMap[tmon->dpid];
+    if ( !isValidDetId(pvss.region, pvss.ring, pvss.station) ) continue;
 
     const string subDetName = getSubDetName(pvss.region, pvss.ring, pvss.station);
     rpcTValues_[subDetName].first++;
@@ -240,41 +253,11 @@ void MuonRPCAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
   }
 
 ///////////// Ignore below //////////////
+  
 /*
   unsigned int nI = 0, nV = 0, nT = 0;
   double sumI = 0, sumV = 0, sumT = 0;
   double sumI2 = 0, sumV2 = 0, sumT2 = 0;
-
-  for ( std::vector<RPCObImon::I_Item>::const_iterator imon = rpcImon.begin();
-        imon != rpcImon.end(); ++imon )
-  {
-    const double rpcI = imon->value;
-    sumI += rpcI;
-    sumI2 += rpcI*rpcI;
-    ++nI;
-
-    const RPCObPVSSmap::Item pvss = pvssMap[imon->dpid];
-    const TString detName = detNameToForm(pvss.region, pvss.ring, pvss.station);
-
-    h1_[detName+"_I"]->Fill(rpcI);
-  }
-  const double avgI = sumI/nI;
-  const double errI = TMath::Sqrt((sumI2 - sumI*sumI/nI)/nI);
-  //rpcAvgI_.push_back(avgI);
-  //rpcErrI_.push_back(errI);
-
-  for ( std::vector<RPCObVmon::V_Item>::const_iterator vmon = rpcVmon.begin();
-        vmon != rpcVmon.end(); ++vmon )
-  {
-    const double rpcV = vmon->value;
-    sumV += rpcV;
-    sumV2 += rpcV*rpcV;
-    ++nV;
-  }
-  const double avgV = sumV/nV;
-  const double errV = TMath::Sqrt((sumV2 - sumV*sumV/nV)/nV);
-  //rpcAvgV_.push_back(avgV);
-  //rpcErrV_.push_back(errV);
 
   for ( std::vector<RPCObTemp::T_Item>::const_iterator tmon = rpcTmon.begin();
         tmon != rpcTmon.end(); ++tmon )

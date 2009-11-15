@@ -10,10 +10,11 @@
 
 #include "CondFormats/RPCObjects/interface/RPCObCond.h"
 
+#include <string>
 #include <map>
 
 class TH1F;
-class TString;
+class TProfile;
 
 class MuonRPCAnalyzer : public edm::EDAnalyzer
 {
@@ -31,6 +32,7 @@ private:
   edm::InputTag digiLabel_;
 
   std::map<std::string, TH1F*> h1_;
+  std::map<std::string, TProfile*> prf_;
 
   // Store detector cell names and its average of IOV values
   typedef std::map<std::string, std::pair<unsigned int, double> > DetIOVMap;
