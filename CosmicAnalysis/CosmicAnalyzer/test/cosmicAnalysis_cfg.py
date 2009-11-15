@@ -15,12 +15,13 @@ process.GlobalTag.globaltag = cms.string('%s::All' % globalTag)
 # Read input sample list
 import sys
 sys.path.append('test')
+sys.path.append('.')
 
 from source_cfg import *
 process.source = cms.Source ("PoolSource",fileNames = readFiles, secondaryFileNames = secFiles)
 process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(10))
 
-#process.MessageLogger.cerr.FwkReport.reportEvery = 100
+process.MessageLogger.cerr.FwkReport.reportEvery = 100
 
 # CondDB
 process.load("CondCore.DBCommon.CondDBCommon_cfi")
@@ -57,7 +58,15 @@ process.TFileService = cms.Service("TFileService",
 
 # Modules
 process.muonRPCAnalyzer = cms.EDAnalyzer("MuonRPCAnalyzer",
-    digiLabel = cms.InputTag('muonRPCDigis')
+    digiLabel = cms.InputTag('muonRPCDigis'),
+    histoDimensions = cms.PSet(
+        minDate = cms.untracked.uint32(91108),
+        maxDate = cms.untracked.uint32(101108),
+        minTime = cms.untracked.uint32(0),
+        maxTime = cms.untracked.uint32(235959),
+        dDate = cms.untracked.uint32(0),
+        dTime = cms.untracked.uint32(40000)
+    )
 )
 
 # Sequences and Paths
