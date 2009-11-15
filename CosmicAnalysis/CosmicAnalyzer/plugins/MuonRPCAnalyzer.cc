@@ -21,6 +21,7 @@
 #include <TH1F.h>
 #include <TProfile.h>
 #include <TString.h>
+#include <TDatime.h>
 
 #include <memory>
 
@@ -39,17 +40,74 @@ bool isValidDetId(const int region, const int ring, const int station)
   else return true;
 }
 
+time_t dateTimeToUnixTime(unsigned int date, unsigned int time)
+{
+  const unsigned int year = 2000+date%100;
+  date /= 100;
+  const unsigned int month = date%100;
+  date /= 100;
+  const unsigned int day = date%100;
+  
+  const unsigned int sec = time%100;
+  time /= 100;  
+  const unsigned int min = time%100;
+  time /= 100;
+  const unsigned int hour = time%100;
+
+  return TDatime(year, month, day, hour, min, sec).Convert();
+}
+
 MuonRPCAnalyzer::MuonRPCAnalyzer(const edm::ParameterSet& pset)
 {
+  rpcIMinTime_ = rpcVMinTime_ = rpcTMinTime_ = 0;
+  rpcIMaxTime_ = rpcVMaxTime_ = rpcTMaxTime_ = 0;
+
   digiLabel_ = pset.getParameter<edm::InputTag>("digiLabel");
+
+  edm::ParameterSet histoDimensions = pset.getParameter<edm::ParameterSet>("histoDimensions");
+  
+  // Date format with DDMMYY and Time format with hhmmss
+  time_t minDateTime, maxDateTime, dDateTime;
+  {
+    const unsigned int minDate = histoDimensions.getUntrackedParameter<unsigned int>("minDate");
+    const unsigned int maxDate = histoDimensions.getUntrackedParameter<unsigned int>("maxDate");
+    const unsigned int minTime = histoDimensions.getUntrackedParameter<unsigned int>("minTime");
+    const unsigned int maxTime = histoDimensions.getUntrackedParameter<unsigned int>("maxTime");
+
+    const unsigned int dDate = histoDimensions.getUntrackedParameter<unsigned int>("dDate");
+    const unsigned int dTime = histoDimensions.getUntrackedParameter<unsigned int>("dTime");
+
+    minDateTime = dateTimeToUnixTime(minDate, minTime);
+    maxDateTime = dateTimeToUnixTime(maxDate, maxTime);
+    dDateTime = dateTimeToUnixTime(dDate, dTime);
+  }
 
   h1_["strip"] = fs_->make<TH1F>("hStrip", "Strip profile", 100, 0, 100);
   h1_["bx"] = fs_->make<TH1F>("hBx", "Bunch crossing", 11, -5.5, 5.5);
   h1_["nDigi"] = fs_->make<TH1F>("hNDigi", "Number of digi", 100, 0, 100);
 
-  h1_["T"] = fs_->make<TH1F>("hT", "Temperature;Temperature [^#circC]", 100, 15, 25);
+  h1_["T"] = fs_->make<TH1F>("hT", "Temperature;Temperature [#circC]", 100, 0, 25);
   h1_["I"] = fs_->make<TH1F>("hI", "Current;Current [#muA]", 100, 0, 10);
-  h1_["V"] = fs_->make<TH1F>("hV", "Voltage;Voltage", 100, 7000, 10000);
+  h1_["V"] = fs_->make<TH1F>("hV", "Voltage;Voltage", 100, 0, 1);
+
+  // Book profile histograms for Time vs Conditions
+  prf_["TimeVsT"] = fs_->make<TProfile>("prfTimeVsT", "Time vs Temperature;Time [YY-MM-DD hh:mm:ss];Temperature [#circC]",
+                                        TMath::Nint(double(maxDateTime-minDateTime)/dDateTime), minDateTime, maxDateTime);
+  prf_["TimeVsI"] = fs_->make<TProfile>("prfTimeVsI", "Time vs Current;Time [YY-MM-DD hh:mm:ss];Current [#muA]",
+                                        TMath::Nint(double(maxDateTime-minDateTime)/dDateTime), minDateTime, maxDateTime);
+  prf_["TimeVsV"] = fs_->make<TProfile>("prfTimeVsV", "Time vs Voltage;Time [YY-MM-DD hh:mm:ss];Voltage [kV]",
+                                        TMath::Nint(double(maxDateTime-minDateTime)/dDateTime), minDateTime, maxDateTime);
+
+  // Set axis to correspond to Timestamp format
+  prf_["TimeVsT"]->GetXaxis()->SetTimeDisplay(1);
+  prf_["TimeVsI"]->GetXaxis()->SetTimeDisplay(1);
+  prf_["TimeVsV"]->GetXaxis()->SetTimeDisplay(1);
+
+  //const TString timeFormat("%d-%m-%y");
+  const TString timeFormat("%d %H:%M:%S");
+  prf_["TimeVsT"]->GetXaxis()->SetTimeFormat(timeFormat);
+  prf_["TimeVsI"]->GetXaxis()->SetTimeFormat(timeFormat);
+  prf_["TimeVsV"]->GetXaxis()->SetTimeFormat(timeFormat);
 
   for ( int region = RPCDetId::minRegionId; region <= RPCDetId::maxRegionId; ++region )
   {
@@ -69,9 +127,9 @@ MuonRPCAnalyzer::MuonRPCAnalyzer(const edm::ParameterSet& pset)
     h1_[Form("%d_bx", region)] = regionDir.make<TH1F>("hBx", "Bunch crossing", 11, -5.5, 5.5);
     h1_[Form("%d_nDigi", region)] = regionDir.make<TH1F>("hNDigi", "Number of digi", 100, 0, 100);
 
-    h1_[Form("%d_T", region)] = regionDir.make<TH1F>("hT", "Temperature;Temperature [^#circC]", 100, 15, 25);
+    h1_[Form("%d_T", region)] = regionDir.make<TH1F>("hT", "Temperature;Temperature [#circC]", 100, 0, 25);
     h1_[Form("%d_I", region)] = regionDir.make<TH1F>("hI", "Current;Current [#muA]", 100, 0, 10);
-    h1_[Form("%d_V", region)] = regionDir.make<TH1F>("hV", "Voltage;Voltage", 100, 7000, 10000);
+    h1_[Form("%d_V", region)] = regionDir.make<TH1F>("hV", "Voltage;Voltage", 100, 0, 1);
 
     for ( int ring = minRingId; ring <= maxRingId; ++ring )
     {
@@ -80,11 +138,9 @@ MuonRPCAnalyzer::MuonRPCAnalyzer(const edm::ParameterSet& pset)
         const string subDetName = getSubDetName(region, ring ,station);
         TFileDirectory subDir = regionDir.mkdir(subDetName, subDetName);
 
-        cout << "Building histograms for " << subDetName << endl;
-
-        h1_[subDetName+"_T"] = subDir.make<TH1F>("hT", "Temperature;Temperature [^#circC]", 100, 15, 25);
+        h1_[subDetName+"_T"] = subDir.make<TH1F>("hT", "Temperature;Temperature [#circC]", 100, 0, 25);
         h1_[subDetName+"_I"] = subDir.make<TH1F>("hI", "Current;Current [#muA]", 100, 0, 10);
-        h1_[subDetName+"_V"] = subDir.make<TH1F>("hV", "Voltage;Voltage", 100, 7000, 10000);
+        h1_[subDetName+"_V"] = subDir.make<TH1F>("hV", "Voltage;Voltage", 100, 0, 1);
 
         rpcIValues_[subDetName] = std::make_pair(0,0);
         rpcVValues_[subDetName] = std::make_pair(0,0);
@@ -105,49 +161,6 @@ void MuonRPCAnalyzer::beginJob(const edm::EventSetup& eventSetup)
 
 void MuonRPCAnalyzer::endJob()
 {
-/*
-  if ( !eventNumbers_.empty() )
-  {
-    const float* evtNumArr = &eventNumbers_[0];
-    const float* na = 0;
-
-    if ( !rpcAvgI_.empty() )
-    {
-      const int size = rpcAvgI_.size();
-      TGraphErrors* grpAvgI = fs_->make<TGraphErrors>(size, evtNumArr, &rpcAvgI_[0], na, &rpcErrI_[0]);
-      grpAvgI->SetName("grpEvtNumVsI");
-      grpAvgI->SetTitle("Event number vs Current;Event number;Current");
-    }
-    else
-    {
-      cerr << "No rpc current information" << endl;
-    }
-
-    if ( !rpcAvgV_.empty() )
-    {
-      const int size = rpcAvgV_.size();
-      TGraphErrors* grpAvgV = fs_->make<TGraphErrors>(size, evtNumArr, &rpcAvgI_[0], na, &rpcErrV_[0]);
-      grpAvgV->SetName("grpEvtNumVsV");
-      grpAvgV->SetTitle("Event number vs Voltage;Event number;Voltage");
-    }
-    else
-    {
-      cerr << "No RPC voltage information" << endl;
-    }
-
-    if ( !rpcAvgT_.empty() )
-    {
-      const int size = rpcAvgT_.size();
-      TGraphErrors* grpAvgT = fs_->make<TGraphErrors>(size, evtNumArr, &rpcAvgT_[0], na, &rpcErrT_[0]);
-      grpAvgT->SetName("grpEvtNumVsT");
-      grpAvgT->SetTitle("Event number vs Temperature;Event number;Temperature");
-    }
-    else
-    {
-      cerr << "No RPC temperature information" << endl;
-    }
-  }
-*/
 }
 
 void MuonRPCAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& eventSetup)
@@ -175,102 +188,106 @@ void MuonRPCAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
   std::vector<RPCObVmon::V_Item> rpcVmon = rpcRunIOV.getVmon();
   std::vector<RPCObTemp::T_Item> rpcTmon = rpcRunIOV.getTemp();
 
-  // Retrieve IOV information
-  for ( std::vector<RPCObImon::I_Item>::const_iterator imon = rpcImon.begin();
-        imon != rpcImon.end(); ++imon )
+  // Analyze conditional information only when the IOV is changed
+  if ( rpcIMinTime_ == rpcIMaxTime_ || rpcIMinTime_ < rpcRunIOV.min_I || rpcIMaxTime_ > rpcRunIOV.max_I )
   {
-    const double rpcI = imon->value;
-    const RPCObPVSSmap::Item pvss = pvssMap[imon->dpid];
-    if ( !isValidDetId(pvss.region, pvss.ring, pvss.station) ) continue;
+    rpcIMinTime_ = rpcRunIOV.min_I;
+    rpcIMaxTime_ = rpcRunIOV.max_I;
 
-    const string subDetName = getSubDetName(pvss.region, pvss.ring, pvss.station);
-    rpcIValues_[subDetName].first++;
-    rpcIValues_[subDetName].second += rpcI;
+    // Retrieve IOV information
+    for ( std::vector<RPCObImon::I_Item>::const_iterator imon = rpcImon.begin();
+          imon != rpcImon.end(); ++imon )
+    {
+      const double rpcI = imon->value;
+      const RPCObPVSSmap::Item pvss = pvssMap[imon->dpid];
+      if ( !isValidDetId(pvss.region, pvss.ring, pvss.station) ) continue;
+
+      const string subDetName = getSubDetName(pvss.region, pvss.ring, pvss.station);
+      rpcIValues_[subDetName].first++;
+      rpcIValues_[subDetName].second += rpcI;
+
+      // Fill condition values averaging over all detector cells
+      prf_["TimeVsI"]->Fill(dateTimeToUnixTime(imon->day, imon->time), rpcI);
+    }
+
+    // Calclulate average condition values in IOV for each detector cell and fill histograms
+    for ( DetIOVMap::const_iterator detIOV = rpcIValues_.begin(); detIOV != rpcIValues_.end(); ++detIOV)
+    {
+      const string& subDetName = detIOV->first;
+      const pair<unsigned int, double>& numberAndSum = detIOV->second;
+
+      const unsigned int n = numberAndSum.first;
+      const double sum = numberAndSum.second;
+
+      if ( n != 0 ) h1_[subDetName+"_I"]->Fill(sum/n);
+    }
   }
 
-  for ( std::vector<RPCObVmon::V_Item>::const_iterator vmon = rpcVmon.begin();
-        vmon != rpcVmon.end(); ++vmon )
+  if ( rpcVMinTime_ == rpcVMaxTime_ || rpcVMinTime_ < rpcRunIOV.min_V || rpcVMaxTime_ > rpcRunIOV.max_V )
   {
-    const double rpcV = vmon->value;
-    const RPCObPVSSmap::Item pvss = pvssMap[vmon->dpid];
-    if ( !isValidDetId(pvss.region, pvss.ring, pvss.station) ) continue;
+    rpcVMinTime_ = rpcRunIOV.min_V;
+    rpcVMaxTime_ = rpcRunIOV.max_V;
 
-    const string subDetName = getSubDetName(pvss.region, pvss.ring, pvss.station);
-    rpcVValues_[subDetName].first++;
-    rpcVValues_[subDetName].second += rpcV;
+    for ( std::vector<RPCObVmon::V_Item>::const_iterator vmon = rpcVmon.begin();
+          vmon != rpcVmon.end(); ++vmon )
+    {
+      const double rpcV = vmon->value;
+      const RPCObPVSSmap::Item pvss = pvssMap[vmon->dpid];
+      if ( !isValidDetId(pvss.region, pvss.ring, pvss.station) ) continue;
+
+      const string subDetName = getSubDetName(pvss.region, pvss.ring, pvss.station);
+      rpcVValues_[subDetName].first++;
+      rpcVValues_[subDetName].second += rpcV;
+
+      // Fill condition values averaging over all detector cells
+      prf_["TimeVsV"]->Fill(dateTimeToUnixTime(vmon->day, vmon->time), rpcV);
+    }
+
+    // Calclulate average condition values in IOV for each detector cell and fill histograms
+    for ( DetIOVMap::const_iterator detIOV = rpcVValues_.begin(); detIOV != rpcVValues_.end(); ++detIOV)
+    {
+      const string& subDetName = detIOV->first;
+      const pair<unsigned int, double>& numberAndSum = detIOV->second;
+
+      const unsigned int n = numberAndSum.first;
+      const double sum = numberAndSum.second;
+
+      if ( n != 0) h1_[subDetName+"_V"]->Fill(sum/n);
+    }
   }
 
-  for ( std::vector<RPCObTemp::T_Item>::const_iterator tmon = rpcTmon.begin();
-        tmon != rpcTmon.end(); ++tmon )
+  if ( rpcTMinTime_ == rpcTMaxTime_ || rpcTMinTime_ < rpcRunIOV.min_T || rpcTMaxTime_ > rpcRunIOV.max_T )
   {
-    const double rpcT = tmon->value;
-    const RPCObPVSSmap::Item pvss = pvssMap[tmon->dpid];
-    if ( !isValidDetId(pvss.region, pvss.ring, pvss.station) ) continue;
+    rpcTMinTime_ = rpcRunIOV.min_T;
+    rpcTMaxTime_ = rpcRunIOV.max_T;
 
-    const string subDetName = getSubDetName(pvss.region, pvss.ring, pvss.station);
-    rpcTValues_[subDetName].first++;
-    rpcTValues_[subDetName].second += rpcT;
+    for ( std::vector<RPCObTemp::T_Item>::const_iterator tmon = rpcTmon.begin();
+          tmon != rpcTmon.end(); ++tmon )
+    {
+      const double rpcT = tmon->value;
+      const RPCObPVSSmap::Item pvss = pvssMap[tmon->dpid];
+      if ( !isValidDetId(pvss.region, pvss.ring, pvss.station) ) continue;
+
+      const string subDetName = getSubDetName(pvss.region, pvss.ring, pvss.station);
+      rpcTValues_[subDetName].first++;
+      rpcTValues_[subDetName].second += rpcT;
+
+      // Fill condition values averaging over all detector cells
+      prf_["TimeVsT"]->Fill(dateTimeToUnixTime(tmon->day, tmon->time), rpcT);
+    }
+
+    // Calclulate average condition values in IOV for each detector cell and fill histograms
+    for ( DetIOVMap::const_iterator detIOV = rpcTValues_.begin(); detIOV != rpcTValues_.end(); ++detIOV)
+    {
+      const string& subDetName = detIOV->first;
+      const pair<unsigned int, double>& numberAndSum = detIOV->second;
+
+      const unsigned int n = numberAndSum.first;
+      const double sum = numberAndSum.second;
+
+      if ( n != 0 ) h1_[subDetName+"_T"]->Fill(sum/n);
+    }
   }
-
-  // Calclulate average values of IOV for each detector cell and fill histograms
-  for ( DetIOVMap::const_iterator detIOV = rpcTValues_.begin(); detIOV != rpcTValues_.end(); ++detIOV)
-  {
-    const string& subDetName = detIOV->first;
-    const pair<unsigned int, double>& numberAndSum = detIOV->second;
-
-    const unsigned int n = numberAndSum.first;
-    const double sum = numberAndSum.second;
-
-    const double avg = (n == 0) ? 0 : sum/n;
-
-    h1_[subDetName+"_T"]->Fill(avg);
-  }
-
-  for ( DetIOVMap::const_iterator detIOV = rpcIValues_.begin(); detIOV != rpcIValues_.end(); ++detIOV)
-  {
-    const string& subDetName = detIOV->first;
-    const pair<unsigned int, double>& numberAndSum = detIOV->second;
-
-    const unsigned int n = numberAndSum.first;
-    const double sum = numberAndSum.second;
-
-    const double avg = (n == 0) ? 0 : sum/n;
-
-    h1_[subDetName+"_I"]->Fill(avg);
-  }
-
-  for ( DetIOVMap::const_iterator detIOV = rpcVValues_.begin(); detIOV != rpcVValues_.end(); ++detIOV)
-  {
-    const string& subDetName = detIOV->first;
-    const pair<unsigned int, double>& numberAndSum = detIOV->second;
-
-    const unsigned int n = numberAndSum.first;
-    const double sum = numberAndSum.second;
-
-    const double avg = (n == 0) ? 0 : sum/n;
-
-    h1_[subDetName+"_V"]->Fill(avg);
-  }
-
-///////////// Ignore below //////////////
-  
-/*
-  unsigned int nI = 0, nV = 0, nT = 0;
-  double sumI = 0, sumV = 0, sumT = 0;
-  double sumI2 = 0, sumV2 = 0, sumT2 = 0;
-
-  for ( std::vector<RPCObTemp::T_Item>::const_iterator tmon = rpcTmon.begin();
-        tmon != rpcTmon.end(); ++tmon )
-  {
-    const double rpcT = tmon->value;
-    sumT += rpcT;
-    sumT2 += rpcT*rpcT;
-    ++nT;
-  }
-  const double avgT = sumT/nT;
-  const double errT = TMath::Sqrt((sumT2 - sumT*sumT/nT)/nT);
-  //rpcAvgT_.push_back(avgT);
-  //rpcErrT_.push_back(errT);
 
   // Analyze Digi information
   edm::ESHandle<RPCGeometry> rpcGeom;
@@ -310,6 +327,5 @@ void MuonRPCAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
     }
     h1_["nDigi"]->Fill(nDigi);
   }
-*/
 }
 

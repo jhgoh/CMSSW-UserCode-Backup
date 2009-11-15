@@ -37,6 +37,9 @@ private:
   // Store detector cell names and its average of IOV values
   typedef std::map<std::string, std::pair<unsigned int, double> > DetIOVMap;
   DetIOVMap rpcIValues_, rpcVValues_, rpcTValues_;
+
+  unsigned int rpcIMinTime_, rpcVMinTime_, rpcTMinTime_;
+  unsigned int rpcIMaxTime_, rpcVMaxTime_, rpcTMaxTime_;
 };
 
 #endif
