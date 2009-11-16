@@ -57,15 +57,15 @@ process.TFileService = cms.Service("TFileService",
 )
 
 # Modules
+import time
 process.muonRPCAnalyzer = cms.EDAnalyzer("MuonRPCAnalyzer",
     digiLabel = cms.InputTag('muonRPCDigis'),
     histoDimensions = cms.PSet(
-        minDate = cms.untracked.uint32(91108),
-        maxDate = cms.untracked.uint32(101108),
-        minTime = cms.untracked.uint32(0),
-        maxTime = cms.untracked.uint32(235959),
-        dDate = cms.untracked.uint32(0),
-        dTime = cms.untracked.uint32(40000)
+        minUTime = cms.untracked.uint32(4294915000),
+        maxUTime = cms.untracked.uint32(4294915000+3600*4),
+#        minUTime = cms.untracked.uint32( int(time.mktime( (2008, 11,  9, 0, 0, 0, 0, 0, 0) )) ),
+#        maxUTime = cms.untracked.uint32( int(time.mktime( (2008, 11, 10, 0, 0, 0, 0, 0, 0) )) ),
+        dTime = cms.untracked.uint32(30*60)
     )
 )
 
