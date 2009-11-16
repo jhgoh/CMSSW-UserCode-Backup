@@ -40,23 +40,6 @@ bool isValidDetId(const int region, const int ring, const int station)
   else return true;
 }
 
-time_t dateTimeToUnixTime(unsigned int date, unsigned int time)
-{
-  const unsigned int year = 2000+date%100;
-  date /= 100;
-  const unsigned int month = date%100;
-  date /= 100;
-  const unsigned int day = date%100;
-  
-  const unsigned int sec = time%100;
-  time /= 100;  
-  const unsigned int min = time%100;
-  time /= 100;
-  const unsigned int hour = time%100;
-
-  return TDatime(year, month, day, hour, min, sec).Convert();
-}
-
 MuonRPCAnalyzer::MuonRPCAnalyzer(const edm::ParameterSet& pset)
 {
   rpcIMinTime_ = rpcVMinTime_ = rpcTMinTime_ = 0;
@@ -67,20 +50,9 @@ MuonRPCAnalyzer::MuonRPCAnalyzer(const edm::ParameterSet& pset)
   edm::ParameterSet histoDimensions = pset.getParameter<edm::ParameterSet>("histoDimensions");
   
   // Date format with DDMMYY and Time format with hhmmss
-  time_t minDateTime, maxDateTime, dDateTime;
-  {
-    const unsigned int minDate = histoDimensions.getUntrackedParameter<unsigned int>("minDate");
-    const unsigned int maxDate = histoDimensions.getUntrackedParameter<unsigned int>("maxDate");
-    const unsigned int minTime = histoDimensions.getUntrackedParameter<unsigned int>("minTime");
-    const unsigned int maxTime = histoDimensions.getUntrackedParameter<unsigned int>("maxTime");
-
-    const unsigned int dDate = histoDimensions.getUntrackedParameter<unsigned int>("dDate");
-    const unsigned int dTime = histoDimensions.getUntrackedParameter<unsigned int>("dTime");
-
-    minDateTime = dateTimeToUnixTime(minDate, minTime);
-    maxDateTime = dateTimeToUnixTime(maxDate, maxTime);
-    dDateTime = dateTimeToUnixTime(dDate, dTime);
-  }
+  const unsigned int minDateTime = histoDimensions.getUntrackedParameter<unsigned int>("minUTime");
+  const unsigned int maxDateTime = histoDimensions.getUntrackedParameter<unsigned int>("maxUTime");
+  const unsigned int dDateTime = histoDimensions.getUntrackedParameter<unsigned int>("dTime");
 
   h1_["strip"] = fs_->make<TH1F>("hStrip", "Strip profile", 100, 0, 100);
   h1_["bx"] = fs_->make<TH1F>("hBx", "Bunch crossing", 11, -5.5, 5.5);
@@ -161,6 +133,11 @@ void MuonRPCAnalyzer::beginJob(const edm::EventSetup& eventSetup)
 
 void MuonRPCAnalyzer::endJob()
 {
+  cout << "---------------------------\n"
+       << " endJob() called           \n"
+       << " rpcT TimeRange = " << rpcTMinTime_ << ":" << rpcTMaxTime_ << endl
+       << " rpcI TimeRange = " << rpcIMinTime_ << ":" << rpcVMaxTime_ << endl
+       << " rpcV TimeRange = " << rpcVMinTime_ << ":" << rpcVMaxTime_ << endl;
 }
 
 void MuonRPCAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& eventSetup)
@@ -184,15 +161,13 @@ void MuonRPCAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
 
   std::map<int, RPCObPVSSmap::Item> pvssMap = rpcRunIOV.getPVSSMap();
 
-  std::vector<RPCObImon::I_Item> rpcImon = rpcRunIOV.getImon();
-  std::vector<RPCObVmon::V_Item> rpcVmon = rpcRunIOV.getVmon();
-  std::vector<RPCObTemp::T_Item> rpcTmon = rpcRunIOV.getTemp();
-
   // Analyze conditional information only when the IOV is changed
-  if ( rpcIMinTime_ == rpcIMaxTime_ || rpcIMinTime_ < rpcRunIOV.min_I || rpcIMaxTime_ > rpcRunIOV.max_I )
+  if ( rpcIMinTime_ == rpcIMaxTime_ || rpcIMinTime_ > rpcRunIOV.min_I || rpcIMaxTime_ < rpcRunIOV.max_I )
   {
     rpcIMinTime_ = rpcRunIOV.min_I;
     rpcIMaxTime_ = rpcRunIOV.max_I;
+
+    std::vector<RPCObImon::I_Item> rpcImon = rpcRunIOV.getImon();
 
     // Retrieve IOV information
     for ( std::vector<RPCObImon::I_Item>::const_iterator imon = rpcImon.begin();
@@ -207,7 +182,8 @@ void MuonRPCAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
       rpcIValues_[subDetName].second += rpcI;
 
       // Fill condition values averaging over all detector cells
-      prf_["TimeVsI"]->Fill(dateTimeToUnixTime(imon->day, imon->time), rpcI);
+      cout << RPCRunIOV::toUNIX(imon->day, imon->time) << endl;
+      prf_["TimeVsI"]->Fill(RPCRunIOV::toUNIX(imon->day, imon->time), rpcI);
     }
 
     // Calclulate average condition values in IOV for each detector cell and fill histograms
@@ -220,13 +196,16 @@ void MuonRPCAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
       const double sum = numberAndSum.second;
 
       if ( n != 0 ) h1_[subDetName+"_I"]->Fill(sum/n);
+      h1_["I"]->Fill(sum/n);
     }
   }
 
-  if ( rpcVMinTime_ == rpcVMaxTime_ || rpcVMinTime_ < rpcRunIOV.min_V || rpcVMaxTime_ > rpcRunIOV.max_V )
+  if ( rpcVMinTime_ == rpcVMaxTime_ || rpcVMinTime_ > rpcRunIOV.min_V || rpcVMaxTime_ < rpcRunIOV.max_V )
   {
     rpcVMinTime_ = rpcRunIOV.min_V;
     rpcVMaxTime_ = rpcRunIOV.max_V;
+
+    std::vector<RPCObVmon::V_Item> rpcVmon = rpcRunIOV.getVmon();
 
     for ( std::vector<RPCObVmon::V_Item>::const_iterator vmon = rpcVmon.begin();
           vmon != rpcVmon.end(); ++vmon )
@@ -240,7 +219,7 @@ void MuonRPCAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
       rpcVValues_[subDetName].second += rpcV;
 
       // Fill condition values averaging over all detector cells
-      prf_["TimeVsV"]->Fill(dateTimeToUnixTime(vmon->day, vmon->time), rpcV);
+      prf_["TimeVsV"]->Fill(RPCRunIOV::toUNIX(vmon->day, vmon->time), rpcV);
     }
 
     // Calclulate average condition values in IOV for each detector cell and fill histograms
@@ -253,13 +232,16 @@ void MuonRPCAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
       const double sum = numberAndSum.second;
 
       if ( n != 0) h1_[subDetName+"_V"]->Fill(sum/n);
+      h1_["V"]->Fill(sum/n);
     }
   }
 
-  if ( rpcTMinTime_ == rpcTMaxTime_ || rpcTMinTime_ < rpcRunIOV.min_T || rpcTMaxTime_ > rpcRunIOV.max_T )
+  if ( rpcTMinTime_ == rpcTMaxTime_ || rpcTMinTime_ > rpcRunIOV.min_T || rpcTMaxTime_ < rpcRunIOV.max_T )
   {
     rpcTMinTime_ = rpcRunIOV.min_T;
     rpcTMaxTime_ = rpcRunIOV.max_T;
+
+    std::vector<RPCObTemp::T_Item> rpcTmon = rpcRunIOV.getTemp();
 
     for ( std::vector<RPCObTemp::T_Item>::const_iterator tmon = rpcTmon.begin();
           tmon != rpcTmon.end(); ++tmon )
@@ -273,7 +255,7 @@ void MuonRPCAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
       rpcTValues_[subDetName].second += rpcT;
 
       // Fill condition values averaging over all detector cells
-      prf_["TimeVsT"]->Fill(dateTimeToUnixTime(tmon->day, tmon->time), rpcT);
+      prf_["TimeVsT"]->Fill(RPCRunIOV::toUNIX(tmon->day, tmon->time), rpcT);
     }
 
     // Calclulate average condition values in IOV for each detector cell and fill histograms
@@ -286,6 +268,7 @@ void MuonRPCAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
       const double sum = numberAndSum.second;
 
       if ( n != 0 ) h1_[subDetName+"_T"]->Fill(sum/n);
+      h1_["T"]->Fill(sum/n);
     }
   }
 
