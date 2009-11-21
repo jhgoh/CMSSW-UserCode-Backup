@@ -51,8 +51,15 @@ readFiles.extend( [
 'file:/afs/cern.ch/cms/CAF/CMSCOMM/COMM_GLOBAL/ErrorRecover/ALCA_recoverreco_Data.00121976.0001.Error.storageManager.01.0002.dat.root',
 'file:/afs/cern.ch/cms/CAF/CMSCOMM/COMM_GLOBAL/ErrorRecover/ALCA_recoverreco_Data.00121976.0001.Error.storageManager.07.0001.dat.root',
 'file:/afs/cern.ch/cms/CAF/CMSCOMM/COMM_GLOBAL/ErrorRecover/ALCA_recoverreco_Data.00121980.0001.Error.storageManager.03.0000.dat.root',
-'file:/afs/cern.ch/cms/CAF/CMSCOMM/COMM_GLOBAL/ErrorRecover/ALCA_recoverreco_Data.00121980.0001.Error.storageManager.01.0002.dat.root'
+'file:/afs/cern.ch/cms/CAF/CMSCOMM/COMM_GLOBAL/ErrorRecover/ALCA_recoverreco_Data.00121980.0001.Error.storageManager.01.0002.dat.root',
 
+
+'file:/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/data/Express/121/943/DQM_V0001_R000121943__StreamExpress__BeamCommissioning09-Express-v2__DQM.root',
+'file:/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/data/Express/121/949/DQM_V0001_R000121949__StreamExpress__BeamCommissioning09-Express-v2__DQM.root',
+'file:/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/data/Express/121/960/DQM_V0001_R000121960__StreamExpress__BeamCommissioning09-Express-v2__DQM.root',
+'file:/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/data/Express/121/962/DQM_V0001_R000121962__StreamExpress__BeamCommissioning09-Express-v2__DQM.root',
+'file:/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/data/Express/121/964/DQM_V0001_R000121964__StreamExpress__BeamCommissioning09-Express-v2__DQM.root',
+'file:/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/data/Express/121/993/DQM_V0001_R000121993__StreamExpress__BeamCommissioning09-Express-v2__DQM.root'
 
 #       '/store/express/BeamCommissioning09/StreamExpress/ALCARECO/v2/000/121/943/0A8735F7-08D6-DE11-8240-000423D99B3E.root',
 #       '/store/express/BeamCommissioning09/StreamExpress/ALCARECO/v2/000/121/943/047A1CC1-0BD6-DE11-A910-001617C3B76A.root'

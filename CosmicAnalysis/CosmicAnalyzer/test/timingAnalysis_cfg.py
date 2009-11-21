@@ -26,7 +26,8 @@ process.MessageLogger.cerr.FwkReport.reportEvery = 3
 
 # File output
 process.TFileService = cms.Service("TFileService",
-    fileName = cms.string('hist_beamSplash_120026.root')
+#    fileName = cms.string('hist_beamSplash_120026.root')
+    fileName = cms.string('hist_beamSplash_976_993.root')
 )
 
 # Modules
