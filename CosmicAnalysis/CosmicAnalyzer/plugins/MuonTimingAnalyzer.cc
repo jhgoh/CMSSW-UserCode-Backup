@@ -44,9 +44,9 @@ MuonTimingAnalyzer::MuonTimingAnalyzer(const edm::ParameterSet& pset)
   h1_["DigiBx_REP1"] = fs_->make<TH1F>("DigiBx_REP1", "Bx number from all Digis in the Endcap+1;Bx number", 3600, 0, 3600);
   h1_["DigiBx_REP2"] = fs_->make<TH1F>("DigiBx_REP2", "Bx number from all Digis in the Endcap+2;Bx number", 3600, 0, 3600);
   h1_["DigiBx_REP3"] = fs_->make<TH1F>("DigiBx_REP3", "Bx number from all Digis in the Endcap+3;Bx number", 3600, 0, 3600);
-  h1_["DigiBx_REN1"] = fs_->make<TH1F>("DigiBx_REN1", "Bx number from all Digis in the Endcap+1;Bx number", 3600, 0, 3600);
-  h1_["DigiBx_REN2"] = fs_->make<TH1F>("DigiBx_REN2", "Bx number from all Digis in the Endcap+2;Bx number", 3600, 0, 3600);
-  h1_["DigiBx_REN3"] = fs_->make<TH1F>("DigiBx_REN3", "Bx number from all Digis in the Endcap+3;Bx number", 3600, 0, 3600);
+  h1_["DigiBx_REN1"] = fs_->make<TH1F>("DigiBx_REN1", "Bx number from all Digis in the Endcap-1;Bx number", 3600, 0, 3600);
+  h1_["DigiBx_REN2"] = fs_->make<TH1F>("DigiBx_REN2", "Bx number from all Digis in the Endcap-2;Bx number", 3600, 0, 3600);
+  h1_["DigiBx_REN3"] = fs_->make<TH1F>("DigiBx_REN3", "Bx number from all Digis in the Endcap-3;Bx number", 3600, 0, 3600);
 
   h2_["BxVsNDigi"] = fs_->make<TH2F>("h2BxVsNDigi", "Bx number vs Number of Digis;Bx number;Number of Digis", 3600, 0, 3600, 250, 0, 250);
   h2_["BxVsNRecHits"] = fs_->make<TH2F>("h2BxVsNRecHits", "Bx number vs Number of RecHits;Bx number;Number of RecHits", 3600, 0, 3600, 250, 0, 250);
