@@ -28,8 +28,8 @@ public:
 private:
   edm::Service<TFileService> fs_;
 
-  edm::InputTag digisLabel_;
-  edm::InputTag recHitsLabel_;
+  edm::InputTag digiLabel_;
+  edm::InputTag recHitLabel_;
 
   std::map<std::string, TH1F*> h1_;
   std::map<std::string, TH2F*> h2_;
