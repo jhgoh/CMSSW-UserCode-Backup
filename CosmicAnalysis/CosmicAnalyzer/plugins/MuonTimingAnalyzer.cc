@@ -38,8 +38,25 @@ MuonTimingAnalyzer::MuonTimingAnalyzer(const edm::ParameterSet& pset)
   prf_["BxVsNDigi"] = fs_->make<TProfile>("prfBxVsNDigi", "Bx number vs Number of Digis;Bx number;Number of Digis", 3600, 0,3600);
   prf_["BxVsNRecHits"] = fs_->make<TProfile>("prfBxVsNRecHits", "Bx number vs Number of RecHits;Bx number;Number of RecHits", 3600, 0, 3600);
 
+  h1_["NDigi"] = fs_->make<TH1F>("hNDigi", "Number of Digis;Number of Digis", 250, 0, 250);
+  h1_["NReco"] = fs_->make<TH1F>("hNReco", "Number of Reco hits;Number of Reco hits", 250, 0, 250);
+
+  h1_["DigiBx_REP1"] = fs_->make<TH1F>("DigiBx_REP1", "Bx number from all Digis in the Endcap+1;Bx number", 3600, 0, 3600);
+  h1_["DigiBx_REP2"] = fs_->make<TH1F>("DigiBx_REP2", "Bx number from all Digis in the Endcap+2;Bx number", 3600, 0, 3600);
+  h1_["DigiBx_REP3"] = fs_->make<TH1F>("DigiBx_REP3", "Bx number from all Digis in the Endcap+3;Bx number", 3600, 0, 3600);
+  h1_["DigiBx_REN1"] = fs_->make<TH1F>("DigiBx_REN1", "Bx number from all Digis in the Endcap+1;Bx number", 3600, 0, 3600);
+  h1_["DigiBx_REN2"] = fs_->make<TH1F>("DigiBx_REN2", "Bx number from all Digis in the Endcap+2;Bx number", 3600, 0, 3600);
+  h1_["DigiBx_REN3"] = fs_->make<TH1F>("DigiBx_REN3", "Bx number from all Digis in the Endcap+3;Bx number", 3600, 0, 3600);
+
   h2_["BxVsNDigi"] = fs_->make<TH2F>("h2BxVsNDigi", "Bx number vs Number of Digis;Bx number;Number of Digis", 3600, 0, 3600, 250, 0, 250);
   h2_["BxVsNRecHits"] = fs_->make<TH2F>("h2BxVsNRecHits", "Bx number vs Number of RecHits;Bx number;Number of RecHits", 3600, 0, 3600, 250, 0, 250);
+
+  h2_["BxVsNDigi_REP1"] = fs_->make<TH2F>("h2BxVsNDigi_REP1", "Endcap+1 Bx number vs Number of Digis;Bx number;Number of Digis", 3600, 0, 3600, 250, 0, 250);
+  h2_["BxVsNDigi_REP2"] = fs_->make<TH2F>("h2BxVsNDigi_REP2", "Endcap+2 Bx number vs Number of Digis;Bx number;Number of Digis", 3600, 0, 3600, 250, 0, 250);
+  h2_["BxVsNDigi_REP3"] = fs_->make<TH2F>("h2BxVsNDigi_REP3", "Endcap+3 Bx number vs Number of Digis;Bx number;Number of Digis", 3600, 0, 3600, 250, 0, 250);
+  h2_["BxVsNDigi_REN1"] = fs_->make<TH2F>("h2BxVsNDigi_REN1", "Endcap-1 Bx number vs Number of Digis;Bx number;Number of Digis", 3600, 0, 3600, 250, 0, 250);
+  h2_["BxVsNDigi_REN2"] = fs_->make<TH2F>("h2BxVsNDigi_REN2", "Endcap-2 Bx number vs Number of Digis;Bx number;Number of Digis", 3600, 0, 3600, 250, 0, 250);
+  h2_["BxVsNDigi_REN3"] = fs_->make<TH2F>("h2BxVsNDigi_REN3", "Endcap-3 Bx number vs Number of Digis;Bx number;Number of Digis", 3600, 0, 3600, 250, 0, 250);
 
   minBxNumber_ = 0;
   maxBxNumber_ = 0;
@@ -88,11 +105,24 @@ void MuonTimingAnalyzer::analyze(const edm::Event& event, const edm::EventSetup&
     if ( !roll ) continue;
     const RPCDigiCollection::Range& range = (*detUnitIt).second;
 
+    // Determine the histogram name
+    TString detName = "";
+    if ( Rsid.region() == 1 ) detName += "REP";
+    else if ( Rsid.region() == -1 ) detName += "REN";
+    else continue;
+    detName += Form("%d", Rsid.station());
+
+    double sumBx = 0;
     for ( RPCDigiCollection::const_iterator digiIt = range.first; 
           digiIt != range.second; ++digiIt )
     {
+      sumBx += digiIt->bx();
       nDigis++;
+
+      h1_[string("DigiBx_"+detName)]->Fill(bxNumber+sumBx);
     }
+    h2_[string("BxVsNDigi_"+detName)]->Fill(bxNumber+sumBx/nDigis, nDigis);
+
   }
 
   unsigned int nRecHits = 0;
