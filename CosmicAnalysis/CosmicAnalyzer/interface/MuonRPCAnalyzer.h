@@ -38,8 +38,10 @@ private:
   typedef std::map<std::string, std::pair<unsigned int, double> > DetIOVMap;
   DetIOVMap rpcIValues_, rpcVValues_, rpcTValues_;
 
-  unsigned int rpcIMinTime_, rpcVMinTime_, rpcTMinTime_;
-  unsigned int rpcIMaxTime_, rpcVMaxTime_, rpcTMaxTime_;
+  uint64_t rpcIMinTime_, rpcVMinTime_, rpcTMinTime_;
+  uint64_t rpcIMaxTime_, rpcVMaxTime_, rpcTMaxTime_;
+
+  uint64_t timeOffset_;
 };
 
 #endif
