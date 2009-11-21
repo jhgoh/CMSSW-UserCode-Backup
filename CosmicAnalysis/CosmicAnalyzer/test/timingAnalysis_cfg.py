@@ -23,7 +23,7 @@ from source_beamSplash_121943_cfg import *
 process.source = cms.Source ("PoolSource",fileNames = readFiles, secondaryFileNames = secFiles)
 process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(-1))
 
-process.MessageLogger.cerr.FwkReport.reportEvery = 3
+process.MessageLogger.cerr.FwkReport.reportEvery = 100
 
 # File output
 process.TFileService = cms.Service("TFileService",
@@ -32,12 +32,17 @@ process.TFileService = cms.Service("TFileService",
     fileName = cms.string('hist_beamSplash_121943.root')
 )
 
-# Modules
+# Analysis modules
 process.muonTimingAnalyzer = cms.EDAnalyzer("MuonTimingAnalyzer",
     digisLabel = cms.InputTag('muonRPCDigis'),
     recHitsLabel = cms.InputTag('rpcRecHits')
 )
-
 process.cosmicAnalysisSeq = cms.Sequence(process.muonTimingAnalyzer)
 
-process.p = cms.Path(process.cosmicAnalysisSeq)
+# Unpack RPC Digis
+import EventFilter.RPCRawToDigi.rpcUnpacker_cfi
+process.muonRPCDigis = EventFilter.RPCRawToDigi.rpcUnpacker_cfi.rpcunpacker.clone()
+process.rpcUnpackerSeq = cms.Sequence(process.muonRPCDigis)
+
+# Define run path
+process.p = cms.Path(process.rpcUnpackerSeq*process.cosmicAnalysisSeq)
