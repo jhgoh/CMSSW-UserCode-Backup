@@ -17,7 +17,9 @@ import sys
 sys.path.append('test')
 sys.path.append('.')
 
-from source_beamSplash_121943_cfg import *
+#from source_beamSplash_121943_cfg import *
+from source_beamSplash_121964_cfg import *
+#from source_beamSplash_121993_cfg import *
 #from source_beamSplash_976_993_cfg import *
 #from source_beamSplash_120026_cfg import *
 process.source = cms.Source ("PoolSource",fileNames = readFiles, secondaryFileNames = secFiles)
@@ -27,15 +29,13 @@ process.MessageLogger.cerr.FwkReport.reportEvery = 100
 
 # File output
 process.TFileService = cms.Service("TFileService",
-#    fileName = cms.string('hist_beamSplash_120026.root')
-#    fileName = cms.string('hist_beamSplash_976_993.root')
-    fileName = cms.string('hist_beamSplash_121943.root')
+    fileName = cms.string('hist_beamSplash_121964.root')
 )
 
 # Analysis modules
 process.muonTimingAnalyzer = cms.EDAnalyzer("MuonTimingAnalyzer",
-    digisLabel = cms.InputTag('muonRPCDigis'),
-    recHitsLabel = cms.InputTag('rpcRecHits')
+    digiLabel = cms.InputTag('muonRPCDigis'),
+    recHitLabel = cms.InputTag('rpcRecHits')
 )
 process.cosmicAnalysisSeq = cms.Sequence(process.muonTimingAnalyzer)
 
