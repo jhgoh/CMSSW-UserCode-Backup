@@ -19,13 +19,17 @@ sys.path.append('.')
 
 from source_cfg import *
 process.source = cms.Source ("PoolSource",fileNames = readFiles, secondaryFileNames = secFiles)
-process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(10))
+process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(1000))
 
 process.MessageLogger.cerr.FwkReport.reportEvery = 100
 
 # CondDB
 process.load("CondCore.DBCommon.CondDBCommon_cfi")
-process.CondDBCommon.connect = 'sqlite_file:/afs/cern.ch/user/d/dpagano/public/dati.db'
+process.CondDBCommon.connect = 'frontier://cmsfrontier.cern.ch:8000/FrontierProd/CMS_COND_31X_RPC'
+"""
+cmscond_list_iov -c frontier://cmsfrontier.cern.ch:8000/FrontierProd/CMS_COND_31X_RPC
+"""
+#process.CondDBCommon.connect = 'sqlite_file:/afs/cern.ch/user/d/dpagano/public/dati.db'
 #process.CondDBCommon.DBParameter.authenticationPath='./'
 
 process.rpcMon = cms.ESSource("PoolDBESSource",
@@ -34,19 +38,19 @@ process.rpcMon = cms.ESSource("PoolDBESSource",
   toGet = cms.VPSet(
     cms.PSet(
       record = cms.string('RPCObImonRcd'),
-      tag = cms.string('Imon_v3')
+      tag = cms.string('Imon_STD')
     ),
     cms.PSet(
       record = cms.string('RPCObVmonRcd'),
-      tag = cms.string('Vmon_v3')
+      tag = cms.string('Vmon_STD')
     ),
     cms.PSet(
       record = cms.string('RPCObTempRcd'),
-      tag = cms.string('Temp_v3')
+      tag = cms.string('Temp_STD')
     ),
     cms.PSet(
       record = cms.string('RPCObPVSSmapRcd'),
-      tag = cms.string('PVSS_v3')
+      tag = cms.string('RPCPVSSmap_STD')
     )
   )
 )
@@ -61,15 +65,11 @@ import time
 process.muonRPCAnalyzer = cms.EDAnalyzer("MuonRPCAnalyzer",
     digiLabel = cms.InputTag('muonRPCDigis'),
     histoDimensions = cms.PSet(
-        minUTime = cms.untracked.uint32(4294915000),
-        maxUTime = cms.untracked.uint32(4294915000+3600*4),
-#        minUTime = cms.untracked.uint32( int(time.mktime( (2008, 11,  9, 0, 0, 0, 0, 0, 0) )) ),
-#        maxUTime = cms.untracked.uint32( int(time.mktime( (2008, 11, 10, 0, 0, 0, 0, 0, 0) )) ),
-        dTime = cms.untracked.uint32(30*60)
+        minUTime = cms.untracked.uint64(long(time.mktime( (2009, 11,  3, 0, 0, 0, 0, 0, 0) ))),
+        maxUTime = cms.untracked.uint64(long(time.mktime( (2009, 11, 17, 0, 0, 0, 0, 0, 0) ))),
+        dTime = cms.untracked.uint64(4*3600)
     )
 )
-
-# Sequences and Paths
 
 process.cosmicAnalysisSeq = cms.Sequence(process.muonRPCAnalyzer)
 
