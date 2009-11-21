@@ -41,6 +41,8 @@ MuonTimingAnalyzer::MuonTimingAnalyzer(const edm::ParameterSet& pset)
   h1_["NDigi"] = fs_->make<TH1F>("hNDigi", "Number of Digis;Number of Digis", 250, 0, 250);
   h1_["NReco"] = fs_->make<TH1F>("hNReco", "Number of Reco hits;Number of Reco hits", 250, 0, 250);
 
+  h1_["BxNumber"] = fs_->make<TH1F>("hBxNumber", "Bx number;Bx number", 3600, 0, 3600);
+
   h1_["DigiBx_REP1"] = fs_->make<TH1F>("DigiBx_REP1", "Bx number from all Digis in the Endcap+1;Bx number", 3600, 0, 3600);
   h1_["DigiBx_REP2"] = fs_->make<TH1F>("DigiBx_REP2", "Bx number from all Digis in the Endcap+2;Bx number", 3600, 0, 3600);
   h1_["DigiBx_REP3"] = fs_->make<TH1F>("DigiBx_REP3", "Bx number from all Digis in the Endcap+3;Bx number", 3600, 0, 3600);
@@ -96,6 +98,8 @@ void MuonTimingAnalyzer::analyze(const edm::Event& event, const edm::EventSetup&
   edm::ESHandle<RPCGeometry> rpcGeom;
   eventSetup.get<MuonGeometryRecord>().get(rpcGeom);
 
+  h1_["BxNumber"]->Fill(bxNumber);
+
   unsigned int nDigis = 0;
   for ( RPCDigiCollection::DigiRangeIterator detUnitIt = digisHandle->begin();
         detUnitIt != digisHandle->end(); ++detUnitIt )
@@ -119,7 +123,7 @@ void MuonTimingAnalyzer::analyze(const edm::Event& event, const edm::EventSetup&
       sumBx += digiIt->bx();
       nDigis++;
 
-      h1_[string("DigiBx_"+detName)]->Fill(bxNumber+sumBx);
+      h1_[string("DigiBx_"+detName)]->Fill(bxNumber+digiIt->bx());
     }
     h2_[string("BxVsNDigi_"+detName)]->Fill(bxNumber+sumBx/nDigis, nDigis);
 
