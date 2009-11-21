@@ -17,11 +17,12 @@ import sys
 sys.path.append('test')
 sys.path.append('.')
 
-from source_beamSplash_120026_cfg import *
+from source_beamSplash_976_993_cfg import *
+#from source_beamSplash_120026_cfg import *
 process.source = cms.Source ("PoolSource",fileNames = readFiles, secondaryFileNames = secFiles)
 process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(-1))
 
-process.MessageLogger.cerr.FwkReport.reportEvery = 100
+process.MessageLogger.cerr.FwkReport.reportEvery = 3
 
 # File output
 process.TFileService = cms.Service("TFileService",
