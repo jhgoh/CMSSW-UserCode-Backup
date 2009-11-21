@@ -41,7 +41,7 @@ MuonTimingAnalyzer::MuonTimingAnalyzer(const edm::ParameterSet& pset)
   h1_["NDigi"] = fs_->make<TH1F>("hNDigi", "Number of Digis;Number of Digis", 250, 0, 250);
   h1_["NReco"] = fs_->make<TH1F>("hNReco", "Number of Reco hits;Number of Reco hits", 250, 0, 250);
 
-  h1_["BxNumber"] = fs_->make<TH1F>("hBxNumber", "Bx number;Bx number", 3600, 0, 3600);
+  h1_["BxNumber"] = fs_->make<TH1F>("hBxNumber", "Bx number;Bx number;Number of Events", 3600, 0, 3600);
 
   h1_["DigiBx_REP1"] = fs_->make<TH1F>("DigiBx_REP1", "Bx number from all Digis in the Endcap+1;Bx number", 3600, 0, 3600);
   h1_["DigiBx_REP2"] = fs_->make<TH1F>("DigiBx_REP2", "Bx number from all Digis in the Endcap+2;Bx number", 3600, 0, 3600);
