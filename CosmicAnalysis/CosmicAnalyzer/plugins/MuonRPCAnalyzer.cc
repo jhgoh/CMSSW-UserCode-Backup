@@ -32,11 +32,13 @@ std::string getSubDetName(const int region, const int ring, const int station)
   return Form("%d_%d_%d", region, ring, station);
 }
 
-bool isValidDetId(const int region, const int ring, const int station)
+bool isValidDetId(const RPCObPVSSmap::Item& pvss)
 {
-  if ( region < RPCDetId::minRegionId || region > RPCDetId::maxRegionId ) return false;
-  if ( ring < RPCDetId::minRingBarrelId || ring > RPCDetId::maxRingBarrelId ) return false;
-  if ( station < RPCDetId::minStationId || station > RPCDetId::maxStationId ) return false;
+  if ( pvss.region < RPCDetId::minRegionId || pvss.region > RPCDetId::maxRegionId ) return false;
+  if ( pvss.ring < RPCDetId::minRingBarrelId || pvss.ring > RPCDetId::maxRingBarrelId ) return false;
+  if ( pvss.station < RPCDetId::minStationId || pvss.station > RPCDetId::maxStationId ) return false;
+  if ( pvss.sector == 0 && pvss.layer == 0 && pvss.subsector == 0 ) return false;
+
   else return true;
 }
 
@@ -49,26 +51,26 @@ MuonRPCAnalyzer::MuonRPCAnalyzer(const edm::ParameterSet& pset)
 
   edm::ParameterSet histoDimensions = pset.getParameter<edm::ParameterSet>("histoDimensions");
   
-  // Date format with DDMMYY and Time format with hhmmss
-  const unsigned int minDateTime = histoDimensions.getUntrackedParameter<unsigned int>("minUTime");
-  const unsigned int maxDateTime = histoDimensions.getUntrackedParameter<unsigned int>("maxUTime");
-  const unsigned int dDateTime = histoDimensions.getUntrackedParameter<unsigned int>("dTime");
+  const uint64_t minDateTime = histoDimensions.getUntrackedParameter<uint64_t>("minUTime");
+  const uint64_t maxDateTime = histoDimensions.getUntrackedParameter<uint64_t>("maxUTime");
+  const uint64_t dDateTime = histoDimensions.getUntrackedParameter<uint64_t>("dTime");
+  timeOffset_ = minDateTime;
 
   h1_["strip"] = fs_->make<TH1F>("hStrip", "Strip profile", 100, 0, 100);
   h1_["bx"] = fs_->make<TH1F>("hBx", "Bunch crossing", 11, -5.5, 5.5);
   h1_["nDigi"] = fs_->make<TH1F>("hNDigi", "Number of digi", 100, 0, 100);
 
-  h1_["T"] = fs_->make<TH1F>("hT", "Temperature;Temperature [#circC]", 100, 0, 25);
+  h1_["T"] = fs_->make<TH1F>("hT", "Temperature;Temperature [#circC]", 100, 10, 25);
   h1_["I"] = fs_->make<TH1F>("hI", "Current;Current [#muA]", 100, 0, 10);
   h1_["V"] = fs_->make<TH1F>("hV", "Voltage;Voltage", 100, 0, 1);
 
   // Book profile histograms for Time vs Conditions
   prf_["TimeVsT"] = fs_->make<TProfile>("prfTimeVsT", "Time vs Temperature;Time [YY-MM-DD hh:mm:ss];Temperature [#circC]",
-                                        TMath::Nint(double(maxDateTime-minDateTime)/dDateTime), minDateTime, maxDateTime);
+                                        TMath::Nint(double(maxDateTime-minDateTime)/dDateTime), 0, maxDateTime-minDateTime);
   prf_["TimeVsI"] = fs_->make<TProfile>("prfTimeVsI", "Time vs Current;Time [YY-MM-DD hh:mm:ss];Current [#muA]",
-                                        TMath::Nint(double(maxDateTime-minDateTime)/dDateTime), minDateTime, maxDateTime);
+                                        TMath::Nint(double(maxDateTime-minDateTime)/dDateTime), 0, maxDateTime-minDateTime);
   prf_["TimeVsV"] = fs_->make<TProfile>("prfTimeVsV", "Time vs Voltage;Time [YY-MM-DD hh:mm:ss];Voltage [kV]",
-                                        TMath::Nint(double(maxDateTime-minDateTime)/dDateTime), minDateTime, maxDateTime);
+                                        TMath::Nint(double(maxDateTime-minDateTime)/dDateTime), 0, maxDateTime-minDateTime);
 
   // Set axis to correspond to Timestamp format
   prf_["TimeVsT"]->GetXaxis()->SetTimeDisplay(1);
@@ -80,6 +82,10 @@ MuonRPCAnalyzer::MuonRPCAnalyzer(const edm::ParameterSet& pset)
   prf_["TimeVsT"]->GetXaxis()->SetTimeFormat(timeFormat);
   prf_["TimeVsI"]->GetXaxis()->SetTimeFormat(timeFormat);
   prf_["TimeVsV"]->GetXaxis()->SetTimeFormat(timeFormat);
+
+  prf_["TimeVsT"]->GetXaxis()->SetTimeOffset(timeOffset_);
+  prf_["TimeVsT"]->GetXaxis()->SetTimeOffset(timeOffset_);
+  prf_["TimeVsT"]->GetXaxis()->SetTimeOffset(timeOffset_);
 
   for ( int region = RPCDetId::minRegionId; region <= RPCDetId::maxRegionId; ++region )
   {
@@ -136,12 +142,15 @@ void MuonRPCAnalyzer::endJob()
   cout << "---------------------------\n"
        << " endJob() called           \n"
        << " rpcT TimeRange = " << rpcTMinTime_ << ":" << rpcTMaxTime_ << endl
-       << " rpcI TimeRange = " << rpcIMinTime_ << ":" << rpcVMaxTime_ << endl
+       << " rpcI TimeRange = " << rpcIMinTime_ << ":" << rpcIMaxTime_ << endl
        << " rpcV TimeRange = " << rpcVMinTime_ << ":" << rpcVMaxTime_ << endl;
 }
 
 void MuonRPCAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& eventSetup)
 {
+  unsigned long long eventDAQTime = event.time().value();
+  const uint64_t eventTime = RPCRunIOV::DAQtoUNIX(&eventDAQTime);
+
   // Initialize the RPC cond values map
   for ( DetIOVMap::iterator iValue = rpcIValues_.begin(); iValue != rpcIValues_.end(); ++iValue )
   {
@@ -162,11 +171,8 @@ void MuonRPCAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
   std::map<int, RPCObPVSSmap::Item> pvssMap = rpcRunIOV.getPVSSMap();
 
   // Analyze conditional information only when the IOV is changed
-  if ( rpcIMinTime_ == rpcIMaxTime_ || rpcIMinTime_ > rpcRunIOV.min_I || rpcIMaxTime_ < rpcRunIOV.max_I )
+  if ( eventTime < rpcIMinTime_ || eventTime > rpcIMaxTime_ )
   {
-    rpcIMinTime_ = rpcRunIOV.min_I;
-    rpcIMaxTime_ = rpcRunIOV.max_I;
-
     std::vector<RPCObImon::I_Item> rpcImon = rpcRunIOV.getImon();
 
     // Retrieve IOV information
@@ -174,16 +180,21 @@ void MuonRPCAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
           imon != rpcImon.end(); ++imon )
     {
       const double rpcI = imon->value;
+      const uint64_t rpcITime = RPCRunIOV::toUNIX(imon->day, imon->time);
+
+      if ( rpcIMinTime_ == 0 || rpcIMinTime_ > rpcITime ) rpcIMinTime_ = rpcITime;
+      if ( rpcIMaxTime_ < rpcITime ) rpcIMaxTime_ = rpcITime;
+
       const RPCObPVSSmap::Item pvss = pvssMap[imon->dpid];
-      if ( !isValidDetId(pvss.region, pvss.ring, pvss.station) ) continue;
+      if ( !isValidDetId(pvss) ) continue;
 
       const string subDetName = getSubDetName(pvss.region, pvss.ring, pvss.station);
       rpcIValues_[subDetName].first++;
       rpcIValues_[subDetName].second += rpcI;
 
       // Fill condition values averaging over all detector cells
-      cout << RPCRunIOV::toUNIX(imon->day, imon->time) << endl;
-      prf_["TimeVsI"]->Fill(RPCRunIOV::toUNIX(imon->day, imon->time), rpcI);
+      prf_["TimeVsI"]->Fill(rpcITime-timeOffset_, rpcI);
+      cout << "I(" << prf_["TimeVsI"]->GetXaxis()->GetXmin() << " - " << rpcITime << " - " << prf_["TimeVsI"]->GetXaxis()->GetXmax() << endl;
     }
 
     // Calclulate average condition values in IOV for each detector cell and fill histograms
@@ -200,26 +211,29 @@ void MuonRPCAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
     }
   }
 
-  if ( rpcVMinTime_ == rpcVMaxTime_ || rpcVMinTime_ > rpcRunIOV.min_V || rpcVMaxTime_ < rpcRunIOV.max_V )
+  if ( eventTime < rpcIMinTime_ || eventTime > rpcIMaxTime_ )
   {
-    rpcVMinTime_ = rpcRunIOV.min_V;
-    rpcVMaxTime_ = rpcRunIOV.max_V;
-
     std::vector<RPCObVmon::V_Item> rpcVmon = rpcRunIOV.getVmon();
 
     for ( std::vector<RPCObVmon::V_Item>::const_iterator vmon = rpcVmon.begin();
           vmon != rpcVmon.end(); ++vmon )
     {
       const double rpcV = vmon->value;
+      const uint64_t rpcVTime = RPCRunIOV::toUNIX(vmon->day, vmon->time);
+
+      if ( rpcVMinTime_ ==0 || rpcVMinTime_ > rpcVTime ) rpcVMinTime_ = rpcVTime;
+      if ( rpcVMaxTime_ < rpcVTime ) rpcVMaxTime_ = rpcVTime;
+
       const RPCObPVSSmap::Item pvss = pvssMap[vmon->dpid];
-      if ( !isValidDetId(pvss.region, pvss.ring, pvss.station) ) continue;
+      if ( !isValidDetId(pvss) ) continue;
 
       const string subDetName = getSubDetName(pvss.region, pvss.ring, pvss.station);
       rpcVValues_[subDetName].first++;
       rpcVValues_[subDetName].second += rpcV;
 
       // Fill condition values averaging over all detector cells
-      prf_["TimeVsV"]->Fill(RPCRunIOV::toUNIX(vmon->day, vmon->time), rpcV);
+      prf_["TimeVsV"]->Fill(rpcVTime-timeOffset_, rpcV);
+      cout << "V(" << prf_["TimeVsV"]->GetXaxis()->GetXmin() << " - " << rpcVTime << " - " << prf_["TimeVsV"]->GetXaxis()->GetXmax() << endl;
     }
 
     // Calclulate average condition values in IOV for each detector cell and fill histograms
@@ -236,26 +250,29 @@ void MuonRPCAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
     }
   }
 
-  if ( rpcTMinTime_ == rpcTMaxTime_ || rpcTMinTime_ > rpcRunIOV.min_T || rpcTMaxTime_ < rpcRunIOV.max_T )
+  if ( eventTime < rpcTMinTime_ || eventTime > rpcTMaxTime_ )
   {
-    rpcTMinTime_ = rpcRunIOV.min_T;
-    rpcTMaxTime_ = rpcRunIOV.max_T;
-
     std::vector<RPCObTemp::T_Item> rpcTmon = rpcRunIOV.getTemp();
 
     for ( std::vector<RPCObTemp::T_Item>::const_iterator tmon = rpcTmon.begin();
           tmon != rpcTmon.end(); ++tmon )
     {
       const double rpcT = tmon->value;
+      const uint64_t rpcTTime = RPCRunIOV::toUNIX(tmon->day, tmon->time);
+
+      if ( rpcTMinTime_ == 0 || rpcTMinTime_ > rpcTTime ) rpcTMinTime_ = rpcTTime;
+      if ( rpcTMaxTime_ < rpcTTime ) rpcTMaxTime_ = rpcTTime;
+
       const RPCObPVSSmap::Item pvss = pvssMap[tmon->dpid];
-      if ( !isValidDetId(pvss.region, pvss.ring, pvss.station) ) continue;
+      if ( !isValidDetId(pvss) ) continue;
 
       const string subDetName = getSubDetName(pvss.region, pvss.ring, pvss.station);
       rpcTValues_[subDetName].first++;
       rpcTValues_[subDetName].second += rpcT;
 
       // Fill condition values averaging over all detector cells
-      prf_["TimeVsT"]->Fill(RPCRunIOV::toUNIX(tmon->day, tmon->time), rpcT);
+      prf_["TimeVsT"]->Fill(rpcTTime-timeOffset_, rpcT);
+      cout << "T(" << prf_["TimeVsT"]->GetXaxis()->GetXmin() << " - " << rpcTTime << " - " << prf_["TimeVsT"]->GetXaxis()->GetXmax() << endl;
     }
 
     // Calclulate average condition values in IOV for each detector cell and fill histograms
