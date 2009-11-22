@@ -8,6 +8,7 @@
 #include "FWCore/ServiceRegistry/interface/Service.h"
 #include "PhysicsTools/UtilAlgos/interface/TFileService.h"
 
+#include "TString.h"
 #include <string>
 #include <map>
 
@@ -35,6 +36,7 @@ private:
   std::map<std::string, TH2F*> h2_;
   std::map<std::string, TProfile*> prf_;
 
+  int minNDigiCut_;
   int minBxNumber_, maxBxNumber_;
 
   // Store detector cell names and its average of IOV values

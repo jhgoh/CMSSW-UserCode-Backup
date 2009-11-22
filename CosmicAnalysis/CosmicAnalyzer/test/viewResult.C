@@ -1,9 +1,16 @@
-void viewResult(TString fileName="hist_beamSplash_120026.root")
+void viewResult()
 {
+  
+}
+
+void viewBxDistr(TString runNumStr = "120026")
+{
+  TString fileName = Form("hist_beamSplash_%s.root", runNumStr);
+
   gStyle->SetOptStat(1111);
   gStyle->SetOptFit(1);
 
-  TCanvas* c = new TCanvas("cOverview", "Overview", 800, 1200);
+  TCanvas* c = new TCanvas(Form("cOverview_%s", runNumStr), "Overview_%s", 800, 1200);
 
   // Set up canvas
   c->Divide(1,4);

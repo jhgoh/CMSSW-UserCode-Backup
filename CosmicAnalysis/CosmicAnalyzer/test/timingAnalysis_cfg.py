@@ -19,18 +19,27 @@ sys.path.append('.')
 
 import os
 if 'RUNNUMBER' not in os.environ:
-  runNumber = 121943
-else
-  runNumber = int(os.environ['RUNNUMBER'])
+  runNumber = "121943"
+else :
+  runNumber = os.environ['RUNNUMBER']
 
-if runNumber == 120026 :
+if runNumber == "120020" :
+  from source_beamSplash_120020_cfg import *
+elif runNumber == "120026" :
   from source_beamSplash_120026_cfg import *
-if runNumber == 121943 :
+elif runNumber == "120042" :
+  from source_beamSplash_120042_cfg import *
+elif runNumber == "121943" :
   from source_beamSplash_121943_cfg import *
-elif runNumber == 121964 :
+elif runNumber == "121964" :
   from source_beamSplash_121964_cfg import *
-elif runNumber == 121993 :
+elif runNumber == "121993" :
   from source_beamSplash_121993_cfg import *
+elif runNumber == "errStream" :
+  from source_beamSplash_errStream_cfg import *
+else :
+  print "Invalid run number input"
+  sys.exit()
 
 process.source = cms.Source ("PoolSource",fileNames = readFiles, secondaryFileNames = secFiles)
 process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(-1))
@@ -39,7 +48,7 @@ process.MessageLogger.cerr.FwkReport.reportEvery = 100
 
 # File output
 process.TFileService = cms.Service("TFileService",
-    fileName = cms.string('hist_beamSplash_%d.root' % runNumber)
+    fileName = cms.string('hist_beamSplash_%s.root' % runNumber)
 )
 
 # Analysis modules
