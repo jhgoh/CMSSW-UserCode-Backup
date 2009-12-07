@@ -26,11 +26,18 @@ protected:
   virtual void analyze(const edm::Event& event, const edm::EventSetup& eventSetup);
 
 private:
-  edm::InputTag higgs1Label_;
-  edm::InputTag higgs2Label_;
+  edm::InputTag muon1Label_;
+  edm::InputTag e1Label_;
+  unsigned int nInterested_;
+
+  int muonSelectionType_;
   
   std::map<std::string, TH1F*> h1_;
   std::map<std::string, TH2F*> h2_;
+
+  // To be discarded
+  edm::InputTag higgs1Label_;
+  edm::InputTag higgs2Label_;
 };
 
 #endif
