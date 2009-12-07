@@ -52,7 +52,7 @@ HiggsToEMuAnalyzer::HiggsToEMuAnalyzer(const edm::ParameterSet& pset)
   // Histograms for muons
   TFileDirectory m1Dir = fs->mkdir("m1", "m1");
 
-  h1_["m1_pt"] = m1Dir.make<TH1F>("pt", "Transverse momentum;Transverse momentum [GeV/c]", 100, 0, 1000);
+  h1_["m1_pt"] = m1Dir.make<TH1F>("pt", "Transverse momentum;Transverse momentum [GeV/c]", 100, 0, 500);
   h1_["m1_eta"] = m1Dir.make<TH1F>("eta", "Pseudorapidity;Pseudorapidity #eta", 100, -2.5, 2.5);
   h1_["m1_phi"] = m1Dir.make<TH1F>("phi", "Azimuthal angle;Azimuthal angle [Radian]", 100, -TMath::Pi(), TMath::Pi());
   h1_["m1_trackIso"] = m1Dir.make<TH1F>("trackIso", "Track isolation;Track isolation", 100, 0, 20);
@@ -60,7 +60,7 @@ HiggsToEMuAnalyzer::HiggsToEMuAnalyzer(const edm::ParameterSet& pset)
   h1_["m1_relIso"] = m1Dir.make<TH1F>("relIso", "Relative isolation;Relative isolation", 100, 0, 20);
 
   // Leading muons
-  h1_["m1_pt1_pt"] = m1Dir.make<TH1F>("pt1_pt", "Transverse momentum of leading muon;Transverse momentum [GeV/c]", 100, 0, 1000);
+  h1_["m1_pt1_pt"] = m1Dir.make<TH1F>("pt1_pt", "Transverse momentum of leading muon;Transverse momentum [GeV/c]", 100, 0, 500);
   h1_["m1_pt1_eta"] = m1Dir.make<TH1F>("pt1_eta", "Pseudorapidity of leading muon;Pseudorapidity #eta", 100, -2.5, 2.5);
   h1_["m1_pt1_phi"] = m1Dir.make<TH1F>("pt1_phi", "Azimuthal angle of leading muon;Azimuthal angle [Radian]", 100, -TMath::Pi(), TMath::Pi());
   h1_["m1_pt1_trackIso"] = m1Dir.make<TH1F>("pt1_trackIso", "Track isolation of leading muon;Track isolation", 100, 0, 20);
@@ -68,7 +68,7 @@ HiggsToEMuAnalyzer::HiggsToEMuAnalyzer(const edm::ParameterSet& pset)
   h1_["m1_pt1_relIso"] = m1Dir.make<TH1F>("pt1_relIso", "Relative isolation of leading muon;Relative isolation", 100, 0, 20);
 
   // 2nd leading muons
-  h1_["m1_pt2_pt"] = m1Dir.make<TH1F>("pt2_pt", "Transverse momentum of 2^{nd} leading muon;Transverse momentum [GeV/c]", 100, 0, 1000);
+  h1_["m1_pt2_pt"] = m1Dir.make<TH1F>("pt2_pt", "Transverse momentum of 2^{nd} leading muon;Transverse momentum [GeV/c]", 100, 0, 500);
   h1_["m1_pt2_eta"] = m1Dir.make<TH1F>("pt2_eta", "Pseudorapidity of 2^{nd} leading muon;Pseudorapidity #eta", 100, -2.5, 2.5);
   h1_["m1_pt2_phi"] = m1Dir.make<TH1F>("pt2_phi", "Azimuthal angle of 2^{nd} leading muon;Azimuthal angle [Radian]", 100, -TMath::Pi(), TMath::Pi());
   h1_["m1_pt2_trackIso"] = m1Dir.make<TH1F>("pt2_trackIso", "Track isolation of 2^{nd} leading muon;Track isolation", 100, 0, 20);
@@ -76,7 +76,7 @@ HiggsToEMuAnalyzer::HiggsToEMuAnalyzer(const edm::ParameterSet& pset)
   h1_["m1_pt2_relIso"] = m1Dir.make<TH1F>("pt2_relIso", "Relative isolation of 2^{nd} leading muon;Relative isolation", 100, 0, 20);
 
   // 3rd leading muons
-  h1_["m1_pt3_pt"] = m1Dir.make<TH1F>("pt3_pt", "Transverse momentum of 3^{rd} leading muon;Transverse momentum [GeV/c]", 100, 0, 1000);
+  h1_["m1_pt3_pt"] = m1Dir.make<TH1F>("pt3_pt", "Transverse momentum of 3^{rd} leading muon;Transverse momentum [GeV/c]", 100, 0, 500);
   h1_["m1_pt3_eta"] = m1Dir.make<TH1F>("pt3_eta", "Pseudorapidity of 3^{rd} leading muon;Pseudorapidity #eta", 100, -2.5, 2.5);
   h1_["m1_pt3_phi"] = m1Dir.make<TH1F>("pt3_phi", "Azimuthal angle of 3^{rd} leading muon;Azimuthal angle [Radian]", 100, -TMath::Pi(), TMath::Pi());
   h1_["m1_pt3_trackIso"] = m1Dir.make<TH1F>("pt3_trackIso", "Track isolation of 3^{rd} leading muon;Track isolation", 100, 0, 20);
@@ -86,62 +86,62 @@ HiggsToEMuAnalyzer::HiggsToEMuAnalyzer(const edm::ParameterSet& pset)
   // Histograms for electrons
   TFileDirectory e1Dir = fs->mkdir("e1", "e1");
 
-  h1_["e1_pt"] = e1Dir.make<TH1F>("pt", "Transverse momentum;Transverse momentum [GeV/c]", 100, 0, 1000);
+  h1_["e1_pt"] = e1Dir.make<TH1F>("pt", "Transverse momentum;Transverse momentum [GeV/c]", 100, 0, 500);
   h1_["e1_eta"] = e1Dir.make<TH1F>("eta", "Pseudorapidity;Pseudorapidity #eta", 100, -2.5, 2.5);
   h1_["e1_phi"] = e1Dir.make<TH1F>("phi", "Azimuthal angle;Azimuthal angle [Radian]", 100, -TMath::Pi(), TMath::Pi());
   h1_["e1_trackIso"] = e1Dir.make<TH1F>("trackIso", "Track isolation;Track isolation", 100, 0, 20);
   h1_["e1_caloIso"] = e1Dir.make<TH1F>("caloIso", "Calo isolation;Calo isolation", 100, 0, 20);
   h1_["e1_relIso"] = e1Dir.make<TH1F>("relIso", "Relative isolation;Relative isolation", 100, 0, 20);
 
-  h1_["e1_robustLoose"] = e1Dir.make<TH1F>("robustLoose", "ElectronID with RobustLoose;ElectronID", 11, 0, 1.1);
-  h1_["e1_robustTight"] = e1Dir.make<TH1F>("robustTight", "ElectronID with RobustTight;ElectronID", 11, 0, 1.1);
+  h1_["e1_robustLoose"] = e1Dir.make<TH1F>("robustLoose", "ElectronID with RobustLoose;ElectronID", 11, -0.05, 1.05);
+  h1_["e1_robustTight"] = e1Dir.make<TH1F>("robustTight", "ElectronID with RobustTight;ElectronID", 11, -0.05, 1.05);
 
   // Leading electrons
-  h1_["e1_pt1_pt"] = e1Dir.make<TH1F>("pt1_pt", "Transverse momentum of leading muon;Transverse momentum [GeV/c]", 100, 0, 1000);
+  h1_["e1_pt1_pt"] = e1Dir.make<TH1F>("pt1_pt", "Transverse momentum of leading muon;Transverse momentum [GeV/c]", 100, 0, 500);
   h1_["e1_pt1_eta"] = e1Dir.make<TH1F>("pt1_eta", "Pseudorapidity of leading muon;Pseudorapidity #eta", 100, -2.5, 2.5);
   h1_["e1_pt1_phi"] = e1Dir.make<TH1F>("pt1_phi", "Azimuthal angle of leading muon;Azimuthal angle [Radian]", 100, -TMath::Pi(), TMath::Pi());
   h1_["e1_pt1_trackIso"] = e1Dir.make<TH1F>("pt1_trackIso", "Track isolation of leading muon;Track isolation", 100, 0, 20);
   h1_["e1_pt1_caloIso"] = e1Dir.make<TH1F>("pt1_caloIso", "Calo isolation of leading muon;Calo isolation", 100, 0, 20);
   h1_["e1_pt1_relIso"] = e1Dir.make<TH1F>("pt1_relIso", "Relative isolation of leading muon;Relative isolation", 100, 0, 20);
-  h1_["e1_pt1_robustLoose"] = e1Dir.make<TH1F>("pt1_robustLoose", "ElectronID of leading muon with RobustLoose;ElectronID", 11, 0, 1.1);
-  h1_["e1_pt1_robustTight"] = e1Dir.make<TH1F>("pt1_robustTight", "ElectronID of leading muon with RobustTight;ElectronID", 11, 0, 1.1);
+  h1_["e1_pt1_robustLoose"] = e1Dir.make<TH1F>("pt1_robustLoose", "ElectronID of leading muon with RobustLoose;ElectronID", 11, -0.05, 1.05);
+  h1_["e1_pt1_robustTight"] = e1Dir.make<TH1F>("pt1_robustTight", "ElectronID of leading muon with RobustTight;ElectronID", 11, -0.05, 1.05);
 
   // 2nd leading electrons
-  h1_["e1_pt2_pt"] = e1Dir.make<TH1F>("pt2_pt", "Transverse momentum of 2^{nd} leading muon;Transverse momentum [GeV/c]", 100, 0, 1000);
+  h1_["e1_pt2_pt"] = e1Dir.make<TH1F>("pt2_pt", "Transverse momentum of 2^{nd} leading muon;Transverse momentum [GeV/c]", 100, 0, 500);
   h1_["e1_pt2_eta"] = e1Dir.make<TH1F>("pt2_eta", "Pseudorapidity of 2^{nd} leading muon;Pseudorapidity #eta", 100, -2.5, 2.5);
   h1_["e1_pt2_phi"] = e1Dir.make<TH1F>("pt2_phi", "Azimuthal angle of 2^{nd} leading muon;Azimuthal angle [Radian]", 100, -TMath::Pi(), TMath::Pi());
   h1_["e1_pt2_trackIso"] = e1Dir.make<TH1F>("pt2_trackIso", "Track isolation of 2^{nd} leading muon;Track isolation", 100, 0, 20);
   h1_["e1_pt2_caloIso"] = e1Dir.make<TH1F>("pt2_caloIso", "Calo isolation of 2^{nd} leading muon;Calo isolation", 100, 0, 20);
   h1_["e1_pt2_relIso"] = e1Dir.make<TH1F>("pt2_relIso", "Relative isolation of 2^{nd} leading muon;Relative isolation", 100, 0, 20);
-  h1_["e1_pt2_robustLoose"] = e1Dir.make<TH1F>("pt2_robustLoose", "ElectronID of 2^{nd} leading muon with RobustLoose;ElectronID", 11, 0, 1.1);
-  h1_["e1_pt2_robustTight"] = e1Dir.make<TH1F>("pt2_robustTight", "ElectronID of 2^{nd} leading muon with RobustTight;ElectronID", 11, 0, 1.1);
+  h1_["e1_pt2_robustLoose"] = e1Dir.make<TH1F>("pt2_robustLoose", "ElectronID of 2^{nd} leading muon with RobustLoose;ElectronID", 11, -0.05, 1.05);
+  h1_["e1_pt2_robustTight"] = e1Dir.make<TH1F>("pt2_robustTight", "ElectronID of 2^{nd} leading muon with RobustTight;ElectronID", 11, -0.05, 1.05);
 
   // 3rd leading electrons
-  h1_["e1_pt3_pt"] = e1Dir.make<TH1F>("pt3_pt", "Transverse momentum of 3^{rd} leading muon;Transverse momentum [GeV/c]", 100, 0, 1000);
+  h1_["e1_pt3_pt"] = e1Dir.make<TH1F>("pt3_pt", "Transverse momentum of 3^{rd} leading muon;Transverse momentum [GeV/c]", 100, 0, 500);
   h1_["e1_pt3_eta"] = e1Dir.make<TH1F>("pt3_eta", "Pseudorapidity of 3^{rd} leading muon;Pseudorapidity #eta", 100, -2.5, 2.5);
   h1_["e1_pt3_phi"] = e1Dir.make<TH1F>("pt3_phi", "Azimuthal angle of 3^{rd} leading muon;Azimuthal angle [Radian]", 100, -TMath::Pi(), TMath::Pi());
   h1_["e1_pt3_trackIso"] = e1Dir.make<TH1F>("pt3_trackIso", "Track isolation of 3^{rd} leading muon;Track isolation", 100, 0, 20);
   h1_["e1_pt3_caloIso"] = e1Dir.make<TH1F>("pt3_caloIso", "Calo isolation of 3^{rd} leading muon;Calo isolation", 100, 0, 20);
   h1_["e1_pt3_relIso"] = e1Dir.make<TH1F>("pt3_relIso", "Relative isolation of 3^{rd} leading muon;Relative isolation", 100, 0, 20);
-  h1_["e1_pt3_robustLoose"] = e1Dir.make<TH1F>("pt3_robustLoose", "ElectronID of 3^{rd} leading muon with RobustLoose;ElectronID", 11, 0, 1.1);
-  h1_["e1_pt3_robustTight"] = e1Dir.make<TH1F>("pt3_robustTight", "ElectronID of 3^{rd} leading muon with RobustTight;ElectronID", 11, 0, 1.1);
+  h1_["e1_pt3_robustLoose"] = e1Dir.make<TH1F>("pt3_robustLoose", "ElectronID of 3^{rd} leading muon with RobustLoose;ElectronID", 11, -0.05, 1.05);
+  h1_["e1_pt3_robustTight"] = e1Dir.make<TH1F>("pt3_robustTight", "ElectronID of 3^{rd} leading muon with RobustTight;ElectronID", 11, -0.05, 1.05);
 
   // Histograms for EMu combination
   TFileDirectory emuDir = fs->mkdir("emu", "emu");
 
   h1_["emu_rawMass"] = emuDir.make<TH1F>("rawMass", "Raw mass of Electron-Muon pair;Mass [GeV/c^{2}]", 100, 0, 1000);
-  h1_["emu_rawPt"] = emuDir.make<TH1F>("rawPt", "Raw transverse momentum of Electorn-Muon pair;Transverse momentum [GeV/c]", 100, 0, 1000);
+  h1_["emu_rawPt"] = emuDir.make<TH1F>("rawPt", "Raw transverse momentum of Electorn-Muon pair;Transverse momentum [GeV/c]", 100, 0, 500);
   h1_["emu_rawEta"] = emuDir.make<TH1F>("rawEta", "Raw pseudorapidity of Electron-Muon pair;Pseudorapidity", 100, -2.5, 2.5);
 
   h1_["emu_mass"] = emuDir.make<TH1F>("mass", "Mass of Electron-Muon pair;Mass [GeV/c^{2}]", 100, 0, 1000);
-  h1_["emu_pt"] = emuDir.make<TH1F>("pt", "Transverse momentum of Electorn-Muon pair;Transverse momentum [GeV/c]", 100, 0, 1000);
+  h1_["emu_pt"] = emuDir.make<TH1F>("pt", "Transverse momentum of Electorn-Muon pair;Transverse momentum [GeV/c]", 100, 0, 500);
   h1_["emu_eta"] = emuDir.make<TH1F>("eta", "Pseudorapidity of Electron-Muon pair;Pseudorapidity", 100, -2.5, 2.5);
 
   h1_["emu_cosDeltaPhi"] = emuDir.make<TH1F>("cosDeltaPhi", "Cosine of Electron-Muon pair opening angle;Cos(#Delta#phi)", 100, -1.01, 1.01);
   h1_["emu_resolM"] = emuDir.make<TH1F>("resolM", "Mass resolution of Electron-Muon pair;Mass resolution [GeV/c^{2}]", 100, 0, 100);
   h1_["emu_resolPt"] = emuDir.make<TH1F>("resolPt", "Transverse momentum resolution of Electron-Muon pair;Transverse momentum resolution [GeV/c]", 100, 0, 100);
   h1_["emu_fitChi2"] = emuDir.make<TH1F>("fitChi2", "Fit #Chi^{2} of Electron-Muon pair;#Chi^{2}", 100, 0, 30);
-  h1_["emu_trackDZ"] = emuDir.make<TH1F>("trackDZ", "Track #Delta Z of Electron-Muon pair;#Delta Z [cm]", 100, 0, 25);
+  h1_["emu_trackDZ"] = emuDir.make<TH1F>("trackDZ", "Track #Delta Z of Electron-Muon pair;#Delta Z [cm]", 100, 0, 1);
 
   // Histograms for 4Leptons
   TFileDirectory emuemuDir = fs->mkdir("emuemu", "emuemu");
