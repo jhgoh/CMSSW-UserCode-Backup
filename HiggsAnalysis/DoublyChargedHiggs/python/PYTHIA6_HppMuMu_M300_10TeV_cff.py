@@ -8,7 +8,7 @@ generator = cms.EDFilter("Pythia6GeneratorFilter",
     maxEventsToPrint = cms.untracked.int32(0),
     pythiaPylistVerbosity = cms.untracked.int32(0),
     filterEfficiency = cms.untracked.double(1.),
-    comEnergy = cms.double(10000.0),
+    comEnergy = cms.untracked.double(10000.0),
 #    crossSection = cms.untracked.double(7.1),
     PythiaParameters = cms.PSet(
         pythiaUESettingsBlock,
@@ -43,7 +43,7 @@ generator = cms.EDFilter("Pythia6GeneratorFilter",
 ProductionFilterSequence = cms.Sequence(generator)
 
 configurationMetadata = cms.untracked.PSet(
-    version = cms.untracked.string('$Revision: 1.3 $'),
+    version = cms.untracked.string('$Revision: 1.3.2.1 $'),
     name = cms.untracked.string('$Source: /cvs_server/repositories/CMSSW/UserCode/JHGoh/HiggsAnalysis/DoublyChargedHiggs/python/PYTHIA6_HppMuMu_M300_10TeV_cff.py,v $'),
     annotation = cms.untracked.string('PYTHIA6-H++ to MuMu at 10TeV')
 )
