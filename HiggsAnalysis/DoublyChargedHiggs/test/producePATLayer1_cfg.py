@@ -1,18 +1,12 @@
 import FWCore.ParameterSet.Config as cms
 
-globalTag = 'MC_31X_V8'
+globalTag = 'IDEAL_V12'
 
 process = cms.Process("PAT")
 
 # initialize MessageLogger and output report
 process.load("FWCore.MessageLogger.MessageLogger_cfi")
-process.MessageLogger.cerr.threshold = 'INFO'
-#process.MessageLogger.categories.append('PATSummaryTables')
-#process.MessageLogger.cerr.INFO = cms.untracked.PSet(
-#    default          = cms.untracked.PSet( limit = cms.untracked.int32(0)  ),
-#    PATSummaryTables = cms.untracked.PSet( limit = cms.untracked.int32(-1) )
-#)
-process.options   = cms.untracked.PSet( wantSummary = cms.untracked.bool(True) )
+process.MessageLogger.cerr.FwkReport.reportEvery = 100
 
 # source
 process.source = cms.Source("PoolSource", 
@@ -26,14 +20,23 @@ process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
 process.GlobalTag.globaltag = cms.string('%s::All' % globalTag)
 process.load("Configuration.StandardSequences.MagneticField_cff")
 
-# Set datafiles
-process.source.fileNames.append('file:res/step1.root')
-process.source.secondaryFileNames.append('file:res/step2.root')
-
-process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(-1))
-
 # PAT Layer 0+1
 process.load("PhysicsTools.PatAlgos.patSequences_cff")
+
+from PhysicsTools.PatAlgos.tools.trigTools import switchOffTriggerMatchingOld
+switchOffTriggerMatchingOld(process)
+#from PhysicsTools.PatAlgos.tools.trigTools import *
+#switchTriggerOff(process)
+
+process.allLayer1Muons.addGenMatch        = False
+process.allLayer1Photons.addGenMatch      = False
+process.allLayer1Electrons.addGenMatch    = False
+process.allLayer1Jets.addGenPartonMatch   = False
+process.allLayer1Jets.addGenJetMatch      = False
+process.allLayer1Jets.getJetMCFlavour     = False
+process.allLayer1Taus.addGenMatch         = False
+process.allLayer1Taus.addGenJetMatch      = False
+process.layer1METs.addGenMET              = False
 
 process.p = cms.Path(
     process.patDefaultSequence  
@@ -59,7 +62,7 @@ patEventContent = [
 ]
 
 process.out = cms.OutputModule("PoolOutputModule",
-    fileName = cms.untracked.string('PAT.root'),
+    fileName = cms.untracked.string('FastSim_PAT.root'),
     # save only events passing the full path
     SelectEvents   = cms.untracked.PSet( SelectEvents = cms.vstring('p') ),
     # save PAT Layer 1 output
