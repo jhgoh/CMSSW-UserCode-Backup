@@ -12,12 +12,6 @@
 
 using namespace std;
 
-double getHppXSec(const double hppMass)
-{
-  static HppCurve hppCurve;
-  return hppCurve.Eval(hppMass);
-}
-
 void view(const double hppMass = 200, const char* datasetNameForm = "Hpp%d_EMu_10TeV_GEN_HLT")
 {
   cout << "=== View cuts ===" << endl;

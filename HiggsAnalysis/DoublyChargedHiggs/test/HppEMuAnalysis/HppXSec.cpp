@@ -118,3 +118,9 @@ TGraph* HppXSec()
   return grpXSec;
 }
 
+double getHppXSec(const double hppMass)
+{
+  static HppCurve hppCurve;
+  return hppCurve.Eval(hppMass);
+};
+
