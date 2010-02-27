@@ -1,7 +1,10 @@
+#include "TSystem.h"
+#include "TROOT.h"
+#include "TStyle.h"
+
 #include "TFile.h"
 #include "TH1F.h"
 #include "TCanvas.h"
-#include "TStyle.h"
 #include "TGraph2D.h"
 
 #include "TMath.h"
@@ -18,8 +21,6 @@ using namespace std;
 
 void limit()
 {
-  gStyle->SetPalette(1);
-
   // Define constants
   // MC samples's cross-sections and number of events
   const double bkgXSec_TT_4l = 280900*1.46*0.01091;
@@ -33,44 +34,21 @@ void limit()
   const double sigNEvents = 10000;
 
   // Number of pseudo-experiments during the limit calculation
-  const int nMC = 1000;
+  const int nMC = 1000000;
 
   // Luminosity steps
-  vector<double> lumiPoints;
-  lumiPoints.push_back(0.1);
-  lumiPoints.push_back(0.5);
-  lumiPoints.push_back(1.0);
-  lumiPoints.push_back(5.0);
-  lumiPoints.push_back(10.);
-  lumiPoints.push_back(50.);
-  lumiPoints.push_back(100);
-  const int nLumiPoints = lumiPoints.size();
+  const int nLumiPoints = 10;
+  const double lumiPoints[nLumiPoints] = {0.1, 0.2, 0.4, 0.6, 0.8, 1.0, 5.0, 10.0, 50.0, 100.};
 
   // Set mass points
-  std::vector<double> massPoints;
-  massPoints.push_back(140);
-  massPoints.push_back(160);
-  massPoints.push_back(180);
-  massPoints.push_back(200);
-  massPoints.push_back(220);
-  massPoints.push_back(240);
-  massPoints.push_back(260);
-  massPoints.push_back(280);
-  massPoints.push_back(300);
-  massPoints.push_back(350);
-  massPoints.push_back(400);
-  massPoints.push_back(500);
-  massPoints.push_back(600);
-  massPoints.push_back(800);
-  const int nMassPoints = massPoints.size();
+  const int nMassPoints = 14;
+  double massPoints[nMassPoints] = {140, 160, 180, 200, 220, 240, 260, 280, 300, 350, 400, 500, 600, 800};
 
   TFile* file_output = TFile::Open("limit.root", "RECREATE");
 
-  TGraph2D* grpCLs_MassVsLumi = new TGraph2D(nMassPoints*nLumiPoints);
-  grpCLs_MassVsLumi->SetName("grpCLs_MassVsLumi");
-  grpCLs_MassVsLumi->SetTitle("Exclusion limit");
-  //grpCLs_MassVsLumi->GetXaxis()->SetTitle("Mass [GeV/c^{2}]");
-  //grpCLs_MassVsLumi->GetYaxis()->SetTitle("Luminosity [fb^{-1}]");
+  TGraph2D* grpCL_MassVsLumi = new TGraph2D(nMassPoints*nLumiPoints);
+  grpCL_MassVsLumi->SetName("grpCL_MassVsLumi");
+  grpCL_MassVsLumi->SetTitle("Exclusion limit CL = 1-CLs");
 
   // Read background samples first
   TFile* file_TT_4l = TFile::Open("res/TT_4l_10TeV_GEN.root");
@@ -128,8 +106,8 @@ void limit()
       const double expCLb = cl->GetExpectedCLb_b();
 
       const int idx = lumiIdx + massIdx*nLumiPoints;
-      grpCLs_MassVsLumi->SetPoint(idx, mass, lumi, cls);
-      //grpCLs_MassVsLumi->SetPoint(idx, massIdx, lumiIdx, 1);
+      grpCL_MassVsLumi->SetPoint(idx, mass, lumi, 1-cls);
+      //grpCL_MassVsLumi->SetPoint(idx, massIdx, lumiIdx, 1);
 
       hMass_NormSig->Delete();
       hMass_NormBkg->Delete();
@@ -138,11 +116,17 @@ void limit()
     }
   }
 
-  if ( !gSystem->IsBatch() )
+  grpCL_MassVsLumi->GetXaxis()->SetTitle("Mass [GeV/c^{2}]");
+  grpCL_MassVsLumi->GetYaxis()->SetTitle("Luminosity [fb^{-1}]");
+  if ( !gROOT->IsBatch() )
   {
+    gStyle->SetPalette(1);
+
     TCanvas* cCLs = new TCanvas("cCLs", "cCLs");
-    grpCLs_MassVsLumi->Draw("A,CONT");
-    //grpCLs_MassVsLumi->Draw("COLZ");
+    cCLs->SetLogy();
+
+    grpCL_MassVsLumi->Draw("CONT4Z");
+    //grpCL_MassVsLumi->Draw("COLZ");
 
     file_output->Write();
   }
