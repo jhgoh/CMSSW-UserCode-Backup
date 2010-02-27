@@ -20,21 +20,8 @@ void candCounting()
   resolFtn.SetParameter("p1", 6.51756e-03);
   resolFtn.SetParameter("p2", 1.53268e-05);
 
-  std::vector<double> massPoints;
-  massPoints.push_back(140);
-  massPoints.push_back(160);
-  massPoints.push_back(180);
-  massPoints.push_back(200);
-  massPoints.push_back(220);
-  massPoints.push_back(240);
-  massPoints.push_back(260);
-  massPoints.push_back(280);
-  massPoints.push_back(300);
-  massPoints.push_back(350);
-  massPoints.push_back(400);
-  massPoints.push_back(500);
-  massPoints.push_back(600);
-  massPoints.push_back(800);
+  const int nMassPoints = 14;
+  const double massPoints[nMassPoints] = {140, 160, 180, 200, 220, 240, 260, 280, 300, 350, 400, 500, 600, 800};
 
   const double lumi = 1;
 
@@ -48,11 +35,11 @@ void candCounting()
 
   const double sigNEvents = 10000;
 
-  TGraph* grpSig = new TGraph(massPoints.size());
-  TGraph* grpBkg = new TGraph(massPoints.size());
-  TGraph* grpSignif = new TGraph(massPoints.size());
+  TGraph* grpSig = new TGraph(nMassPoints);
+  TGraph* grpBkg = new TGraph(nMassPoints);
+  TGraph* grpSignif = new TGraph(nMassPoints);
 
-  for ( unsigned int i=0; i<massPoints.size(); ++i )
+  for ( unsigned int i=0; i<nMassPoints; ++i )
   {
     const double mass = massPoints[i];
     const double sigma = resolFtn.Eval(mass);
