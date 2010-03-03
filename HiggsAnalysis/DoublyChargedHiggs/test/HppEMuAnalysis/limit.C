@@ -34,21 +34,26 @@ void limit()
   const double sigNEvents = 10000;
 
   // Number of pseudo-experiments during the limit calculation
-  const int nMC = 1000000;
+  const int nMC = 10000;
 
   // Luminosity steps
-  const int nLumiPoints = 10;
-  const double lumiPoints[nLumiPoints] = {0.1, 0.2, 0.4, 0.6, 0.8, 1.0, 5.0, 10.0, 50.0, 100.};
+  const int nLumiPoints = 14;
+  const double lumiPoints[nLumiPoints] = {0.01, 0.02, 0.05, 0.07, 0.1, 0.2, 0.4, 0.6, 0.8, 1.0, 5.0, 10.0, 50.0, 100.};
 
   // Set mass points
   const int nMassPoints = 14;
   double massPoints[nMassPoints] = {140, 160, 180, 200, 220, 240, 260, 280, 300, 350, 400, 500, 600, 800};
 
   TFile* file_output = TFile::Open("limit.root", "RECREATE");
+  TDirectory* dir_CLs = file_output->mkdir("CLs", "CLs");
 
-  TGraph2D* grpCL_MassVsLumi = new TGraph2D(nMassPoints*nLumiPoints);
-  grpCL_MassVsLumi->SetName("grpCL_MassVsLumi");
-  grpCL_MassVsLumi->SetTitle("Exclusion limit CL = 1-CLs");
+  TGraph2D* grpCL_Bkg_MassVsLumi = new TGraph2D(nMassPoints*nLumiPoints);
+  grpCL_Bkg_MassVsLumi->SetName("grpCL_Bkg_MassVsLumi");
+  grpCL_Bkg_MassVsLumi->SetTitle("Exclusion limit CL = 1-CLs (B only hypothesis)");
+
+  TGraph2D* grpCL_SigBkg_MassVsLumi = new TGraph2D(nMassPoints*nLumiPoints);
+  grpCL_SigBkg_MassVsLumi->SetName("grpCL_SigBkg_MassVsLumi");
+  grpCL_SigBkg_MassVsLumi->SetTitle("Exclusion limit CL = 1-CLs (S+B hypothesis)");
 
   // Read background samples first
   TFile* file_TT_4l = TFile::Open("res/TT_4l_10TeV_GEN.root");
@@ -97,36 +102,50 @@ void limit()
       hMass_DataSigBkg->Add(hMass_NormBkg);
 
       // Now compute exclusion limits
-      TLimitDataSource dataSource(hMass_NormSig, hMass_NormBkg, hMass_DataSigBkg);
-      TConfidenceLevel* cl = TLimit::ComputeLimit(&dataSource, nMC);
+      TLimitDataSource dataSource_SigBkg(hMass_NormSig, hMass_NormBkg, hMass_DataSigBkg);
+      TLimitDataSource dataSource_Bkg(hMass_NormSig, hMass_NormBkg, hMass_NormBkg);
 
-      const double cls = cl->CLs();
-      const double clb = cl->CLb();
-      const double expCLs = cl->GetExpectedCLs_b();
-      const double expCLb = cl->GetExpectedCLb_b();
+      dir_CLs->cd();
+      TConfidenceLevel* cl_SigBkg = TLimit::ComputeLimit(&dataSource_SigBkg, nMC);
+      TConfidenceLevel* cl_Bkg = TLimit::ComputeLimit(&dataSource_Bkg, nMC);
+
+      cl_SigBkg->Write(Form("cl_SigBkg_M%.1f_L%.1f", mass, lumi));
+      cl_Bkg->Write(Form("cl_Bkg_M%.1f_L%.1f", mass, lumi));
+
+      const double cls_SigBkg = cl_SigBkg->CLs();
+      const double cls_Bkg = cl_Bkg->CLs();
+      //const double clb = cl_Bkg->CLb();
+      //const double expCLs = cl->GetExpectedCLs_b();
+      //const double expCLb = cl->GetExpectedCLb_b();
 
       const int idx = lumiIdx + massIdx*nLumiPoints;
-      grpCL_MassVsLumi->SetPoint(idx, mass, lumi, 1-cls);
-      //grpCL_MassVsLumi->SetPoint(idx, massIdx, lumiIdx, 1);
+      grpCL_SigBkg_MassVsLumi->SetPoint(idx, mass, lumi, 1-cls_SigBkg);
+      grpCL_Bkg_MassVsLumi->SetPoint(idx, mass, lumi, 1-cls_Bkg);
 
       hMass_NormSig->Delete();
       hMass_NormBkg->Delete();
       hMass_DataSigBkg->Delete();
-      cl->Delete();
+      //cl_SigBkg->Delete();
+      //cl_Bkg->Delete();
     }
   }
 
-  grpCL_MassVsLumi->GetXaxis()->SetTitle("Mass [GeV/c^{2}]");
-  grpCL_MassVsLumi->GetYaxis()->SetTitle("Luminosity [fb^{-1}]");
+  grpCL_Bkg_MassVsLumi->GetXaxis()->SetTitle("Mass [GeV/c^{2}]");
+  grpCL_Bkg_MassVsLumi->GetYaxis()->SetTitle("Luminosity [fb^{-1}]");
+
+  grpCL_SigBkg_MassVsLumi->GetXaxis()->SetTitle("Mass [GeV/c^{2}]");
+  grpCL_SigBkg_MassVsLumi->GetYaxis()->SetTitle("Luminosity [fb^{-1}]");
   if ( !gROOT->IsBatch() )
   {
     gStyle->SetPalette(1);
 
-    TCanvas* cCLs = new TCanvas("cCLs", "cCLs");
-    cCLs->SetLogy();
+    TCanvas* cCLs_Bkg = new TCanvas("cCLs_Bkg", "cCLs_Bkg");
+    cCLs_Bkg->SetLogy();
+    grpCL_Bkg_MassVsLumi->Draw("CONT4Z");
 
-    grpCL_MassVsLumi->Draw("CONT4Z");
-    //grpCL_MassVsLumi->Draw("COLZ");
+    TCanvas* cCLs_SigBkg = new TCanvas("cLCs_SigBkg", "cCLs_SigBkg");
+    cCLs_SigBkg->SetLogy();
+    grpCL_SigBkg_MassVsLumi->Draw("CONT4Z");
 
     file_output->Write();
   }
