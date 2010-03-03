@@ -46,14 +46,15 @@ void limit()
 
   TFile* file_output = TFile::Open("limit.root", "RECREATE");
   TDirectory* dir_CLs = file_output->mkdir("CLs", "CLs");
+  TDirectory* dir_CLb = file_output->mkdir("CLb", "CLb");
 
-  TGraph2D* grpCL_Bkg_MassVsLumi = new TGraph2D(nMassPoints*nLumiPoints);
-  grpCL_Bkg_MassVsLumi->SetName("grpCL_Bkg_MassVsLumi");
-  grpCL_Bkg_MassVsLumi->SetTitle("Exclusion limit CL = 1-CLs (B only hypothesis)");
+  TGraph2D* grpCL_Exclusion_MassVsLumi = new TGraph2D(nMassPoints*nLumiPoints);
+  grpCL_Exclusion_MassVsLumi->SetName("grpCL_Exclusion_MassVsLumi");
+  grpCL_Exclusion_MassVsLumi->SetTitle("Exclusion limit CL = 1-CLs (B only hypothesis)");
 
-  TGraph2D* grpCL_SigBkg_MassVsLumi = new TGraph2D(nMassPoints*nLumiPoints);
-  grpCL_SigBkg_MassVsLumi->SetName("grpCL_SigBkg_MassVsLumi");
-  grpCL_SigBkg_MassVsLumi->SetTitle("Exclusion limit CL = 1-CLs (S+B hypothesis)");
+  TGraph2D* grpCL_Discovery_MassVsLumi = new TGraph2D(nMassPoints*nLumiPoints);
+  grpCL_Discovery_MassVsLumi->SetName("grpCL_Discovery_MassVsLumi");
+  grpCL_Discovery_MassVsLumi->SetTitle("Discovery limit CL = 1-CLb (S+B hypothesis)");
 
   // Read background samples first
   TFile* file_TT_4l = TFile::Open("res/TT_4l_10TeV_GEN.root");
@@ -106,46 +107,45 @@ void limit()
       TLimitDataSource dataSource_Bkg(hMass_NormSig, hMass_NormBkg, hMass_NormBkg);
 
       dir_CLs->cd();
-      TConfidenceLevel* cl_SigBkg = TLimit::ComputeLimit(&dataSource_SigBkg, nMC);
-      TConfidenceLevel* cl_Bkg = TLimit::ComputeLimit(&dataSource_Bkg, nMC);
+      TConfidenceLevel* cl_Exclusion = TLimit::ComputeLimit(&dataSource_SigBkg, nMC);
+      cl_Exclusion->Write(Form("cl_Exclusion_M%.1f_L%.1f", mass, lumi));
 
-      cl_SigBkg->Write(Form("cl_SigBkg_M%.1f_L%.1f", mass, lumi));
-      cl_Bkg->Write(Form("cl_Bkg_M%.1f_L%.1f", mass, lumi));
+      dir_CLb->cd();
+      TConfidenceLevel* cl_Discovery = TLimit::ComputeLimit(&dataSource_Bkg, nMC);
+      cl_Discovery->Write(Form("cl_Discovery_M%.1f_L%.1f", mass, lumi));
 
-      const double cls_SigBkg = cl_SigBkg->CLs();
-      const double cls_Bkg = cl_Bkg->CLs();
-      //const double clb = cl_Bkg->CLb();
-      //const double expCLs = cl->GetExpectedCLs_b();
-      //const double expCLb = cl->GetExpectedCLb_b();
+      //const double cls_Exclusion = cl_Discovery->CLs();
+      //const double clb_Discovery = cl_Exclusion->CLb();
+
+      const double cls_Exclusion = cl_Exclusion->GetExpectedCLsb_b();
+      const double clb_Discovery = cl_Discovery->GetExpectedCLb_sb();
 
       const int idx = lumiIdx + massIdx*nLumiPoints;
-      grpCL_SigBkg_MassVsLumi->SetPoint(idx, mass, lumi, 1-cls_SigBkg);
-      grpCL_Bkg_MassVsLumi->SetPoint(idx, mass, lumi, 1-cls_Bkg);
+      grpCL_Exclusion_MassVsLumi->SetPoint(idx, mass, lumi, 1-cls_Exclusion);
+      grpCL_Discovery_MassVsLumi->SetPoint(idx, mass, lumi, 1-clb_Discovery);
 
       hMass_NormSig->Delete();
       hMass_NormBkg->Delete();
       hMass_DataSigBkg->Delete();
-      //cl_SigBkg->Delete();
-      //cl_Bkg->Delete();
     }
   }
 
-  grpCL_Bkg_MassVsLumi->GetXaxis()->SetTitle("Mass [GeV/c^{2}]");
-  grpCL_Bkg_MassVsLumi->GetYaxis()->SetTitle("Luminosity [fb^{-1}]");
+  grpCL_Exclusion_MassVsLumi->GetXaxis()->SetTitle("Mass [GeV/c^{2}]");
+  grpCL_Exclusion_MassVsLumi->GetYaxis()->SetTitle("Luminosity [fb^{-1}]");
 
-  grpCL_SigBkg_MassVsLumi->GetXaxis()->SetTitle("Mass [GeV/c^{2}]");
-  grpCL_SigBkg_MassVsLumi->GetYaxis()->SetTitle("Luminosity [fb^{-1}]");
+  grpCL_Discovery_MassVsLumi->GetXaxis()->SetTitle("Mass [GeV/c^{2}]");
+  grpCL_Discovery_MassVsLumi->GetYaxis()->SetTitle("Luminosity [fb^{-1}]");
   if ( !gROOT->IsBatch() )
   {
     gStyle->SetPalette(1);
 
-    TCanvas* cCLs_Bkg = new TCanvas("cCLs_Bkg", "cCLs_Bkg");
-    cCLs_Bkg->SetLogy();
-    grpCL_Bkg_MassVsLumi->Draw("CONT4Z");
+    TCanvas* cCL_Exclusion = new TCanvas("cCL_Exclusion", "cCL_Exclusion");
+    cCL_Exclusion->SetLogy();
+    grpCL_Exclusion_MassVsLumi->Draw("CONT4Z");
 
-    TCanvas* cCLs_SigBkg = new TCanvas("cLCs_SigBkg", "cCLs_SigBkg");
-    cCLs_SigBkg->SetLogy();
-    grpCL_SigBkg_MassVsLumi->Draw("CONT4Z");
+    TCanvas* cCL_Discovery = new TCanvas("cLCs_SigBkg", "cCL_Discovery");
+    cCL_Discovery->SetLogy();
+    grpCL_Discovery_MassVsLumi->Draw("CONT4Z");
 
     file_output->Write();
   }
