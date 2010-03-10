@@ -29,6 +29,8 @@
 
 using namespace std;
 
+const TString prefix="20100308_";
+
 const double zMassPDG = 91.1876;
 const double zVetoCut = 5;
 const double higgsMassMin = 50;
@@ -73,7 +75,7 @@ void AnalyzeHppToEMu(TString sampleName, int verbose=0)
   {
     TString datasetPath("HiggsAnalysis/DoublyChargedHiggs/");
     datasetPath += getenv("CMSSW_VERSION");
-    datasetPath += "/"+sampleName+"/HppEMu/";
+    datasetPath += "/"+sampleName+"/"+prefix+"HppEMu/";
 
     FILE* rfdirCmd = gSystem->OpenPipe("nsls "+datasetPath, "r");
     const size_t bufferSize = 1000;
@@ -122,6 +124,9 @@ void AnalyzeHppToEMu(TString sampleName, int verbose=0)
     typedef pat::MuonCollection::const_iterator MuonIter;
     typedef pat::CompositeCandidateCollection::const_iterator CompCandIter;
 
+    // Variables for trigger/skim confirmation
+    int nLeptonPt10 = 0, nLeptonPt5 = 0;
+
     OverlapChecker isOverlap;
 
     for(ElectronIter electronPtr = electronColl->begin();
@@ -130,6 +135,9 @@ void AnalyzeHppToEMu(TString sampleName, int verbose=0)
       hElectronPt->Fill(electronPtr->pt());
       hElectronEta->Fill(electronPtr->eta());
       hElectronIso->Fill((electronPtr->trackIso()+electronPtr->caloIso())/electronPtr->pt());
+
+      if ( electronPtr->pt() > 10 ) ++nLeptonPt10;
+      if ( electronPtr->pt() > 5 ) ++nLeptonPt5;
     }
 
     for(MuonIter muonPtr = muonColl->begin();
@@ -138,7 +146,13 @@ void AnalyzeHppToEMu(TString sampleName, int verbose=0)
       hMuonPt->Fill(muonPtr->pt());
       hMuonEta->Fill(muonPtr->eta());
       hMuonIso->Fill((muonPtr->trackIso()+muonPtr->caloIso())/muonPtr->pt());
+
+      if ( muonPtr->pt() > 10 ) ++nLeptonPt10;
+      if ( muonPtr->pt() > 5 ) ++nLeptonPt5;
     }
+
+    // Skip if Skim condition is not satisfied
+    if ( nLeptonPt10 < 2 || nLeptonPt5 < 1 ) continue;
 
     for(CompCandIter hppCand = posDeltaColl->begin(); 
         hppCand != posDeltaColl->end(); ++hppCand)
@@ -176,8 +190,8 @@ void AnalyzeHppToEMu(TString sampleName, int verbose=0)
       if ( !posMuon or !posElectron ) continue;
 
       // Confirm Skimming cuts
-      if ( posMuon->pt() < 10 or posElectron->pt() < 10 or
-           fabs(posMuon->eta()) > 2.5 or fabs(posElectron->eta()) > 2.5 ) continue;
+      if ( posMuon->pt() < 5 or posElectron->pt() < 5 or
+           fabs(posMuon->eta()) > 2.4 or fabs(posElectron->eta()) > 3 ) continue;
 
       for(CompCandIter hmmCand = negDeltaColl->begin(); 
           hmmCand != negDeltaColl->end(); ++hmmCand)
@@ -195,8 +209,8 @@ void AnalyzeHppToEMu(TString sampleName, int verbose=0)
         if ( !negMuon or !negElectron ) continue;
 
         // Confirm Skimming cuts
-        if ( negMuon->pt() < 10 or negElectron->pt() < 10 or
-             fabs(negMuon->eta()) > 2.5 or fabs(negElectron->eta()) > 2.5 ) continue;
+        if ( negMuon->pt() < 5 or negElectron->pt() < 5 or
+             fabs(negMuon->eta()) > 2.4 or fabs(negElectron->eta()) > 3 ) continue;
 
         // Check overlap
         if ( isOverlap(*hppCand, *hmmCand) ) continue;
@@ -211,8 +225,9 @@ void AnalyzeHppToEMu(TString sampleName, int verbose=0)
         hZToEEMass->Fill(zToEEMass);
 
         // Z veto
-        if ( zToMuMuMass > zMassPDG-zVetoCut and zToMuMuMass < zMassPDG+zVetoCut ) continue;
-        if ( zToEEMass > zMassPDG-zVetoCut and zToEEMass < zMassPDG+zVetoCut ) continue;
+        const double zToMuMuDMass = fabs(zToMuMuMass-zMassPDG);
+        const double zToEEDMass = fabs(zToEEMass-zMassPDG);
+        if ( zToMuMuDMass < zVetoCut || zToEEDMass < zVetoCut ) continue;
 
         const double massDiff = fabs(hppCand->mass()-hmmCand->mass());
         hMassDiff->Fill(massDiff);
