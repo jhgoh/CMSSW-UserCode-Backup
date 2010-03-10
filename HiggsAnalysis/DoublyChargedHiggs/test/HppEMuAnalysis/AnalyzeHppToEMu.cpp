@@ -15,12 +15,14 @@
 
 #include "TCanvas.h"
 #include "TFile.h"
-#include "TTree.h"
+#include "TNtuple.h"
 #include "TString.h"
 
 #include "TMath.h"
 #include "TH1F.h"
 #include "THStack.h"
+
+#include "TNtuple.h"
 
 #include <iostream>
 #include <vector>
@@ -37,14 +39,19 @@ void AnalyzeHppToEMu(TString sampleName, int verbose=0)
   TString fileName = TString("res/")+TString(sampleName)+TString(".root");
   TFile* hFile = TFile::Open(fileName, "RECREATE");
 
+  // Book Ntuple
+  TNtupleD* ntp = new TNtuple("ntp", "ntp", "maxElectronPt:minElectronPt:maxElectronIso:minElectronIso:"
+                                            "maxMuonPt:minMuonPt:maxMuonIso:minMuonIso:"
+                                            "eeMass:mumuMass:maxHiggsPt:minHiggsPt:dMass");
+
   // Book histograms
   TH1F* hElectronPt = new TH1F("ElectronPt", "Electron transverse momentum;p_{T} [GeV/c]", 200, 0, 1000);
   TH1F* hElectronEta = new TH1F("ElectronEta", "Electron pseudorapidity;#eta [Radian]", 200, -3, 3);
-  TH1F* hElectronIso = new TH1F("ElectronIso", "Electron relative isolation;Isolation", 200, 0, 20);
+  TH1F* hElectronIso = new TH1F("ElectronIso", "Electron relative isolation;Isolation", 200, 0, 5);
 
   TH1F* hMuonPt = new TH1F("MuonPt", "Muon transverse momentum;p_{T} [GeV/c]", 200, 0, 1000);
   TH1F* hMuonEta = new TH1F("MuonEta", "Muon pseudorapidity;#eta [Radian]", 200, -3, 3);
-  TH1F* hMuonIso = new TH1F("MuonIso", "Muon relative isolation;Isolation", 200, 0, 20);
+  TH1F* hMuonIso = new TH1F("MuonIso", "Muon relative isolation;Isolation", 200, 0, 3);
 
   TH1F* hHppPt = new TH1F("HppPt", "H^{++} transverse momentum;p_{T} [GeV/c]", 200, 0, 1000);
   TH1F* hHmmPt = new TH1F("HmmPt", "H^{--} transverse mementum;p_{T} [GeV/c]", 200, 0, 1000);
@@ -226,6 +233,43 @@ void AnalyzeHppToEMu(TString sampleName, int verbose=0)
     {
       hHppMassNearest->Fill(hppCandNearest->mass());
       hHmmMassNearest->Fill(hmmCandNearest->mass());
+
+      const int posMuonIdx = hppCandNearest->daughter(0)->isMuon() ? 0 : 1;
+      const int negMuonIdx = hmmCandNearest->daughter(0)->isMuon() ? 0 : 1;
+      const int posElectronIdx = hppCandNearest->daughter(1)->isElectron() ? 1 : 0;
+      const int negElectronIdx = hmmCandNearest->daughter(1)->isElectron() ? 1 : 0;
+
+      const pat::Muon* negMuon = dynamic_cast<const pat::Muon*>(hmmCand->daughter(negMuonIdx));
+      const pat::Muon* posMuon = dynamic_cast<const pat::Muon*>(hppCand->daughter(posMuonIdx));
+      const pat::Electron* negElectron = dynamic_cast<const pat::Electron*>(hmmCand->daughter(negElectronIdx));
+      const pat::Electron* posElectron = dynamic_cast<const pat::Electron*>(hppCand->daughter(posElectronIdx));
+
+      const double maxMuonPt = negMuon->pt() > posMuon->pt() ? negMuon->pt() : posMuon->pt();
+      const double minMuonPt = negMuon->pt() < posMuon->pt() ? negMuon->pt() : posMuon->pt();
+      const double maxElectronPt = negElectron->pt() > posElectron->pt() ? negElectron->pt() : posElectron->pt();
+      const double minElectronPt = negElectron->pt() < posElectron->pt() ? negElectron->pt() : posElectron->pt();
+
+      const double negMuonIso = (negMuon->trackIso()+negMuon->caloIso())/negMuon->pt();
+      const double posMuonIso = (posMuon->trackIso()+posMuon->caloIso())/posMuon->pt();
+      const double negElectronIso = (negElectron->trackIso()+negElectron->caloIso())/negElectron->pt();
+      const double posElectronIso = (posElectron->trackIso()+posElectron->caloIso())/posElectron->pt();
+
+      const double maxMuonIso = negMuonIso > posMuonIso ? negMuonIso : posMuonIso;
+      const double minMuonIso = negMuonIso < posMuonIso ? negMuonIso : posMuonIso;
+      const double maxElectronIso = negElectronIso > posElectronIso ? negElectronIso : posElectronIso;
+      const double minElectronIso = negElectronIso < posElectronIso ? negElectronIso : posElectronIso;
+
+      const double eeMass = (negElectron->p4()+posElectron->p4()).M();
+      const double mumuMass = (negMuon->p4()+posMuon->p4()).M();
+
+      const double maxHiggsPt = hmmCandNearest->pt() > hppCandNearest->pt() ? hmmCandNearest->pt() : hppCandNearest->pt();
+      const double minHiggsPt = hmmCandNearest->pt() < hppCandNearest->pt() ? hmmCandNearest->pt() : hppCandNearest->pt();
+
+      const double dMass = fabs(hmmCandNearest->mass()-hppCandNearest->mass());
+
+      ntp->Fill(maxElectronPt, minElectronPt, maxElectronIso, minElectronIso,
+                maxMuonPt, minMuonPt, maxMuonIso, minMuonIso,
+                eeMass, mumuMass, maxHiggsPt, minHiggsPt, dMass);
     }
 
   }
@@ -245,6 +289,7 @@ void AnalyzeHppToEMu(TString sampleName, int verbose=0)
   }
   else
   {
+    ntp->Write();
     hFile->Close();
   }
 }
