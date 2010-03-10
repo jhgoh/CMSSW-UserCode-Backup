@@ -22,7 +22,7 @@
 #include "TH1F.h"
 #include "THStack.h"
 
-#include "TNtuple.h"
+#include "TNtupleD.h"
 
 #include <iostream>
 #include <vector>
@@ -42,7 +42,7 @@ void AnalyzeHppToEMu(TString sampleName, int verbose=0)
   TFile* hFile = TFile::Open(fileName, "RECREATE");
 
   // Book Ntuple
-  TNtupleD* ntp = new TNtuple("ntp", "ntp", "maxElectronPt:minElectronPt:maxElectronIso:minElectronIso:"
+  TNtupleD* ntp = new TNtupleD("ntp", "ntp", "maxElectronPt:minElectronPt:maxElectronIso:minElectronIso:"
                                             "maxMuonPt:minMuonPt:maxMuonIso:minMuonIso:"
                                             "eeMass:mumuMass:maxHiggsPt:minHiggsPt:dMass");
 
@@ -254,10 +254,10 @@ void AnalyzeHppToEMu(TString sampleName, int verbose=0)
       const int posElectronIdx = hppCandNearest->daughter(1)->isElectron() ? 1 : 0;
       const int negElectronIdx = hmmCandNearest->daughter(1)->isElectron() ? 1 : 0;
 
-      const pat::Muon* negMuon = dynamic_cast<const pat::Muon*>(hmmCand->daughter(negMuonIdx));
-      const pat::Muon* posMuon = dynamic_cast<const pat::Muon*>(hppCand->daughter(posMuonIdx));
-      const pat::Electron* negElectron = dynamic_cast<const pat::Electron*>(hmmCand->daughter(negElectronIdx));
-      const pat::Electron* posElectron = dynamic_cast<const pat::Electron*>(hppCand->daughter(posElectronIdx));
+      const pat::Muon* negMuon = dynamic_cast<const pat::Muon*>(hmmCandNearest->daughter(negMuonIdx));
+      const pat::Muon* posMuon = dynamic_cast<const pat::Muon*>(hppCandNearest->daughter(posMuonIdx));
+      const pat::Electron* negElectron = dynamic_cast<const pat::Electron*>(hmmCandNearest->daughter(negElectronIdx));
+      const pat::Electron* posElectron = dynamic_cast<const pat::Electron*>(hppCandNearest->daughter(posElectronIdx));
 
       const double maxMuonPt = negMuon->pt() > posMuon->pt() ? negMuon->pt() : posMuon->pt();
       const double minMuonPt = negMuon->pt() < posMuon->pt() ? negMuon->pt() : posMuon->pt();
