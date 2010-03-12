@@ -31,7 +31,7 @@ void limit()
   const double bkgNEvents_ZZ_4l = 898940;
   const double bkgNEvents_LLBB_4l = 1063204;
 
-  const double sigNEvents = 10000;
+  const double sigNEvents = 1000;
 
   // Number of pseudo-experiments during the limit calculation
   const int nMC = 10000;

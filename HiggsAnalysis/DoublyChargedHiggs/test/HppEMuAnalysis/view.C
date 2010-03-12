@@ -25,7 +25,6 @@ void view(const double hppMass = 200, const char* datasetNameForm = "Hpp%d_EMu_1
   // XSec parameters from https://twiki.cern.ch/twiki/bin/viewauth/CMS/HiggsZZMCsamples
   const double bkgXSec[nBkg] = {280900*1.46*0.01091, 56200*1.66*0.007, 189*(1+0.35+0.2)*0.3165};
   const double bkgNEvents[nBkg] = {1007062, 1063204, 898940};
-  //const double bkgNEvents[nBkg] = {10000, 10000, 10000};
   TFile* bkgFiles[nBkg];
 
   for ( size_t bkgIdx = 0; bkgIdx < nBkg; ++bkgIdx )

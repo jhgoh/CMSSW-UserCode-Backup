@@ -42,9 +42,11 @@ void AnalyzeHppToEMu(TString sampleName, int verbose=0)
   TFile* hFile = TFile::Open(fileName, "RECREATE");
 
   // Book Ntuple
-  TNtupleD* ntp = new TNtupleD("ntp", "ntp", "maxElectronPt:minElectronPt:maxElectronIso:minElectronIso:"
-                                            "maxMuonPt:minMuonPt:maxMuonIso:minMuonIso:"
-                                            "eeMass:mumuMass:maxHiggsPt:minHiggsPt:dMass");
+  TNtupleD* ntp = new TNtupleD("ntp", "ntp", 
+                               "MaxElectronPt:MinElectronPt:MaxElectronIso:MinElectronIso:"
+                               "MaxMuonPt:MinMuonPt:MaxMuonIso:MinMuonIso:"
+                               "EEMass:MuMuMass:MaxHiggsPt:MinHiggsPt:"
+                               "HmmMass:HppMass");
 
   // Book histograms
   TH1F* hElectronPt = new TH1F("ElectronPt", "Electron transverse momentum;p_{T} [GeV/c]", 200, 0, 1000);
@@ -129,15 +131,29 @@ void AnalyzeHppToEMu(TString sampleName, int verbose=0)
 
     OverlapChecker isOverlap;
 
+    // Confirm Skim condition is not satisfied
+    for(ElectronIter electronPtr = electronColl->begin();
+        electronPtr != electronColl->end(); ++electronPtr)
+    {
+      if ( electronPtr->pt() > 10 ) ++nLeptonPt10;
+      if ( electronPtr->pt() > 5 ) ++nLeptonPt5;
+    }
+
+    for(MuonIter muonPtr = muonColl->begin();
+        muonPtr != muonColl->end(); ++muonPtr)
+      if ( muonPtr->pt() > 10 ) ++nLeptonPt10;
+      if ( muonPtr->pt() > 5 ) ++nLeptonPt5;
+    }
+
+    if ( nLeptonPt10 < 2 || nLeptonPt5 < 1 ) continue;
+
+    // Loop over leptons again to Fill histograms
     for(ElectronIter electronPtr = electronColl->begin();
         electronPtr != electronColl->end(); ++electronPtr)
     {
       hElectronPt->Fill(electronPtr->pt());
       hElectronEta->Fill(electronPtr->eta());
       hElectronIso->Fill((electronPtr->trackIso()+electronPtr->caloIso())/electronPtr->pt());
-
-      if ( electronPtr->pt() > 10 ) ++nLeptonPt10;
-      if ( electronPtr->pt() > 5 ) ++nLeptonPt5;
     }
 
     for(MuonIter muonPtr = muonColl->begin();
@@ -146,13 +162,7 @@ void AnalyzeHppToEMu(TString sampleName, int verbose=0)
       hMuonPt->Fill(muonPtr->pt());
       hMuonEta->Fill(muonPtr->eta());
       hMuonIso->Fill((muonPtr->trackIso()+muonPtr->caloIso())/muonPtr->pt());
-
-      if ( muonPtr->pt() > 10 ) ++nLeptonPt10;
-      if ( muonPtr->pt() > 5 ) ++nLeptonPt5;
     }
-
-    // Skip if Skim condition is not satisfied
-    if ( nLeptonPt10 < 2 || nLeptonPt5 < 1 ) continue;
 
     for(CompCandIter hppCand = posDeltaColl->begin(); 
         hppCand != posDeltaColl->end(); ++hppCand)
@@ -191,7 +201,7 @@ void AnalyzeHppToEMu(TString sampleName, int verbose=0)
 
       // Confirm Skimming cuts
       if ( posMuon->pt() < 5 or posElectron->pt() < 5 or
-           fabs(posMuon->eta()) > 2.4 or fabs(posElectron->eta()) > 3 ) continue;
+           fabs(posMuon->eta()) > 2.4 or fabs(posElectron->eta()) > 2.4 ) continue;
 
       for(CompCandIter hmmCand = negDeltaColl->begin(); 
           hmmCand != negDeltaColl->end(); ++hmmCand)
@@ -210,7 +220,7 @@ void AnalyzeHppToEMu(TString sampleName, int verbose=0)
 
         // Confirm Skimming cuts
         if ( negMuon->pt() < 5 or negElectron->pt() < 5 or
-             fabs(negMuon->eta()) > 2.4 or fabs(negElectron->eta()) > 3 ) continue;
+             fabs(negMuon->eta()) > 2.4 or fabs(negElectron->eta()) > 2.4 ) continue;
 
         // Check overlap
         if ( isOverlap(*hppCand, *hmmCand) ) continue;
@@ -224,10 +234,10 @@ void AnalyzeHppToEMu(TString sampleName, int verbose=0)
         hZToMuMuMass->Fill(zToMuMuMass);
         hZToEEMass->Fill(zToEEMass);
 
-        // Z veto
-        const double zToMuMuDMass = fabs(zToMuMuMass-zMassPDG);
-        const double zToEEDMass = fabs(zToEEMass-zMassPDG);
-        if ( zToMuMuDMass < zVetoCut || zToEEDMass < zVetoCut ) continue;
+        //// Z veto
+        //const double zToMuMuDMass = fabs(zToMuMuMass-zMassPDG);
+        //const double zToEEDMass = fabs(zToEEMass-zMassPDG);
+        //if ( zToMuMuDMass < zVetoCut || zToEEDMass < zVetoCut ) continue;
 
         const double massDiff = fabs(hppCand->mass()-hmmCand->mass());
         hMassDiff->Fill(massDiff);
@@ -284,7 +294,8 @@ void AnalyzeHppToEMu(TString sampleName, int verbose=0)
 
       ntp->Fill(maxElectronPt, minElectronPt, maxElectronIso, minElectronIso,
                 maxMuonPt, minMuonPt, maxMuonIso, minMuonIso,
-                eeMass, mumuMass, maxHiggsPt, minHiggsPt, dMass);
+                eeMass, mumuMass, maxHiggsPt, minHiggsPt, 
+                hmmCandNearest->mass(), hppCandNearest->mass());
     }
 
   }
