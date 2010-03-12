@@ -141,6 +141,7 @@ void AnalyzeHppToEMu(TString sampleName, int verbose=0)
 
     for(MuonIter muonPtr = muonColl->begin();
         muonPtr != muonColl->end(); ++muonPtr)
+    {
       if ( muonPtr->pt() > 10 ) ++nLeptonPt10;
       if ( muonPtr->pt() > 5 ) ++nLeptonPt5;
     }
