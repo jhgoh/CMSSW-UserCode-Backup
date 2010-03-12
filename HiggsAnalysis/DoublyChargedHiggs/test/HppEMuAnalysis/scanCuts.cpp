@@ -16,56 +16,84 @@ class CutProcessor
 public:
   void setSignal(TFile* file, const double xSec, const double nEvent)
   {
+    if ( !file || !file->IsOpen() ) return;
+
     sigFile_ = file;
     sigScale_ = xSec/nEvent;
   }
   void addBackground(TFile* file, const double xSec, const double nEvent)
   {
+    if ( !file || !file->IsOpen() ) return;
+
     bkgFiles_.push_back(file);
     bkgScale_.push_back(xSec/nEvent);
   }
-  void scanCut(TString name, bool greaterThan=true)
+  void scanCut(const char* name, bool greaterThan=true)
   {
-    // Read up histograms
-    TH1F* hSig = (TH1F*)(sigFile_->Get(name));
-    const int nSigTotal = hSig->GetEntries()*sigScale_;
+    if ( !sigFile_ || bkgFiles_.empty() ) return;
 
-    std::vector<TH1F*> hBkgs;
-    int nBkgTotal = 0;
-    for ( size_t bkgIdx=0; bkgIdx<bkgFiles_.size(); ++bkgIdx )
+    // Read up histograms
+    TH1F* hSig = dynamic_cast<TH1F*>(sigFile_->Get(name));
+    if ( !hSig )
     {
-      hBkgs.push_back((TH1F*)(bkgFiles_[bkgIdx]->Get(name)));
-      nBkgTotal += hBkgs[bkgIdx]->GetEntries()*bkgScale_[bkgIdx];
+      cout << "No signal histogram found\n";
+      return;
+    }
+    const double nSigTotal = hSig->GetEntries()*sigScale_;
+
+    const size_t nBkgFiles = bkgFiles_.size();
+    std::vector<TH1F*> hBkgs;
+    double nBkgTotal = 0;
+    for ( size_t bkgIdx=0; bkgIdx<nBkgFiles; ++bkgIdx )
+    {
+      TH1F* hBkg = dynamic_cast<TH1F*>(bkgFiles_[bkgIdx]->Get(name));
+      if ( !hBkg )
+      {
+        cout << "No histogram found " << endl;
+        return;
+      }
+      hBkgs.push_back(hBkg);
+      nBkgTotal += hBkg->GetEntries()*bkgScale_[bkgIdx];
     }
 
+    if ( hBkgs.size() != nBkgFiles ) return;
+
     // Build up graph
-    TGraph* grpSignif = new TGraph(hSig->GetNbinsX());
-    TGraph* grpEffSig = new TGraph(hSig->GetNbinsX());
-    TGraph* grpEffBkg = new TGraph(hSig->GetNbinsX());
+    const Int_t nBinsX = hSig->GetNbinsX();
+    TGraph* grpSignif = new TGraph(nBinsX);
+    TGraph* grpEffSig = new TGraph(nBinsX);
+    TGraph* grpEffBkg = new TGraph(nBinsX);
 
     // Count # of candidates
-    int nSig = 0, nBkg = 0;
-    int bin = greaterThan ? hSig->GetNbinsX() : 1;
-    for ( int i=0; i<hSig->GetNbinsX(); ++i)
+    double nSig = 0, nBkg = 0;
+    int bin = greaterThan ? nBinsX : 1;
+
+    for ( int i=0; i<nBinsX; ++i)
     {
       greaterThan ? --bin : ++bin;
 
       nSig += hSig->GetBinContent(bin)*sigScale_;
-      for ( size_t bkgIdx=0; bkgIdx<bkgFiles_.size(); ++bkgIdx )
+
+      for ( size_t bkgIdx=0; bkgIdx<nBkgFiles; ++bkgIdx )
       {
-        nBkg += hBkgs[bkgIdx]->GetBinContent(bin)*bkgScale_[bkgIdx];
+        TH1F* hBkg = hBkgs[bkgIdx];
+        if ( !hBkg ) continue;
+        nBkg += hBkg->GetBinContent(bin)*bkgScale_[bkgIdx];
       }
 
       const double x = hSig->GetBinLowEdge(bin);
-      const double signif = nSig+nBkg == 0 ? 0 : nSig/sqrt(nSig+nBkg);
+      const double signif = nSig+nBkg == 0 ? 0 : nSig/sqrt(double(nSig+nBkg));
       grpSignif->SetPoint(i, x, signif);
       grpEffSig->SetPoint(i, x, double(nSig)/nSigTotal);
       grpEffBkg->SetPoint(i, x, double(nBkg)/nBkgTotal);
-
-      cout << x << ' ' << signif << ' ' << double(nSig)/nSigTotal << ' ' << double(nBkg)/nBkgTotal << endl;
     }
 
-    TCanvas* c = new TCanvas("can_"+name, "can_"+name);
+    grpSignif->SetTitle(TString(hSig->GetTitle())+";"+hSig->GetXaxis()->GetTitle()+";Significance");
+    grpEffSig->SetTitle(TString(hSig->GetTitle())+";"+hSig->GetXaxis()->GetTitle()+";Efficiency");
+    grpEffBkg->SetTitle(TString(hSig->GetTitle())+";"+hSig->GetXaxis()->GetTitle()+";Efficiency");
+
+    std::string canvasName = string("can_")+name;
+    TCanvas* c = new TCanvas(canvasName.c_str(), canvasName.c_str());
     c->Divide(1,2);
     grpSignif->SetLineWidth(2);
     grpEffSig->SetLineWidth(2);
@@ -74,11 +102,15 @@ public:
     grpEffSig->SetLineColor(kRed);
     grpEffBkg->SetLineColor(kGreen);
 
-    c->cd(1);
+    TVirtualPad* pad;
+
+    pad = c->cd(1);
+    pad->SetGridx(); pad->SetGridy();
     grpSignif->Draw("ALP");
     grpSignif->SetMinimum(0);
 
-    c->cd(2);
+    pad = c->cd(2);
+    pad->SetGridx(); pad->SetGridy();
     grpEffSig->SetMinimum(0);
     grpEffSig->SetMaximum(1.1);
     grpEffSig->Draw("ALP");
@@ -91,14 +123,14 @@ private:
   std::vector<double> bkgScale_;
 };
 
-void scanCuts(const double mass = 140, const TString sigNameForm = "Hpp%.0f_EMu_10TeV_GEN_HLT")
+void scanCuts(const double mass = 140, const char* sigNameForm = "Hpp%.0f_EMu_10TeV_GEN_HLT")
 {
   CutProcessor cutProcessor;
 
   // Set signal sample
-  const TString sigFileName = TString("res/")+Form(sigNameForm, mass)+".root";
-  cutProcessor.setSignal(TFile::Open(sigFileName), getHppXSec(mass), 10000);
- 
+  string sigFileName(string("res/")+Form(sigNameForm, mass)+".root");
+  cutProcessor.setSignal(TFile::Open(sigFileName.c_str()), getHppXSec(mass), 10000);
+
   // Set background sample
   cutProcessor.addBackground(TFile::Open("res/LLBB_4l_10TeV_GEN.root"), 56200*1.66*0.007, 1063204);
   cutProcessor.addBackground(TFile::Open("res/TT_4l_10TeV_GEN.root"), 280900*1.46*0.01091, 1007062);
@@ -110,9 +142,10 @@ void scanCuts(const double mass = 140, const TString sigNameForm = "Hpp%.0f_EMu_
   cutProcessor.scanCut("HppPt");
   cutProcessor.scanCut("HmmPt");
 
+  cutProcessor.scanCut("ZToEEMass");
+  cutProcessor.scanCut("ZToMuMuMass");
+
   cutProcessor.scanCut("ElectronIso", false);
   cutProcessor.scanCut("MuonIso", false);
-  //TString varList[nCuts] = {"MassDiff", "ZToMuMuMass", "ZToEEMass"};
-  
 }
 
