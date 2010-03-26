@@ -73,7 +73,7 @@ process.rpcRecHitPostProcessor = cms.EDAnalyzer("DQMGenericClient",
   subDirs = cms.untracked.vstring("RPCRecHitsV"),
   efficiency = cms.vstring(
     "Effic_Wheel 'Barrel SimHit to RecHit matching efficiency;Wheel' NRecRoll_Wheel NSimRoll_Wheel",
-    "Effic_Disk 'Endcap SimHit to RecHit matching efficiency;Disk' NRecRoll_Disk, NSimRoll_Disk",
+    "Effic_Disk 'Endcap SimHit to RecHit matching efficiency;Disk' NRecRoll_Disk NSimRoll_Disk",
     "NoiseRate_Wheel 'Barrel un-matched RecHit to SimHit rate;Wheel' NNoisyRoll_Wheel NSimRoll_Wheel",
     "NoiseRate_Disk 'Endcap un-matched RecHit to SimHit rate;Disk' NNoisyRoll_Disk NSimRoll_Disk",
     "LostRate_Wheel 'Barrel un-matched RecHit to SimHit rate;Wheel' NLostRoll_Wheel NSimRoll_Wheel",
