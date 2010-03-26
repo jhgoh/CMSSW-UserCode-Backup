@@ -10,7 +10,9 @@ process.load("Configuration.StandardSequences.Geometry_cff")
 
 ### conditions
 process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
-process.GlobalTag.globaltag = 'MC_3XY_V21::All'
+process.GlobalTag.globaltag = 'MC_3XY_V24::All'
+
+process.MessageLogger.cerr.FwkReport.reportEvery = 100
 
 import sys,os
 if 'SAMPLE' in os.environ:
