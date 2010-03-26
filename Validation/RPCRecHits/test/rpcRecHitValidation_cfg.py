@@ -8,12 +8,12 @@ process.load("Configuration.EventContent.EventContent_cff")
 process.load("Configuration.StandardSequences.Services_cff")
 process.load("Configuration.StandardSequences.Geometry_cff")
 
-### conditions
-process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
-process.GlobalTag.globaltag = 'MC_3XY_V24::All'
-
 process.MessageLogger.cerr.FwkReport.reportEvery = 100
 
+### conditions
+process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
+
+### Load MC samples
 import sys,os
 if 'SAMPLE' in os.environ:
   sampleName = os.environ['SAMPLE']
@@ -21,6 +21,7 @@ if 'SAMPLE' in os.environ:
   sampleCfg = __import__(sampleName+"_cfg")
   process.source = sampleCfg.source
   process.maxEvents = sampleCfg.maxEvents
+  process.GlobalTag.globaltag = sampleCfg.globaltag
 else:
   sampleName = 'Test'
   process.source = cms.Source("PoolSource",
@@ -44,6 +45,7 @@ else:
        '/store/relval/CMSSW_3_5_0/RelValSingleMuPt10/GEN-SIM-DIGI-RAW-HLTDEBUG/MC_3XY_V21-v1/0012/46E7724A-3013-DF11-81F6-001731AF67E9.root'
     )
   )
+  process.GlobalTag.globaltag = 'MC_3XY_V21::All'
   process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(10) )
 
 #process.options = cms.untracked.PSet(
@@ -55,7 +57,7 @@ process.load('Configuration.StandardSequences.EndOfProcess_cff')
 process.load("DQMServices.Components.EDMtoMEConverter_cff")
 
 process.dqmSaver.convention = 'Offline'
-process.dqmSaver.workflow = "/MC_3XY_V21/%s/Validation" % sampleName
+process.dqmSaver.workflow = "/%s/%s/Validation" % (process.GlobalTag.globaltag, sampleName)
 process.DQMStore.verbose = 100
 
 #process.endjob_step = cms.Path(process.endOfProcess)
