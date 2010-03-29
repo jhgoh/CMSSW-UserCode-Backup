@@ -67,7 +67,7 @@ process.DQMStore.verbose = 100
 process.rpcRecHitValidation = cms.EDAnalyzer("RPCRecHitValid",
   simHit = cms.InputTag("g4SimHits", "MuonRPCHits"),
   recHit = cms.InputTag("rpcRecHits"),
-  standAlone = cms.untracked.bool(True),
+  standAloneMode = cms.untracked.bool(True),
   rootFileName = cms.untracked.string("dqm_%s.root" % sampleName)
 )
 
