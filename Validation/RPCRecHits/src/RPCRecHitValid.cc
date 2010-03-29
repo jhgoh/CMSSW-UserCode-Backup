@@ -50,7 +50,7 @@ RPCRecHitValid::RPCRecHitValid(const edm::ParameterSet& pset)
   dbe_->setCurrentFolder(subDir);
 
   // Global plots
-  h_[HName::ClusterSize] = dbe_->book1D("ClusterSize", "Cluster size;Cluster size", 11, -10.5, 10.5);
+  h_[HName::ClusterSize] = dbe_->book1D("ClusterSize", "Cluster size;Cluster size", 21, -10.5, 10.5);
 
   h_[HName::Res] = dbe_->book1D("Res", "Global residuals;Residual [cm]", 100, -8, 8);
   h_[HName::Pull] = dbe_->book1D("Pull", "Global pulls;Pull", 100, -5, 5);
@@ -72,11 +72,11 @@ RPCRecHitValid::RPCRecHitValid(const edm::ParameterSet& pset)
   {
     h_[HName::NSimHitXY_Barrel] = dbe_->book2D("NSimHitXY_Barrel", "Number of SimHits in Barrel, global XY view;X;Y", 1000, -700, 700, 1000, -700, 700);
     h_[HName::NSimHitXY_Endcap] = dbe_->book2D("NSimHitXY_Endcap", "Number of SimHits in Endcap, global XY view;X;Y", 1000, -700, 700, 1000, -700, 700);
-    h_[HName::NSimHitRZ] = dbe_->book2D("NSimHitRZ", "Number of SimHits in global RZ view;R;Z", 1000, -1100, 1100, 1000, 0, 700);
+    h_[HName::NSimHitRZ] = dbe_->book2D("NSimHitRZ", "Number of SimHits in global RZ view;Z;R", 1000, -1100, 1100, 1000, 0, 700);
 
     h_[HName::NRecHitXY_Barrel] = dbe_->book2D("NRecHitXY_Barrel", "Number of RecHits in global XY view;X;Y", 1000, -700, 700, 1000, -700, 700);
     h_[HName::NRecHitXY_Endcap] = dbe_->book2D("NRecHitXY_Endcap", "Number of RecHits in global XY view;X;Y", 1000, -700, 700, 1000, -700, 700);
-    h_[HName::NRecHitRZ] = dbe_->book2D("NRecHitRZ", "Number of RecHits in global RZ view;R;Z", 1000, -1100, 1100, 1000, 0, 700);
+    h_[HName::NRecHitRZ] = dbe_->book2D("NRecHitRZ", "Number of RecHits in global RZ view;Z;R", 1000, -1100, 1100, 1000, 0, 700);
   }
 
   // Residuals and pulls
