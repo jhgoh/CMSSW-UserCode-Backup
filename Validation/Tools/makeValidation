@@ -1,0 +1,111 @@
+#!/bin/bash
+
+if [ $# == 0 ]; then
+  echo "Usage : $0 CMSSW_VERSION [CMSSW_VERSION2 CMSSW_VERSION3 ...]"
+  exit
+fi
+
+RUNTIMEDIR=`pwd`/bin
+
+if [ ! -d $RUNTIMEDIR ]; then
+  mkdir $RUNTIMEDIR
+fi
+
+cd $RUNTIMEDIR
+
+echo "@@@ Checking DBS tools @@@"
+if [ ! -x $RUNTIMEDIR/tool_ls ]; then
+  wget --no-check-certificate https://cmsweb.cern.ch/dbs_discovery/tool_ls
+  chmod +x $RUNTIMEDIR/tool_ls
+fi
+
+if [ ! -x $RUNTIMEDIR/dbssql ]; then
+  wget --no-check-certificate https://cmsweb.cern.ch/dbs_discovery/dbssql
+  chmod +x $RUNTIMEDIR/dbssql
+fi
+
+cd ..
+
+echo "@@@ Preparing configuration files @@@"
+for CMSSW_VERSION in $@; do
+  echo "@@@@ Set up workarea for $CMSSW_VERSION @@@"
+
+  scram project CMSSW $CMSSW_VERSION
+  cd $CMSSW_VERSION/src
+  eval `scram runtime -sh`
+
+  cvs co -d Validation/RPCRecHits UserCode/JHGoh/Validation/RPCRecHits
+  scram build
+
+  cd Validation/RPCRecHits/test
+
+  # Make bsub-run script
+  echo "@@@@ Preparing submission script @@@@"
+  cat > run.sh <<EOF
+#!/bin/bash
+
+cd `pwd`
+eval \`scram runtime -sh\`
+
+EOF
+  chmod +x run.sh
+
+  echo "@@@@ Preparing sample file list configuration fragments @@@@"
+  mkdir samples
+
+  for DATASETNAME in RelValSingleMuPt10 RelValSingleMuPt100 RelValSingleMuPt1000; do
+    DBSQUERY_PREFIX="find dataset where release = $CMSSW_VERSION and dataset like /$DATASETNAME"
+    
+    DATASET_SIM=`$RUNTIMEDIR/dbssql --input="$DBSQUERY_PREFIX/*/GEN-SIM-DIGI-RAW-HLTDEBUG" | grep -o "'/RelVal.*'" | head -1`
+    DATASET_REC=`$RUNTIMEDIR/dbssql --input="$DBSQUERY_PREFIX/*/GEN-SIM-RECO" | grep -o "'/RelVal.*'" | head -1`
+
+    # Prepare source-cfg files
+    if [ X$DATASET_SIM == X ]; then
+      echo "No GEN-SIM-DIGI-RAW-HLTDEBUG dataset found"
+      continue
+    fi
+
+    if [ X$DATASET_REC == X ]; then
+      echo "No GEN-SIM-RECO dataset found"
+      continue
+    fi
+
+    cat > samples/${DATASETNAME}_cfg.py <<EOF
+import FWCore.ParameterSet.Config as cms
+
+maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
+readFiles = cms.untracked.vstring()
+secFiles = cms.untracked.vstring()
+
+source = cms.Source ("PoolSource",fileNames = readFiles, secondaryFileNames = secFiles)
+
+readFiles.extend( [
+EOF
+  
+    $RUNTIMEDIR/tool_ls -d $DATASET_REC | grep -v '^ *$' | sed -e "s#^/#'/#g" -e "s#\.root\$#.root',#g" >> samples/${DATASETNAME}_cfg.py
+    
+    cat >> samples/${DATASETNAME}_cfg.py <<EOF
+] );
+
+secFiles.extend( [
+EOF
+
+    $RUNTIMEDIR/tool_ls -d $DATASET_SIM | grep -v '^ *$' | sed -e "s#^/#'/#g" -e "s#\.root\$#.root',#g" >> samples/${DATASETNAME}_cfg.py
+  
+    cat >> samples/${DATASETNAME}_cfg.py <<EOF
+] );
+EOF
+
+    # GlobalTag settings
+    GLOBALTAG=`grep -m 1 -o '\/GEN-SIM-RECO\/[A-Za-z0-9_]\+' samples/${DATASETNAME}_cfg.py | sed -e 's#/GEN-SIM-RECO/##g'`
+    echo "globaltag = '$GLOBALTAG::All'" >> samples/${DATASETNAME}_cfg.py
+
+    echo "SAMPLE=$DATASETNAME cmsRun rpcRecHitValidation_cfg.py" >> run.sh
+
+  done
+
+  echo "@@@@ Finished Validation environment setup for $CMSSW_VERSION @@@@"
+  cd $RUNTIMEDIR/..
+
+  #bsub -q 8nh run.sh
+done
