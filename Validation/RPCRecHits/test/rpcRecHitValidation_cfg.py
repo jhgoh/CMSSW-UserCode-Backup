@@ -74,12 +74,12 @@ process.rpcRecHitValidation = cms.EDAnalyzer("RPCRecHitValid",
 process.rpcRecHitPostProcessor = cms.EDAnalyzer("DQMGenericClient",
   subDirs = cms.untracked.vstring("RPCRecHitsV"),
   efficiency = cms.vstring(
-    "Effic_Wheel 'Barrel SimHit to RecHit matching efficiency;Wheel' NRecRoll_Wheel NSimRoll_Wheel",
-    "Effic_Disk 'Endcap SimHit to RecHit matching efficiency;Disk' NRecRoll_Disk NSimRoll_Disk",
-    "NoiseRate_Wheel 'Barrel un-matched RecHit to SimHit rate;Wheel' NNoisyRoll_Wheel NRecRoll_Wheel",
-    "NoiseRate_Disk 'Endcap un-matched RecHit to SimHit rate;Disk' NNoisyRoll_Disk NRecRoll_Disk",
-    "LostRate_Wheel 'Barrel un-matched SimHit to RecHit rate;Wheel' NLostRoll_Wheel NSimRoll_Wheel",
-    "LostRate_Disk 'Endcap un-matched SimHit to RecHit rate;Disk' NLostRoll_Disk NSimRoll_Disk"
+    "Effic_Wheel 'Barrel SimHit to RecHit matching efficiency;Wheel' NRecHit_Wheel NSimHit_Wheel",
+    "Effic_Disk 'Endcap SimHit to RecHit matching efficiency;Disk' NRecHit_Disk NSimHit_Disk",
+    "NoiseRate_Wheel 'Barrel un-matched RecHit to SimHit rate;Wheel' NNoisyHit_Wheel NRecHit_Wheel",
+    "NoiseRate_Disk 'Endcap un-matched RecHit to SimHit rate;Disk' NNoisyHit_Disk NRecHit_Disk",
+    "LostRate_Wheel 'Barrel un-matched SimHit to RecHit rate;Wheel' NLostHit_Wheel NSimHit_Wheel",
+    "LostRate_Disk 'Endcap un-matched SimHit to RecHit rate;Disk' NLostHit_Disk NSimHit_Disk"
   ),
   resolution = cms.vstring(""),
   outputFileName = cms.untracked.string("")
