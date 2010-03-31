@@ -138,6 +138,10 @@ RPCRecHitValid::RPCRecHitValid(const edm::ParameterSet& pset)
 
 RPCRecHitValid::~RPCRecHitValid()
 {
+  if ( dbe_ )
+  {
+    if ( !rootFileName_.empty() ) dbe_->save(rootFileName_);
+  }
 }
 
 void RPCRecHitValid::beginJob()
@@ -146,10 +150,6 @@ void RPCRecHitValid::beginJob()
 
 void RPCRecHitValid::endJob()
 {
-  if ( dbe_ )
-  {
-    if ( !rootFileName_.empty() ) dbe_->save(rootFileName_);
-  }
 }
 
 void RPCRecHitValid::analyze(const edm::Event& event, const edm::EventSetup& eventSetup)
