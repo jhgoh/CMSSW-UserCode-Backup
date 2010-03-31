@@ -5,26 +5,23 @@ if [ $# == 0 ]; then
   exit
 fi
 
-RUNTIMEDIR=`readlink -f $0 | sed -e "s#$0##g"`'/bin'
+BASEDIR=`pwd`
+RUNTIMEDIR=$(readlink -f $0 | sed -e "s#$(basename $0)##g")'bin'
 
 if [ ! -d $RUNTIMEDIR ]; then
   mkdir $RUNTIMEDIR
 fi
 
-cd $RUNTIMEDIR
-
 echo "@@@ Checking DBS tools @@@"
 if [ ! -x $RUNTIMEDIR/tool_ls ]; then
-  wget --no-check-certificate https://cmsweb.cern.ch/dbs_discovery/tool_ls
+  wget --no-check-certificate https://cmsweb.cern.ch/dbs_discovery/tool_ls -O $RUNTIMEDIR/tool_ls
   chmod +x $RUNTIMEDIR/tool_ls
 fi
 
 if [ ! -x $RUNTIMEDIR/dbssql ]; then
-  wget --no-check-certificate https://cmsweb.cern.ch/dbs_discovery/dbssql
+  wget --no-check-certificate https://cmsweb.cern.ch/dbs_discovery/dbssql -O $RUNTIMEDIR/dbssql
   chmod +x $RUNTIMEDIR/dbssql
 fi
-
-cd ..
 
 echo "@@@ Preparing configuration files @@@"
 for CMSSW_VERSION in $@; do
@@ -105,7 +102,7 @@ EOF
   done
 
   echo "@@@@ Finished Validation environment setup for $CMSSW_VERSION @@@@"
-  cd $RUNTIMEDIR/..
+  cd $BASEDIR
 
   #bsub -q 8nh run.sh
 done
