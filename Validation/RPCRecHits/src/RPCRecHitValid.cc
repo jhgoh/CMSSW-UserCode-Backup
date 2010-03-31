@@ -16,12 +16,15 @@ struct HName
   enum
   {
     ClusterSize, Res, Pull,
-    NSimRoll_Wheel, NSimRoll_Disk,
-    NRecRoll_Wheel, NRecRoll_Disk,
-    NLostRoll_Wheel, NLostRoll_Disk,
-    NNoisyRoll_Wheel, NNoisyRoll_Disk,
-    NSimHitXY_Barrel, NSimHitXY_Endcap, NSimHitRZ,
-    NRecHitXY_Barrel, NRecHitXY_Endcap, NRecHitRZ,
+    NSimHit_Wheel, NSimHit_Disk,
+    NRecHit_Wheel, NRecHit_Disk,
+    NLostHit_Wheel, NLostHit_Disk,
+    NNoisyHit_Wheel, NNoisyHit_Disk,
+    NSimHitRZ, NRecHitRZ,
+    NSimHitXY_WM2, NSimHitXY_WM1, NSimHitXY_W00, NSimHitXY_WP1, NSimHitXY_WP2,
+    NRecHitXY_WM2, NRecHitXY_WM1, NRecHitXY_W00, NRecHitXY_WP1, NRecHitXY_WP2,
+    NSimHitXY_DM3, NSimHitXY_DM2, NSimHitXY_DM1, NSimHitXY_DP1, NSimHitXY_DP2, NSimHitXY_DP3,
+    NRecHitXY_DM3, NRecHitXY_DM2, NRecHitXY_DM1, NRecHitXY_DP1, NRecHitXY_DP2, NRecHitXY_DP3,
     Res_WM2, Res_WM1, Res_W00, Res_WP1, Res_WP2,
     Res_DM3, Res_DM2, Res_DM1, Res_DP1, Res_DP2, Res_DP3,
     Pull_WM2, Pull_WM1, Pull_W00, Pull_WP1, Pull_WP2,
@@ -55,28 +58,54 @@ RPCRecHitValid::RPCRecHitValid(const edm::ParameterSet& pset)
   h_[HName::Res] = dbe_->book1D("Res", "Global residuals;Residual [cm]", 100, -8, 8);
   h_[HName::Pull] = dbe_->book1D("Pull", "Global pulls;Pull", 100, -5, 5);
 
-  h_[HName::NSimRoll_Wheel] = dbe_->book1D("NSimRoll_Wheel", "Number of rolls containing SimHits;Wheel", 5, -2.5, 2.5);
-  h_[HName::NSimRoll_Disk] = dbe_->book1D("NSimRoll_Disk", "Number of rolls containing SimHits;Disk", 7, -3.5, 3.5);
+  h_[HName::NSimHit_Wheel] = dbe_->book1D("NSimHit_Wheel", "Number of SimHits;Wheel", 5, -2.5, 2.5);
+  h_[HName::NSimHit_Disk] = dbe_->book1D("NSimHit_Disk", "Number of SimHits;Disk", 7, -3.5, 3.5);
 
-  h_[HName::NRecRoll_Wheel] = dbe_->book1D("NRecRoll_Wheel", "Number of rolls containing RecHits;Wheel", 5, -2.5, 2.5);
-  h_[HName::NRecRoll_Disk] = dbe_->book1D("NRecRoll_Disk", "Number of rolls containing RecHits;Disk", 7, -3.5, 3.5);
+  h_[HName::NRecHit_Wheel] = dbe_->book1D("NRecHit_Wheel", "Number of RecHits;Wheel", 5, -2.5, 2.5);
+  h_[HName::NRecHit_Disk] = dbe_->book1D("NRecHit_Disk", "Number of RecHits;Disk", 7, -3.5, 3.5);
 
-  h_[HName::NLostRoll_Wheel] = dbe_->book1D("NLostRoll_Wheel", "Number of rolls with hits lost;Wheel", 5, -2.5, 2.5);
-  h_[HName::NLostRoll_Disk] = dbe_->book1D("NLostRoll_Disk", "Number of rolls with hits lost;Disk", 7, -3.5, 3.5);
+  h_[HName::NLostHit_Wheel] = dbe_->book1D("NLostHit_Wheel", "Number of lost hits;Wheel", 5, -2.5, 2.5);
+  h_[HName::NLostHit_Disk] = dbe_->book1D("NLostHit_Disk", "Number of lost hits;Disk", 7, -3.5, 3.5);
 
-  h_[HName::NNoisyRoll_Wheel] = dbe_->book1D("NNoisyRoll_Wheel", "Number of rolls with hits noisy;Wheel", 5, -2.5, 2.5);
-  h_[HName::NNoisyRoll_Disk] = dbe_->book1D("NNoisyRoll_Disk", "Number of rolls with hits noisy;Disk", 7, -3.5, 3.5);
+  h_[HName::NNoisyHit_Wheel] = dbe_->book1D("NNoisyHit_Wheel", "Number of noisy hits;Wheel", 5, -2.5, 2.5);
+  h_[HName::NNoisyHit_Disk] = dbe_->book1D("NNoisyHit_Disk", "Number of noisy hits;Disk", 7, -3.5, 3.5);
 
   // XY overview
   if ( isStandAloneMode_ )
   {
-    h_[HName::NSimHitXY_Barrel] = dbe_->book2D("NSimHitXY_Barrel", "Number of SimHits in Barrel, global XY view;X;Y", 1000, -700, 700, 1000, -700, 700);
-    h_[HName::NSimHitXY_Endcap] = dbe_->book2D("NSimHitXY_Endcap", "Number of SimHits in Endcap, global XY view;X;Y", 1000, -700, 700, 1000, -700, 700);
-    h_[HName::NSimHitRZ] = dbe_->book2D("NSimHitRZ", "Number of SimHits in global RZ view;Z;R", 1000, -1100, 1100, 1000, 0, 700);
+    const int nBin = 1000;
+    const double xmin = -1000, xmax = 1000;
+    const double ymin = -1000, ymax = 1000;
 
-    h_[HName::NRecHitXY_Barrel] = dbe_->book2D("NRecHitXY_Barrel", "Number of RecHits in global XY view;X;Y", 1000, -700, 700, 1000, -700, 700);
-    h_[HName::NRecHitXY_Endcap] = dbe_->book2D("NRecHitXY_Endcap", "Number of RecHits in global XY view;X;Y", 1000, -700, 700, 1000, -700, 700);
-    h_[HName::NRecHitRZ] = dbe_->book2D("NRecHitRZ", "Number of RecHits in global RZ view;Z;R", 1000, -1100, 1100, 1000, 0, 700);
+    h_[HName::NSimHitRZ] = dbe_->book2D("NSimHitRZ", "Number of SimHits;Z;R", nBin, -1100, 1100, nBin, 0, xmax);
+    h_[HName::NRecHitRZ] = dbe_->book2D("NRecHitRZ", "Number of RecHits;Z;R", nBin, -1100, 1100, nBin, 0, xmax);
+
+    h_[HName::NSimHitXY_WM2] = dbe_->book2D("NSimHitXY_WM2", "Number of SimHits WM2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NSimHitXY_WM1] = dbe_->book2D("NSimHitXY_WM1", "Number of SimHits WM1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NSimHitXY_W00] = dbe_->book2D("NSimHitXY_W00", "Number of SimHits W00;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NSimHitXY_WP1] = dbe_->book2D("NSimHitXY_WP1", "Number of SimHits WP1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NSimHitXY_WP2] = dbe_->book2D("NSimHitXY_WP2", "Number of SimHits WP2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+                                                                                   
+    h_[HName::NSimHitXY_DM3] = dbe_->book2D("NSimHitXY_DM3", "Number of SimHits DM3;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NSimHitXY_DM2] = dbe_->book2D("NSimHitXY_DM2", "Number of SimHits DM2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NSimHitXY_DM1] = dbe_->book2D("NSimHitXY_DM1", "Number of SimHits DM1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NSimHitXY_DP1] = dbe_->book2D("NSimHitXY_DP1", "Number of SimHits DP1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NSimHitXY_DP2] = dbe_->book2D("NSimHitXY_DP2", "Number of SimHits DP2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NSimHitXY_DP3] = dbe_->book2D("NSimHitXY_DP3", "Number of SimHits DP3;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+                                                                                   
+    h_[HName::NRecHitXY_WM2] = dbe_->book2D("NRecHitXY_WM2", "Number of RecHits WM2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NRecHitXY_WM1] = dbe_->book2D("NRecHitXY_WM1", "Number of RecHits WM1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NRecHitXY_W00] = dbe_->book2D("NRecHitXY_W00", "Number of RecHits W00;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NRecHitXY_WP1] = dbe_->book2D("NRecHitXY_WP1", "Number of RecHits WP1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NRecHitXY_WP2] = dbe_->book2D("NRecHitXY_WP2", "Number of RecHits WP2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+                                                                                   
+    h_[HName::NRecHitXY_DM3] = dbe_->book2D("NRecHitXY_DM3", "Number of RecHits DM3;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NRecHitXY_DM2] = dbe_->book2D("NRecHitXY_DM2", "Number of RecHits DM2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NRecHitXY_DM1] = dbe_->book2D("NRecHitXY_DM1", "Number of RecHits DM1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NRecHitXY_DP1] = dbe_->book2D("NRecHitXY_DP1", "Number of RecHits DP1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NRecHitXY_DP2] = dbe_->book2D("NRecHitXY_DP2", "Number of RecHits DP2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NRecHitXY_DP3] = dbe_->book2D("NRecHitXY_DP3", "Number of RecHits DP3;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+
   }
 
   // Residuals and pulls
@@ -146,155 +175,13 @@ void RPCRecHitValid::analyze(const edm::Event& event, const edm::EventSetup& eve
   typedef edm::PSimHitContainer::const_iterator SimHitIter;
   typedef RPCRecHitCollection::const_iterator RecHitIter;
 
-  typedef std::map<RPCDetId, vector<SimHitIter> > RPCDetToSimHitMap;
-  typedef std::map<RPCDetId, vector<RecHitIter> > RPCDetToRecHitMap;
-  RPCDetToSimHitMap detToSimHits;
-  RPCDetToRecHitMap detToRecHits;
-
+  // Loop over simHits, fill histograms which does not need associations
   for ( SimHitIter simHitIter = simHitHandle->begin();
         simHitIter != simHitHandle->end(); ++simHitIter )
   {
-    //if ( abs(simHit.particleType()) != 13 ) continue;
-
-    const RPCDetId rpcDetId = static_cast<const RPCDetId>(simHitIter->detUnitId());
-    const RPCRoll* roll = dynamic_cast<const RPCRoll*>(rpcGeom->roll(rpcDetId));
+    const RPCDetId detId = static_cast<const RPCDetId>(simHitIter->detUnitId());
+    const RPCRoll* roll = dynamic_cast<const RPCRoll*>(rpcGeom->roll(detId()));
     if ( !roll ) continue;
-
-    detToSimHits[rpcDetId].push_back(simHitIter);
-
-    if ( isStandAloneMode_ )
-    {
-      const GlobalPoint pos = roll->toGlobal(simHitIter->localPosition());
-      h_[HName::NSimHitXY_Endcap]->Fill(pos.x(), pos.y());
-      h_[HName::NSimHitRZ]->Fill(pos.z(), pos.perp());
-    }
-  }
-
-  for ( RecHitIter recHitIter = recHitHandle->begin();
-        recHitIter != recHitHandle->end(); ++recHitIter )
-  {
-    const RPCDetId rpcDetId = static_cast<const RPCDetId>(recHitIter->rpcId());
-    const RPCRoll* roll = dynamic_cast<const RPCRoll*>(rpcGeom->roll(rpcDetId));
-    if ( !roll ) continue;
-
-    detToRecHits[rpcDetId].push_back(recHitIter);
-
-    if ( isStandAloneMode_ )
-    {
-      const GlobalPoint pos = roll->toGlobal(recHitIter->localPosition());
-      h_[HName::NRecHitXY_Endcap]->Fill(pos.x(), pos.y());
-      h_[HName::NRecHitRZ]->Fill(pos.z(), pos.perp());
-    }
-
-    const int clusterSize = recHitIter->clusterSize();
-    h_[HName::ClusterSize]->Fill(clusterSize);
-
-    //const int firstClusterStrip = recHitIter->firstClusterStrip();
-  }
-
-  // Sim to Reco association
-  for ( RPCDetToSimHitMap::const_iterator detToSimHitsIter = detToSimHits.begin();
-        detToSimHitsIter != detToSimHits.end(); ++detToSimHitsIter )
-  {
-    const RPCDetId simRPCDetId = detToSimHitsIter->first;
-    const RPCRoll* roll = dynamic_cast<const RPCRoll*>(rpcGeom->roll(simRPCDetId));
-
-    const int region = roll->id().region();
-    const int ring = roll->id().ring();
-    //const int sector = roll->id().sector();
-    const int station = abs(roll->id().station());
-    //const int layer = roll->id().layer();
-    //const int subsector = roll->id().subsector();
-
-    if ( region == 0 ) h_[HName::NSimRoll_Wheel]->Fill(ring);
-    else h_[HName::NSimRoll_Disk]->Fill(region*station);
-
-    RPCDetToRecHitMap::const_iterator detToRecHitsIter = detToRecHits.find(simRPCDetId);
-    if ( detToRecHitsIter == detToRecHits.end() )
-    {
-      // No Sim to Rec matching : could be dead chambers, "LostRolls"
-      if ( region == 0 ) h_[HName::NLostRoll_Wheel]->Fill(ring);
-      else h_[HName::NLostRoll_Disk]->Fill(region*station);
-    }
-    else
-    {
-      // Sim to Rec matching exists, try to associate simHit and recHit
-      std::vector<SimHitIter> simHitIters = detToSimHitsIter->second;
-      std::vector<RecHitIter> recHitIters = detToRecHitsIter->second;
-
-      const size_t nSimHits = simHitIters.size();
-      const size_t nRecHits = recHitIters.size();
-
-      // Start sim-rec matching
-      typedef map<SimHitIter, RecHitIter> SimToRecHitMap;
-      SimToRecHitMap simToRecHitMap;
-
-      for ( size_t i=0; i<nSimHits; ++i )
-      {
-        SimHitIter simHitIter = simHitIters[i];
-        const double simHitX = simHitIter->localPosition().x();
-
-        for ( size_t j=0; j<nRecHits; ++j )
-        {
-          RecHitIter recHitIter = recHitIters[j];
-          const double recHitX = recHitIter->localPosition().x();
-          const double newDx = fabs(recHitX - simHitX);
-
-          SimToRecHitMap::iterator prevMatch = simToRecHitMap.find(simHitIter);
-          if ( prevMatch == simToRecHitMap.end() )
-          {
-            simToRecHitMap.insert(std::make_pair(simHitIter, recHitIter));
-          }
-          else
-          {
-            const double oldRecHitX = prevMatch->second->localPosition().x();
-            const double oldDx = fabs(oldRecHitX - simHitX);
-
-            if ( newDx < oldDx ) prevMatch->second = recHitIter;
-          }
-        }
-      }
-
-      for ( SimToRecHitMap::const_iterator simToRecHitIter = simToRecHitMap.begin();
-            simToRecHitIter != simToRecHitMap.end(); ++simToRecHitIter )
-      {
-        const SimHitIter simHit = simToRecHitIter->first;
-        const RecHitIter recHit = simToRecHitIter->second;
-
-        const double simHitX = simHit->localPosition().x();
-        const double recHitX = recHit->localPosition().x();
-        const double errX = recHit->localPositionError().xx();
-        const double dX = recHitX - simHitX;
-        const double pull = dX/errX;
-
-        h_[HName::Res]->Fill(dX);
-        h_[HName::Pull]->Fill(pull);
-
-        if ( region == 0 )
-        {
-          h_[HName::Res_W00+ring]->Fill(dX);
-          h_[HName::Pull_W00+ring]->Fill(pull);
-        }
-        else if ( region == -1 and station < 4 )
-        {
-          h_[HName::Res_DM1-(station-1)]->Fill(dX);
-          h_[HName::Pull_DM1-(station-1)]->Fill(pull);
-        }
-        else if ( region == 1 and station < 4 )
-        {
-          h_[HName::Res_DP1+(station-1)]->Fill(dX);
-          h_[HName::Pull_DP1+(station-1)]->Fill(pull);
-        }
-      }
-    }
-  }
-
-  // Reco to Sim association
-  for ( RPCDetToRecHitMap::const_iterator detToRecHitsIter = detToRecHits.begin();
-        detToRecHitsIter != detToRecHits.end(); ++detToRecHitsIter )
-  {
-    const RPCDetId recRPCDetId = detToRecHitsIter->first;
-    const RPCRoll* roll = dynamic_cast<const RPCRoll*>(rpcGeom->roll(recRPCDetId));
 
     const int region = roll->id().region();
     const int ring = roll->id().ring();
@@ -303,18 +190,229 @@ void RPCRecHitValid::analyze(const edm::Event& event, const edm::EventSetup& eve
     //const int layer = roll->id().layer();
     //const int subSector = roll->id().subsector();
 
-    if ( region == 0 ) h_[HName::NRecRoll_Wheel]->Fill(ring);
-    else h_[HName::NRecRoll_Disk]->Fill(region*station);
+    if ( region == 0 ) h_[HName::NSimHit_Wheel]->Fill(ring);
+    else h_[HName::NSimHit_Disk]->Fill(region*station);
 
-    RPCDetToSimHitMap::const_iterator detToSimHitsIter = detToSimHits.find(recRPCDetId);
-    if ( detToSimHitsIter == detToSimHits.end() )
+    if ( isStandAloneMode_ )
     {
-      // Noisy rolls
-      if ( region == 0 ) h_[HName::NNoisyRoll_Wheel]->Fill(ring);
-      else h_[HName::NNoisyRoll_Disk]->Fill(region*station);
+      const GlobalPoint pos = roll->toGlobal(simHitIter->localPosition());
+
+      h_[HName::NSimHitRZ]->Fill(pos.z(), pos.perp());
+      if ( region == 0 )
+      {
+        h_[HName::NSimHitXY_W00+ring]->Fill(pos.x(), pos.y());
+      }
+      else if ( region == -1 and station < 4 )
+      {
+        h_[HName::NSimHitXY_DM1-(station-1)]->Fill(pos.x(), pos.y());
+      }
+      else if ( region == 1 and station < 4 )
+      {
+        h_[HName::NSimHitXY_DP1-(station-1)]->Fill(pos.x(), pos.y());
+      }
     }
-    // Matched case already analyzed in Sim to Reco association loop
   }
 
+  // Loop over recHits, fill histograms which does not need associations
+  for ( RecHitIter recHitIter = recHitHandle->begin();
+        recHitIter != recHitHandle->end(); ++recHitIter )
+  {
+    const RPCDetId detId = static_cast<const RPCDetId>(recHitIter->rpcId());
+    const RPCRoll* roll = dynamic_cast<const RPCRoll*>(rpcGeom->roll(detId()));
+    if ( !roll ) continue;
+
+    const int region = roll->id().region();
+    const int ring = roll->id().ring();
+    //const int sector = roll->id().sector();
+    const int station = abs(roll->id().station());
+    //const int layer = roll->id().layer();
+    //const int subSector = roll->id().subsector();
+
+    if ( region == 0 ) h_[HName::NRecHit_Wheel]->Fill(ring);
+    else h_[HName::NRecHit_Disk]->Fill(region*station);
+
+    if ( isStandAloneMode_ )
+    {
+      const GlobalPoint pos = roll->toGlobal(recHitIter->localPosition());
+
+      h_[HName::NRecHitRZ]->Fill(pos.z(), pos.perp());
+      if ( region == 0 )
+      {
+        h_[HName::NRecHitXY_W00+ring]->Fill(pos.x(), pos.y());
+      }
+      else if ( region == -1 and station < 4 )
+      {
+        h_[HName::NRecHitXY_DM1-(station-1)]->Fill(pos.x(), pos.y());
+      }
+      else if ( region == 1 and station < 4 )
+      {
+        h_[HName::NRecHitXY_DP1-(station-1)]->Fill(pos.x(), pos.y());
+      }
+    }
+  }
+
+  // Start matching SimHits to RecHits
+  // Trick used : To remove duplicated matching to the same recHit, 
+  //               we use RecHit->SimHit map 
+
+  //typedef std::map<SimHitIter, RecHitIter> SimToRecHitMap;
+  typedef std::map<RecHitIter, SimHitIter> RecToSimHitMap;
+  //SimToRecHitMap simToRecHitMap;
+  RecToSimHitMap recToSimHitMap;
+
+  for ( SimHitIter simHitIter = simHitHandle->begin();
+        simHitIter != simHitHandle->end(); ++simHitIter )
+  {
+    const RPCDetId simDetId = static_cast<const RPCDetId>(simHitIter->detUnitId());
+    const RPCRoll* simRoll = dynamic_cast<const RPCRoll*>(rpcGeom->roll(simDetId));
+    if ( !simRoll ) continue;
+
+    //const int region = simRoll->id().region();
+    //const int ring = simRoll->id().ring();
+    //const int sector = roll->id().sector();
+    //const int station = abs(simRoll->id().station());
+    //const int layer = roll->id().layer();
+    //const int subSector = roll->id().subsector();
+
+    const double simX = simHitIter->localPosition().x();
+
+    for ( RecHitIter recHitIter = recHitHandle->begin();
+          recHitIter != recHitHandle->end(); ++recHitIter )
+    {
+      const RPCDetId recDetId = static_cast<const RPCDetId>(recHitIter->rpcId());
+      const RPCRoll* recRoll = dynamic_cast<const RPCRoll*>(rpcGeom->roll(recDetId));
+      if ( !recRoll ) continue;
+
+      if ( simDetId != recDetId ) continue;
+
+      const double recX = recHitIter->localPosition().x();
+      const double newDx = fabs(recX - simX);
+
+      // Associate SimHit to RecHit
+      RecToSimHitMap::const_iterator prevMatch = recToSimHitMap.find(recHitIter);
+      if ( prevMatch == recToSimHitMap.end() )
+      {
+        recToSimHitMap.insert(std::make_pair(recHitIter, simHitIter));
+      }
+      else
+      {
+        const double prevX = prevMatch->first->localPosition().x();
+        const double prevDx = fabs(prevX - simX);
+        
+        if ( newDx < prevDx )
+        {
+          recToSimHitMap[recHitIter] = simHitIter;
+        }
+      }
+    }
+  }
+
+  // Now we have simHit-recHit mapping
+  // So we can fill up relavant histograms
+  for ( RecToSimHitMap::const_iterator match = recToSimHitMap.begin();
+        match != recToSimHitMap.end(); ++match )
+  {
+    RecHitIter recHitIter = match->first;
+    SimHitIter simHitIter = match->second;
+
+    const RPCDetId detId = static_cast<const RPCDetId>(simHitIter->detUnitId());
+    const RPCRoll* roll = dynamic_cast<const RPCRoll*>(rpcGeom->roll(detId));
+
+    const int region = roll->id().region();
+    const int ring = roll->id().ring();
+    //const int sector = roll->id().sector();
+    const int station = abs(roll->id().station());
+    //const int layer = roll->id().layer();
+    //const int subsector = roll->id().subsector();
+
+    const double simX = simHitIter->localPosition().x();
+    const double recX = recHitIter->localPosition().x();
+    const double errX = recHitIter->localPositionError().xx();
+    const double dX = recX - simX;
+    const double pull = errX == 0 ? -999 : dX/errX;
+    
+    h_[HName::Res]->Fill(dX);
+    h_[HName::Pull]->Fill(pull);
+
+    if ( region == 0 )
+    {
+      h_[HName::Res_W00+ring]->Fill(dX);
+      h_[HName::Pull_W00+ring]->Fill(pull);
+    }
+    else if ( region == -1 and station < 4 )
+    {
+      h_[HName::Res_DM1-(station-1)]->Fill(dX);
+      h_[HName::Pull_DM1-(station-1)]->Fill(pull);
+    }
+    else if ( region == 1 and station < 4 )
+    {
+      h_[HName::Res_DP1+(station-1)]->Fill(dX);
+      h_[HName::Pull_DP1+(station-1)]->Fill(pull);
+    }
+  }
+
+  // Find Lost hits
+  for ( SimHitIter simHitIter = simHitHandle->begin();
+        simHitIter != simHitHandle->end(); ++simHitIter )
+  {
+    const RPCDetId detId = static_cast<const RPCDetId>(simHitIter->detUnitId());
+    const RPCRoll* roll = dynamic_cast<const RPCRoll*>(rpcGeom->roll(detId));
+
+    const int region = roll->id().region();
+    const int ring = roll->id().ring();
+    //const int sector = roll->id().sector();
+    const int station = abs(roll->id().station());
+    //const int layer = roll->id().layer();
+    //const int subsector = roll->id().subsector();
+
+    bool matched = false;
+    for ( RecToSimHitMap::const_iterator match = recToSimHitMap.begin();
+          match != recToSimHitMap.end(); ++match )
+    {
+      if ( simHitIter == match->second )
+      {
+        matched = true;
+        break;
+      }
+    }
+
+    if ( !matched )
+    {
+      if ( region == 0 ) h_[HName::NLostHit_Wheel]->Fill(ring);
+      else h_[HName::NLostHit_Disk]->Fill(region*station);
+    }
+  }
+
+  // Find Noisy hits
+  for ( RecHitIter recHitIter = recHitHandle->begin();
+        recHitIter != recHitHandle->end(); ++recHitIter )
+  {
+    const RPCDetId detId = static_cast<const RPCDetId>(recHitIter->rpcId());
+    const RPCRoll* roll = dynamic_cast<const RPCRoll*>(rpcGeom->roll(detId));
+
+    const int region = roll->id().region();
+    const int ring = roll->id().ring();
+    //const int sector = roll->id().sector();
+    const int station = abs(roll->id().station());
+    //const int layer = roll->id().layer();
+    //const int subsector = roll->id().subsector();
+
+    bool matched = false;
+    for ( RecToSimHitMap::const_iterator match = recToSimHitMap.begin();
+          match != recToSimHitMap.end(); ++match )
+    {
+      if ( recHitIter == match->first )
+      {
+        matched = true;
+        break;
+      }
+    }
+
+    if ( !matched )
+    {
+      if ( region == 0 ) h_[HName::NNoisyHit_Wheel]->Fill(ring);
+      else h_[HName::NNoisyHit_Disk]->Fill(region*station);
+    }
+  }
 }
 
