@@ -1,4 +1,5 @@
 #include "TROOT.h"
+#include "TSystem.h"
 #include "TFile.h"
 #include "TDirectory.h"
 #include "THStack.h"
@@ -13,30 +14,32 @@ void compareReleases()
 {
   using namespace std;
 
-  const TString dataset = "RelValSingleMuPt100";
+  const TString dataset = "RelValSingleMuPt1000";
 
   const int cWidth = 1024;
   const int cHeight = 768;
 
-  std::vector<TString> releases;
-  
-  releases.push_back("CMSSW_3_5_4");
-  releases.push_back("CMSSW_3_5_5");
-  releases.push_back("CMSSW_3_6_0_pre1");
-  releases.push_back("CMSSW_3_6_0_pre2");
-  releases.push_back("CMSSW_3_6_0_pre3");
-  releases.push_back("CMSSW_3_6_0_pre4");
-
-  const int nReleases = releases.size();
-
   // Open files
+  vector<TString> releases;
   vector<TFile*> files;
-  for ( std::vector<TString>::const_iterator rel = releases.begin();
-        rel != releases.end(); ++rel )
+  void* dataDir = gSystem->OpenDirectory(".");
+  if ( !dataDir ) return;
+  while ( true )
   {
-    TString fileName = *rel+"/src/Validation/RPCRecHits/test/dqm_"+dataset+".root";
-    files.push_back(TFile::Open(fileName));
+    TString dir = gSystem->GetDirEntry(dataDir);
+
+    if ( dir.IsNull() ) break; 
+    if ( !dir.Contains("CMSSW_") ) continue;
+
+    TString fileName = dir+"/src/Validation/RPCRecHits/test/dqm_"+dataset+".root";
+    TFile* file = TFile::Open(fileName);
+
+    if ( !file || !file->IsOpen() ) continue;
+
+    releases.push_back(dir);
+    files.push_back(file);
   }
+  const int nReleases = releases.size();
   const int nFiles = files.size();
 
   // List of histograms to draw
@@ -170,7 +173,6 @@ void compareReleases()
         fitName != fitNames.end(); ++fitName )
   {
     gROOT->cd();
-    const int nReleases = releases.size();
   
     TH1F* hFitMean = new TH1F("hFitMean_"+*fitName, "Gaussian mean of "+*fitName, nReleases, 0, nReleases);
     TH1F* hFitSigma = new TH1F("hFitSigma_"+*fitName, "Gaussian sigma of "+*fitName, nReleases, 0, nReleases);
