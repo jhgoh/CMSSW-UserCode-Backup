@@ -28,6 +28,12 @@ for CMSSW_VERSION in $@; do
   echo "@@@@ Set up workarea for $CMSSW_VERSION @@@"
 
   scram project CMSSW $CMSSW_VERSION
+
+  if [ ! -d $CMSSW_VERSION ]; then
+    echo "@@@@ Cannot find $CMSSW_VERSION @@@@"
+    continue
+  fi
+
   cd $CMSSW_VERSION/src
   eval `scram runtime -sh`
 
@@ -102,7 +108,10 @@ EOF
   done
 
   echo "@@@@ Finished Validation environment setup for $CMSSW_VERSION @@@@"
-  cd $BASEDIR
 
-  #bsub -q 8nh run.sh
+  echo "@@@ Submitting jobs @@@"
+  bsub -q 8nh run.sh
+
+  cd $BASEDIR
+  echo "@@@ Finished @@@"
 done
