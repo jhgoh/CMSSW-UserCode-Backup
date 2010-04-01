@@ -86,6 +86,12 @@ RPCRecHitValid::RPCRecHitValid(const edm::ParameterSet& pset)
   h_[HName::NNoisyHit_Wheel] = dbe_->book1D("NNoisyHit_Wheel", "Number of noisy hits;Wheel", 5, -2.5, 2.5);
   h_[HName::NNoisyHit_Disk] = dbe_->book1D("NNoisyHit_Disk", "Number of noisy hits;Disk", 7, -3.5, 3.5);
 
+  h_[HName::NSimHitMatch_Wheel] = dbe_->book1D("NSimHitMatch_Wheel", "Number of SimHitMatchs;Wheel", 5, -2.5, 2.5);
+  h_[HName::NSimHitMatch_Disk] = dbe_->book1D("NSimHitMatch_Disk", "Number of SimHitMatchs;Disk", 7, -3.5, 3.5);
+
+  h_[HName::NRecHitMatch_Wheel] = dbe_->book1D("NRecHitMatch_Wheel", "Number of RecHitMatchs;Wheel", 5, -2.5, 2.5);
+  h_[HName::NRecHitMatch_Disk] = dbe_->book1D("NRecHitMatch_Disk", "Number of RecHitMatchs;Disk", 7, -3.5, 3.5);
+
   // XY overview
   if ( isStandAloneMode_ )
   {
