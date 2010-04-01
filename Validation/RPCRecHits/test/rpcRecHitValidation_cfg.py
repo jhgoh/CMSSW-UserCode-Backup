@@ -51,15 +51,24 @@ else:
 #process.options = cms.untracked.PSet(
 #    wantSummary = cms.untracked.bool(True)
 #)
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(1) )
 
 ### validation-specific includes
 process.load('Configuration.StandardSequences.EndOfProcess_cff')
 process.load("DQMServices.Components.EDMtoMEConverter_cff")
 
 process.dqmSaver.convention = 'Offline'
-process.dqmSaver.workflow = "/%s/%s/Validation" % (process.GlobalTag.globaltag, sampleName)
+process.dqmSaver.workflow = "/%s/%s/Validation" % (process.GlobalTag.globaltag.value()[:-5], sampleName)
 process.DQMStore.verbose = 100
+process.DQMStore.collateHistograms = False
+process.dqmSaver.convention = 'Offline'
+process.dqmSaver.saveByRun = cms.untracked.int32(-1)
+process.dqmSaver.saveAtJobEnd = cms.untracked.bool(True)
+process.dqmSaver.forceRunNumber = cms.untracked.int32(1)
 
+process.options = cms.untracked.PSet(
+    fileMode = cms.untracked.string('FULLMERGE')
+)
 #process.endjob_step = cms.Path(process.endOfProcess)
 #process.MEtoEDMConverter_step = cms.Sequence(process.MEtoEDMConverter)
 
@@ -68,7 +77,8 @@ process.rpcRecHitValidation = cms.EDAnalyzer("RPCRecHitValid",
   simHit = cms.InputTag("g4SimHits", "MuonRPCHits"),
   recHit = cms.InputTag("rpcRecHits"),
   standAloneMode = cms.untracked.bool(True),
-  rootFileName = cms.untracked.string("dqm_%s.root" % sampleName)
+  rootFileName = cms.untracked.string("") 
+  #rootFileName = cms.untracked.string("dqm_%s.root" % sampleName)
 )
 
 process.rpcRecHitPostProcessor = cms.EDAnalyzer("DQMGenericClient",
@@ -85,7 +95,7 @@ process.rpcRecHitPostProcessor = cms.EDAnalyzer("DQMGenericClient",
   outputFileName = cms.untracked.string("")
 )
 
-process.validation = cms.Sequence(process.rpcRecHitValidation+process.rpcRecHitPostProcessor)
+process.validation = cms.Sequence(process.rpcRecHitValidation+process.rpcRecHitPostProcessor+process.dqmSaver)
 
 #process.out = cms.OutputModule("PoolOutputModule",
 #                               outputCommands = cms.untracked.vstring('drop *', "keep *_MEtoEDMConverter_*_*"),
@@ -95,34 +105,4 @@ process.validation = cms.Sequence(process.rpcRecHitValidation+process.rpcRecHitP
 process.p = cms.Path(process.validation)#+process.MEtoEDMConverter_step)
 #process.outPath = cms.EndPath(process.out)
 
-"""
-if ValidationSequence=="harvesting":
-    process.DQMStore.collateHistograms = False
-    process.dqmSaver.convention = 'Offline'
-    process.dqmSaver.saveByRun = cms.untracked.int32(-1)
-    process.dqmSaver.saveAtJobEnd = cms.untracked.bool(True)
-    process.dqmSaver.forceRunNumber = cms.untracked.int32(1)
 
-    process.options = cms.untracked.PSet(
-        fileMode = cms.untracked.string('FULLMERGE')
-        )
-    for filter in (getattr(process,f) for f in process.filters_()):
-        if hasattr(filter,"outputFile"):
-            filter.outputFile=""
-
-process.harvesting= cms.Sequence(
-    process.EDMtoMEConverter
-    *process.postValidation
-    +process.HLTMuonPostVal
-    *process.dqmSaver)
-
-### final path and endPath
-process.p = cms.Path(process.validation)
-process.outpath = cms.EndPath(process.VALOUTPUT)
-
-process.schedule = cms.Schedule(
-        process.p,
-        process.endjob_step,
-        process.outpath
-)
-"""
