@@ -267,13 +267,6 @@ void RPCRecHitValid::analyze(const edm::Event& event, const edm::EventSetup& eve
     const RPCRoll* simRoll = dynamic_cast<const RPCRoll*>(rpcGeom->roll(simDetId));
     if ( !simRoll ) continue;
 
-    //const int region = simRoll->id().region();
-    //const int ring = simRoll->id().ring();
-    //const int sector = roll->id().sector();
-    //const int station = abs(simRoll->id().station());
-    //const int layer = roll->id().layer();
-    //const int subSector = roll->id().subsector();
-
     const double simX = simHitIter->localPosition().x();
 
     for ( RecHitIter recHitIter = recHitHandle->begin();
