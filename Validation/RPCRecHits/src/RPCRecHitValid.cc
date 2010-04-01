@@ -16,19 +16,35 @@ struct HName
   enum
   {
     ClusterSize, Res, Pull,
+
     NSimHit_Wheel, NSimHit_Disk,
     NRecHit_Wheel, NRecHit_Disk,
+
     NLostHit_Wheel, NLostHit_Disk,
     NNoisyHit_Wheel, NNoisyHit_Disk,
+
+    NSimHitMatch_Wheel, NSimHitMatch_Disk,
+    NRecHitMatch_Wheel, NRecHitMatch_Disk,
+
     NSimHitRZ, NRecHitRZ,
+    NSimHitMatchRZ, NRecHitMatchRZ,
+
     NSimHitXY_WM2, NSimHitXY_WM1, NSimHitXY_W00, NSimHitXY_WP1, NSimHitXY_WP2,
     NRecHitXY_WM2, NRecHitXY_WM1, NRecHitXY_W00, NRecHitXY_WP1, NRecHitXY_WP2,
     NSimHitXY_DM3, NSimHitXY_DM2, NSimHitXY_DM1, NSimHitXY_DP1, NSimHitXY_DP2, NSimHitXY_DP3,
     NRecHitXY_DM3, NRecHitXY_DM2, NRecHitXY_DM1, NRecHitXY_DP1, NRecHitXY_DP2, NRecHitXY_DP3,
+
+    NSimHitMatchXY_WM2, NSimHitMatchXY_WM1, NSimHitMatchXY_W00, NSimHitMatchXY_WP1, NSimHitMatchXY_WP2,
+    NRecHitMatchXY_WM2, NRecHitMatchXY_WM1, NRecHitMatchXY_W00, NRecHitMatchXY_WP1, NRecHitMatchXY_WP2,
+    NSimHitMatchXY_DM3, NSimHitMatchXY_DM2, NSimHitMatchXY_DM1, NSimHitMatchXY_DP1, NSimHitMatchXY_DP2, NSimHitMatchXY_DP3,
+    NRecHitMatchXY_DM3, NRecHitMatchXY_DM2, NRecHitMatchXY_DM1, NRecHitMatchXY_DP1, NRecHitMatchXY_DP2, NRecHitMatchXY_DP3,
+
     Res_WM2, Res_WM1, Res_W00, Res_WP1, Res_WP2,
     Res_DM3, Res_DM2, Res_DM1, Res_DP1, Res_DP2, Res_DP3,
+
     Pull_WM2, Pull_WM1, Pull_W00, Pull_WP1, Pull_WP2,
     Pull_DM3, Pull_DM2, Pull_DM1, Pull_DP1, Pull_DP2, Pull_DP3,
+
     END
   };
 };
@@ -80,6 +96,9 @@ RPCRecHitValid::RPCRecHitValid(const edm::ParameterSet& pset)
     h_[HName::NSimHitRZ] = dbe_->book2D("NSimHitRZ", "Number of SimHits;Z;R", nBin, -1100, 1100, nBin, 0, xmax);
     h_[HName::NRecHitRZ] = dbe_->book2D("NRecHitRZ", "Number of RecHits;Z;R", nBin, -1100, 1100, nBin, 0, xmax);
 
+    h_[HName::NSimHitMatchRZ] = dbe_->book2D("NSimHitMatchRZ", "Number of Matched SimHits;Z;R", nBin, -1100, 1100, nBin, 0, xmax);
+    h_[HName::NRecHitMatchRZ] = dbe_->book2D("NRecHitMatchRZ", "Number of Matched RecHits;Z;R", nBin, -1100, 1100, nBin, 0, xmax);
+
     h_[HName::NSimHitXY_WM2] = dbe_->book2D("NSimHitXY_WM2", "Number of SimHits WM2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
     h_[HName::NSimHitXY_WM1] = dbe_->book2D("NSimHitXY_WM1", "Number of SimHits WM1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
     h_[HName::NSimHitXY_W00] = dbe_->book2D("NSimHitXY_W00", "Number of SimHits W00;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
@@ -105,6 +124,32 @@ RPCRecHitValid::RPCRecHitValid(const edm::ParameterSet& pset)
     h_[HName::NRecHitXY_DP1] = dbe_->book2D("NRecHitXY_DP1", "Number of RecHits DP1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
     h_[HName::NRecHitXY_DP2] = dbe_->book2D("NRecHitXY_DP2", "Number of RecHits DP2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
     h_[HName::NRecHitXY_DP3] = dbe_->book2D("NRecHitXY_DP3", "Number of RecHits DP3;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+
+    h_[HName::NSimHitMatchXY_WM2] = dbe_->book2D("NSimHitMatchXY_WM2", "Number of Matched SimHits WM2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NSimHitMatchXY_WM1] = dbe_->book2D("NSimHitMatchXY_WM1", "Number of Matched SimHits WM1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NSimHitMatchXY_W00] = dbe_->book2D("NSimHitMatchXY_W00", "Number of Matched SimHits W00;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NSimHitMatchXY_WP1] = dbe_->book2D("NSimHitMatchXY_WP1", "Number of Matched SimHits WP1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NSimHitMatchXY_WP2] = dbe_->book2D("NSimHitMatchXY_WP2", "Number of Matched SimHits WP2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+                                                                                   
+    h_[HName::NSimHitMatchXY_DM3] = dbe_->book2D("NSimHitMatchXY_DM3", "Number of Matched SimHits DM3;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NSimHitMatchXY_DM2] = dbe_->book2D("NSimHitMatchXY_DM2", "Number of Matched SimHits DM2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NSimHitMatchXY_DM1] = dbe_->book2D("NSimHitMatchXY_DM1", "Number of Matched SimHits DM1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NSimHitMatchXY_DP1] = dbe_->book2D("NSimHitMatchXY_DP1", "Number of Matched SimHits DP1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NSimHitMatchXY_DP2] = dbe_->book2D("NSimHitMatchXY_DP2", "Number of Matched SimHits DP2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NSimHitMatchXY_DP3] = dbe_->book2D("NSimHitMatchXY_DP3", "Number of Matched SimHits DP3;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+                                                                                   
+    h_[HName::NRecHitMatchXY_WM2] = dbe_->book2D("NRecHitMatchXY_WM2", "Number of Matched RecHits WM2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NRecHitMatchXY_WM1] = dbe_->book2D("NRecHitMatchXY_WM1", "Number of Matched RecHits WM1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NRecHitMatchXY_W00] = dbe_->book2D("NRecHitMatchXY_W00", "Number of Matched RecHits W00;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NRecHitMatchXY_WP1] = dbe_->book2D("NRecHitMatchXY_WP1", "Number of Matched RecHits WP1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NRecHitMatchXY_WP2] = dbe_->book2D("NRecHitMatchXY_WP2", "Number of Matched RecHits WP2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+                                                                                   
+    h_[HName::NRecHitMatchXY_DM3] = dbe_->book2D("NRecHitMatchXY_DM3", "Number of Matched RecHits DM3;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NRecHitMatchXY_DM2] = dbe_->book2D("NRecHitMatchXY_DM2", "Number of Matched RecHits DM2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NRecHitMatchXY_DM1] = dbe_->book2D("NRecHitMatchXY_DM1", "Number of Matched RecHits DM1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NRecHitMatchXY_DP1] = dbe_->book2D("NRecHitMatchXY_DP1", "Number of Matched RecHits DP1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NRecHitMatchXY_DP2] = dbe_->book2D("NRecHitMatchXY_DP2", "Number of Matched RecHits DP2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NRecHitMatchXY_DP3] = dbe_->book2D("NRecHitMatchXY_DP3", "Number of Matched RecHits DP3;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
 
   }
 
@@ -208,7 +253,7 @@ void RPCRecHitValid::analyze(const edm::Event& event, const edm::EventSetup& eve
       }
       else if ( region == 1 and station < 4 )
       {
-        h_[HName::NSimHitXY_DP1-(station-1)]->Fill(pos.x(), pos.y());
+        h_[HName::NSimHitXY_DP1+(station-1)]->Fill(pos.x(), pos.y());
       }
     }
   }
@@ -228,6 +273,8 @@ void RPCRecHitValid::analyze(const edm::Event& event, const edm::EventSetup& eve
     //const int layer = roll->id().layer();
     //const int subSector = roll->id().subsector();
 
+    h_[HName::ClusterSize]->Fill(recHitIter->clusterSize());
+
     if ( region == 0 ) h_[HName::NRecHit_Wheel]->Fill(ring);
     else h_[HName::NRecHit_Disk]->Fill(region*station);
 
@@ -246,7 +293,7 @@ void RPCRecHitValid::analyze(const edm::Event& event, const edm::EventSetup& eve
       }
       else if ( region == 1 and station < 4 )
       {
-        h_[HName::NRecHitXY_DP1-(station-1)]->Fill(pos.x(), pos.y());
+        h_[HName::NRecHitXY_DP1+(station-1)]->Fill(pos.x(), pos.y());
       }
     }
   }
@@ -327,18 +374,46 @@ void RPCRecHitValid::analyze(const edm::Event& event, const edm::EventSetup& eve
     h_[HName::Res]->Fill(dX);
     h_[HName::Pull]->Fill(pull);
 
+    if ( isStandAloneMode_ )
+    {
+      const GlobalPoint simPos = roll->toGlobal(simHitIter->localPosition());
+      const GlobalPoint recPos = roll->toGlobal(recHitIter->localPosition());
+
+      h_[HName::NSimHitMatchRZ]->Fill(simPos.z(), simPos.perp());
+      h_[HName::NRecHitMatchRZ]->Fill(recPos.z(), recPos.perp());
+
+      if ( region == 0 )
+      {
+        h_[HName::NSimHitMatchXY_W00+ring]->Fill(simPos.x(), simPos.y());
+        h_[HName::NRecHitMatchXY_W00+ring]->Fill(recPos.x(), recPos.y());
+      }
+      else if ( region == -1 and station < 4 )
+      {
+        h_[HName::NSimHitMatchXY_DM1-(station-1)]->Fill(simPos.x(), simPos.y());
+        h_[HName::NRecHitMatchXY_DM1-(station-1)]->Fill(recPos.x(), recPos.y());
+      }
+      else if ( region == 1 and station < 4 )
+      {
+        h_[HName::NSimHitMatchXY_DP1+(station-1)]->Fill(simPos.x(), simPos.y());
+        h_[HName::NRecHitMatchXY_DP1+(station-1)]->Fill(recPos.x(), recPos.y());
+      }
+    }
+
     if ( region == 0 )
     {
+      h_[HName::NRecHitMatch_Wheel]->Fill(ring);
       h_[HName::Res_W00+ring]->Fill(dX);
       h_[HName::Pull_W00+ring]->Fill(pull);
     }
     else if ( region == -1 and station < 4 )
     {
+      h_[HName::NRecHitMatch_Disk]->Fill(region*station);
       h_[HName::Res_DM1-(station-1)]->Fill(dX);
       h_[HName::Pull_DM1-(station-1)]->Fill(pull);
     }
     else if ( region == 1 and station < 4 )
     {
+      h_[HName::NRecHitMatch_Disk]->Fill(region*station);
       h_[HName::Res_DP1+(station-1)]->Fill(dX);
       h_[HName::Pull_DP1+(station-1)]->Fill(pull);
     }
