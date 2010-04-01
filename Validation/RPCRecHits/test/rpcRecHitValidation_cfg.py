@@ -51,7 +51,6 @@ else:
 #process.options = cms.untracked.PSet(
 #    wantSummary = cms.untracked.bool(True)
 #)
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(1) )
 
 ### validation-specific includes
 process.load('Configuration.StandardSequences.EndOfProcess_cff')
