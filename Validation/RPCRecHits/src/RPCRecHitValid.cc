@@ -23,21 +23,21 @@ struct HName
     NLostHit_Wheel, NLostHit_Disk,
     NNoisyHit_Wheel, NNoisyHit_Disk,
 
-    NSimHitMatch_Wheel, NSimHitMatch_Disk,
-    NRecHitMatch_Wheel, NRecHitMatch_Disk,
+    NMatchedSimHit_Wheel, NMatchedSimHit_Disk,
+    NMatchedRecHit_Wheel, NMatchedRecHit_Disk,
 
     NSimHitRZ, NRecHitRZ,
-    NSimHitMatchRZ, NRecHitMatchRZ,
+    NMatchedSimHitRZ, NMatchedRecHitRZ,
 
     NSimHitXY_WM2, NSimHitXY_WM1, NSimHitXY_W00, NSimHitXY_WP1, NSimHitXY_WP2,
     NRecHitXY_WM2, NRecHitXY_WM1, NRecHitXY_W00, NRecHitXY_WP1, NRecHitXY_WP2,
     NSimHitXY_DM3, NSimHitXY_DM2, NSimHitXY_DM1, NSimHitXY_DP1, NSimHitXY_DP2, NSimHitXY_DP3,
     NRecHitXY_DM3, NRecHitXY_DM2, NRecHitXY_DM1, NRecHitXY_DP1, NRecHitXY_DP2, NRecHitXY_DP3,
 
-    NSimHitMatchXY_WM2, NSimHitMatchXY_WM1, NSimHitMatchXY_W00, NSimHitMatchXY_WP1, NSimHitMatchXY_WP2,
-    NRecHitMatchXY_WM2, NRecHitMatchXY_WM1, NRecHitMatchXY_W00, NRecHitMatchXY_WP1, NRecHitMatchXY_WP2,
-    NSimHitMatchXY_DM3, NSimHitMatchXY_DM2, NSimHitMatchXY_DM1, NSimHitMatchXY_DP1, NSimHitMatchXY_DP2, NSimHitMatchXY_DP3,
-    NRecHitMatchXY_DM3, NRecHitMatchXY_DM2, NRecHitMatchXY_DM1, NRecHitMatchXY_DP1, NRecHitMatchXY_DP2, NRecHitMatchXY_DP3,
+    NMatchedSimHitXY_WM2, NMatchedSimHitXY_WM1, NMatchedSimHitXY_W00, NMatchedSimHitXY_WP1, NMatchedSimHitXY_WP2,
+    NMatchedRecHitXY_WM2, NMatchedRecHitXY_WM1, NMatchedRecHitXY_W00, NMatchedRecHitXY_WP1, NMatchedRecHitXY_WP2,
+    NMatchedSimHitXY_DM3, NMatchedSimHitXY_DM2, NMatchedSimHitXY_DM1, NMatchedSimHitXY_DP1, NMatchedSimHitXY_DP2, NMatchedSimHitXY_DP3,
+    NMatchedRecHitXY_DM3, NMatchedRecHitXY_DM2, NMatchedRecHitXY_DM1, NMatchedRecHitXY_DP1, NMatchedRecHitXY_DP2, NMatchedRecHitXY_DP3,
 
     Res_WM2, Res_WM1, Res_W00, Res_WP1, Res_WP2,
     Res_DM3, Res_DM2, Res_DM1, Res_DP1, Res_DP2, Res_DP3,
@@ -86,11 +86,11 @@ RPCRecHitValid::RPCRecHitValid(const edm::ParameterSet& pset)
   h_[HName::NNoisyHit_Wheel] = dbe_->book1D("NNoisyHit_Wheel", "Number of noisy hits;Wheel", 5, -2.5, 2.5);
   h_[HName::NNoisyHit_Disk] = dbe_->book1D("NNoisyHit_Disk", "Number of noisy hits;Disk", 7, -3.5, 3.5);
 
-  h_[HName::NSimHitMatch_Wheel] = dbe_->book1D("NSimHitMatch_Wheel", "Number of SimHitMatchs;Wheel", 5, -2.5, 2.5);
-  h_[HName::NSimHitMatch_Disk] = dbe_->book1D("NSimHitMatch_Disk", "Number of SimHitMatchs;Disk", 7, -3.5, 3.5);
+  h_[HName::NMatchedSimHit_Wheel] = dbe_->book1D("NMatchedSimHit_Wheel", "Number of Matched SimHits;Wheel", 5, -2.5, 2.5);
+  h_[HName::NMatchedSimHit_Disk] = dbe_->book1D("NMatchedSimHit_Disk", "Number of Matched SimHits;Disk", 7, -3.5, 3.5);
 
-  h_[HName::NRecHitMatch_Wheel] = dbe_->book1D("NRecHitMatch_Wheel", "Number of RecHitMatchs;Wheel", 5, -2.5, 2.5);
-  h_[HName::NRecHitMatch_Disk] = dbe_->book1D("NRecHitMatch_Disk", "Number of RecHitMatchs;Disk", 7, -3.5, 3.5);
+  h_[HName::NMatchedRecHit_Wheel] = dbe_->book1D("NMatchedRecHit_Wheel", "Number of Matched RecHits;Wheel", 5, -2.5, 2.5);
+  h_[HName::NMatchedRecHit_Disk] = dbe_->book1D("NMatchedRecHit_Disk", "Number of Matched RecHits;Disk", 7, -3.5, 3.5);
 
   // XY overview
   if ( isStandAloneMode_ )
@@ -102,61 +102,60 @@ RPCRecHitValid::RPCRecHitValid(const edm::ParameterSet& pset)
     h_[HName::NSimHitRZ] = dbe_->book2D("NSimHitRZ", "Number of SimHits;Z;R", nBin, -1100, 1100, nBin, 0, xmax);
     h_[HName::NRecHitRZ] = dbe_->book2D("NRecHitRZ", "Number of RecHits;Z;R", nBin, -1100, 1100, nBin, 0, xmax);
 
-    h_[HName::NSimHitMatchRZ] = dbe_->book2D("NSimHitMatchRZ", "Number of Matched SimHits;Z;R", nBin, -1100, 1100, nBin, 0, xmax);
-    h_[HName::NRecHitMatchRZ] = dbe_->book2D("NRecHitMatchRZ", "Number of Matched RecHits;Z;R", nBin, -1100, 1100, nBin, 0, xmax);
+    h_[HName::NMatchedSimHitRZ] = dbe_->book2D("NMatchedSimHitRZ", "Number of Matched SimHits;Z;R", nBin, -1100, 1100, nBin, 0, xmax);
+    h_[HName::NMatchedRecHitRZ] = dbe_->book2D("NMatchedRecHitRZ", "Number of Matched RecHits;Z;R", nBin, -1100, 1100, nBin, 0, xmax);
 
-    h_[HName::NSimHitXY_WM2] = dbe_->book2D("NSimHitXY_WM2", "Number of SimHits WM2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
-    h_[HName::NSimHitXY_WM1] = dbe_->book2D("NSimHitXY_WM1", "Number of SimHits WM1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
-    h_[HName::NSimHitXY_W00] = dbe_->book2D("NSimHitXY_W00", "Number of SimHits W00;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
-    h_[HName::NSimHitXY_WP1] = dbe_->book2D("NSimHitXY_WP1", "Number of SimHits WP1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
-    h_[HName::NSimHitXY_WP2] = dbe_->book2D("NSimHitXY_WP2", "Number of SimHits WP2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NSimHitXY_WM2] = dbe_->book2D("NSimHitXY_WM2", "Number of SimHits Wheel -2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NSimHitXY_WM1] = dbe_->book2D("NSimHitXY_WM1", "Number of SimHits Wheel -1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NSimHitXY_W00] = dbe_->book2D("NSimHitXY_W00", "Number of SimHits Wheel 0;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NSimHitXY_WP1] = dbe_->book2D("NSimHitXY_WP1", "Number of SimHits Wheel +1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NSimHitXY_WP2] = dbe_->book2D("NSimHitXY_WP2", "Number of SimHits Wheel +2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
                                                                                    
-    h_[HName::NSimHitXY_DM3] = dbe_->book2D("NSimHitXY_DM3", "Number of SimHits DM3;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
-    h_[HName::NSimHitXY_DM2] = dbe_->book2D("NSimHitXY_DM2", "Number of SimHits DM2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
-    h_[HName::NSimHitXY_DM1] = dbe_->book2D("NSimHitXY_DM1", "Number of SimHits DM1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
-    h_[HName::NSimHitXY_DP1] = dbe_->book2D("NSimHitXY_DP1", "Number of SimHits DP1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
-    h_[HName::NSimHitXY_DP2] = dbe_->book2D("NSimHitXY_DP2", "Number of SimHits DP2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
-    h_[HName::NSimHitXY_DP3] = dbe_->book2D("NSimHitXY_DP3", "Number of SimHits DP3;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NSimHitXY_DM3] = dbe_->book2D("NSimHitXY_DM3", "Number of SimHits Disk -3;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NSimHitXY_DM2] = dbe_->book2D("NSimHitXY_DM2", "Number of SimHits Disk -2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NSimHitXY_DM1] = dbe_->book2D("NSimHitXY_DM1", "Number of SimHits Disk -1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NSimHitXY_DP1] = dbe_->book2D("NSimHitXY_DP1", "Number of SimHits Disk +1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NSimHitXY_DP2] = dbe_->book2D("NSimHitXY_DP2", "Number of SimHits Disk +2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NSimHitXY_DP3] = dbe_->book2D("NSimHitXY_DP3", "Number of SimHits Disk +3;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
                                                                                    
-    h_[HName::NRecHitXY_WM2] = dbe_->book2D("NRecHitXY_WM2", "Number of RecHits WM2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
-    h_[HName::NRecHitXY_WM1] = dbe_->book2D("NRecHitXY_WM1", "Number of RecHits WM1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
-    h_[HName::NRecHitXY_W00] = dbe_->book2D("NRecHitXY_W00", "Number of RecHits W00;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
-    h_[HName::NRecHitXY_WP1] = dbe_->book2D("NRecHitXY_WP1", "Number of RecHits WP1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
-    h_[HName::NRecHitXY_WP2] = dbe_->book2D("NRecHitXY_WP2", "Number of RecHits WP2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NRecHitXY_WM2] = dbe_->book2D("NRecHitXY_WM2", "Number of RecHits Wheel -2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NRecHitXY_WM1] = dbe_->book2D("NRecHitXY_WM1", "Number of RecHits Wheel -1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NRecHitXY_W00] = dbe_->book2D("NRecHitXY_W00", "Number of RecHits Wheel 0;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NRecHitXY_WP1] = dbe_->book2D("NRecHitXY_WP1", "Number of RecHits Wheel +1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NRecHitXY_WP2] = dbe_->book2D("NRecHitXY_WP2", "Number of RecHits Wheel +2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
                                                                                    
-    h_[HName::NRecHitXY_DM3] = dbe_->book2D("NRecHitXY_DM3", "Number of RecHits DM3;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
-    h_[HName::NRecHitXY_DM2] = dbe_->book2D("NRecHitXY_DM2", "Number of RecHits DM2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
-    h_[HName::NRecHitXY_DM1] = dbe_->book2D("NRecHitXY_DM1", "Number of RecHits DM1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
-    h_[HName::NRecHitXY_DP1] = dbe_->book2D("NRecHitXY_DP1", "Number of RecHits DP1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
-    h_[HName::NRecHitXY_DP2] = dbe_->book2D("NRecHitXY_DP2", "Number of RecHits DP2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
-    h_[HName::NRecHitXY_DP3] = dbe_->book2D("NRecHitXY_DP3", "Number of RecHits DP3;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NRecHitXY_DM3] = dbe_->book2D("NRecHitXY_DM3", "Number of RecHits Disk -3;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NRecHitXY_DM2] = dbe_->book2D("NRecHitXY_DM2", "Number of RecHits Disk -2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NRecHitXY_DM1] = dbe_->book2D("NRecHitXY_DM1", "Number of RecHits Disk -1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NRecHitXY_DP1] = dbe_->book2D("NRecHitXY_DP1", "Number of RecHits Disk +1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NRecHitXY_DP2] = dbe_->book2D("NRecHitXY_DP2", "Number of RecHits Disk +2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NRecHitXY_DP3] = dbe_->book2D("NRecHitXY_DP3", "Number of RecHits Disk +3;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
 
-    h_[HName::NSimHitMatchXY_WM2] = dbe_->book2D("NSimHitMatchXY_WM2", "Number of Matched SimHits WM2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
-    h_[HName::NSimHitMatchXY_WM1] = dbe_->book2D("NSimHitMatchXY_WM1", "Number of Matched SimHits WM1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
-    h_[HName::NSimHitMatchXY_W00] = dbe_->book2D("NSimHitMatchXY_W00", "Number of Matched SimHits W00;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
-    h_[HName::NSimHitMatchXY_WP1] = dbe_->book2D("NSimHitMatchXY_WP1", "Number of Matched SimHits WP1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
-    h_[HName::NSimHitMatchXY_WP2] = dbe_->book2D("NSimHitMatchXY_WP2", "Number of Matched SimHits WP2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NMatchedSimHitXY_WM2] = dbe_->book2D("NMatchedSimHitXY_WM2", "Number of Matched SimHits Wheel -2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NMatchedSimHitXY_WM1] = dbe_->book2D("NMatchedSimHitXY_WM1", "Number of Matched SimHits Wheel -1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NMatchedSimHitXY_W00] = dbe_->book2D("NMatchedSimHitXY_W00", "Number of Matched SimHits Wheel 0;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NMatchedSimHitXY_WP1] = dbe_->book2D("NMatchedSimHitXY_WP1", "Number of Matched SimHits Wheel +1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NMatchedSimHitXY_WP2] = dbe_->book2D("NMatchedSimHitXY_WP2", "Number of Matched SimHits Wheel +2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
                                                                                    
-    h_[HName::NSimHitMatchXY_DM3] = dbe_->book2D("NSimHitMatchXY_DM3", "Number of Matched SimHits DM3;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
-    h_[HName::NSimHitMatchXY_DM2] = dbe_->book2D("NSimHitMatchXY_DM2", "Number of Matched SimHits DM2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
-    h_[HName::NSimHitMatchXY_DM1] = dbe_->book2D("NSimHitMatchXY_DM1", "Number of Matched SimHits DM1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
-    h_[HName::NSimHitMatchXY_DP1] = dbe_->book2D("NSimHitMatchXY_DP1", "Number of Matched SimHits DP1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
-    h_[HName::NSimHitMatchXY_DP2] = dbe_->book2D("NSimHitMatchXY_DP2", "Number of Matched SimHits DP2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
-    h_[HName::NSimHitMatchXY_DP3] = dbe_->book2D("NSimHitMatchXY_DP3", "Number of Matched SimHits DP3;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NMatchedSimHitXY_DM3] = dbe_->book2D("NMatchedSimHitXY_DM3", "Number of Matched SimHits Disk -3;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NMatchedSimHitXY_DM2] = dbe_->book2D("NMatchedSimHitXY_DM2", "Number of Matched SimHits Disk -2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NMatchedSimHitXY_DM1] = dbe_->book2D("NMatchedSimHitXY_DM1", "Number of Matched SimHits Disk -1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NMatchedSimHitXY_DP1] = dbe_->book2D("NMatchedSimHitXY_DP1", "Number of Matched SimHits Disk +1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NMatchedSimHitXY_DP2] = dbe_->book2D("NMatchedSimHitXY_DP2", "Number of Matched SimHits Disk +2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NMatchedSimHitXY_DP3] = dbe_->book2D("NMatchedSimHitXY_DP3", "Number of Matched SimHits Disk +3;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
                                                                                    
-    h_[HName::NRecHitMatchXY_WM2] = dbe_->book2D("NRecHitMatchXY_WM2", "Number of Matched RecHits WM2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
-    h_[HName::NRecHitMatchXY_WM1] = dbe_->book2D("NRecHitMatchXY_WM1", "Number of Matched RecHits WM1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
-    h_[HName::NRecHitMatchXY_W00] = dbe_->book2D("NRecHitMatchXY_W00", "Number of Matched RecHits W00;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
-    h_[HName::NRecHitMatchXY_WP1] = dbe_->book2D("NRecHitMatchXY_WP1", "Number of Matched RecHits WP1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
-    h_[HName::NRecHitMatchXY_WP2] = dbe_->book2D("NRecHitMatchXY_WP2", "Number of Matched RecHits WP2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NMatchedRecHitXY_WM2] = dbe_->book2D("NMatchedRecHitXY_WM2", "Number of Matched RecHits Wheel -2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NMatchedRecHitXY_WM1] = dbe_->book2D("NMatchedRecHitXY_WM1", "Number of Matched RecHits Wheel -1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NMatchedRecHitXY_W00] = dbe_->book2D("NMatchedRecHitXY_W00", "Number of Matched RecHits Wheel 0;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NMatchedRecHitXY_WP1] = dbe_->book2D("NMatchedRecHitXY_WP1", "Number of Matched RecHits Wheel +1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NMatchedRecHitXY_WP2] = dbe_->book2D("NMatchedRecHitXY_WP2", "Number of Matched RecHits Wheel +2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
                                                                                    
-    h_[HName::NRecHitMatchXY_DM3] = dbe_->book2D("NRecHitMatchXY_DM3", "Number of Matched RecHits DM3;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
-    h_[HName::NRecHitMatchXY_DM2] = dbe_->book2D("NRecHitMatchXY_DM2", "Number of Matched RecHits DM2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
-    h_[HName::NRecHitMatchXY_DM1] = dbe_->book2D("NRecHitMatchXY_DM1", "Number of Matched RecHits DM1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
-    h_[HName::NRecHitMatchXY_DP1] = dbe_->book2D("NRecHitMatchXY_DP1", "Number of Matched RecHits DP1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
-    h_[HName::NRecHitMatchXY_DP2] = dbe_->book2D("NRecHitMatchXY_DP2", "Number of Matched RecHits DP2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
-    h_[HName::NRecHitMatchXY_DP3] = dbe_->book2D("NRecHitMatchXY_DP3", "Number of Matched RecHits DP3;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
-
+    h_[HName::NMatchedRecHitXY_DM3] = dbe_->book2D("NMatchedRecHitXY_DM3", "Number of Matched RecHits Disk -3;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NMatchedRecHitXY_DM2] = dbe_->book2D("NMatchedRecHitXY_DM2", "Number of Matched RecHits Disk -2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NMatchedRecHitXY_DM1] = dbe_->book2D("NMatchedRecHitXY_DM1", "Number of Matched RecHits Disk -1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NMatchedRecHitXY_DP1] = dbe_->book2D("NMatchedRecHitXY_DP1", "Number of Matched RecHits Disk +1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NMatchedRecHitXY_DP2] = dbe_->book2D("NMatchedRecHitXY_DP2", "Number of Matched RecHits Disk +2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
+    h_[HName::NMatchedRecHitXY_DP3] = dbe_->book2D("NMatchedRecHitXY_DP3", "Number of Matched RecHits Disk +3;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
   }
 
   // Residuals and pulls
@@ -305,13 +304,10 @@ void RPCRecHitValid::analyze(const edm::Event& event, const edm::EventSetup& eve
   }
 
   // Start matching SimHits to RecHits
-  // Trick used : To remove duplicated matching to the same recHit, 
-  //               we use RecHit->SimHit map 
-
-  //typedef std::map<SimHitIter, RecHitIter> SimToRecHitMap;
-  typedef std::map<RecHitIter, SimHitIter> RecToSimHitMap;
-  //SimToRecHitMap simToRecHitMap;
-  RecToSimHitMap recToSimHitMap;
+  typedef std::map<SimHitIter, RecHitIter> SimToRecHitMap;
+  //typedef std::map<RecHitIter, SimHitIter> RecToSimHitMap;
+  SimToRecHitMap simToRecHitMap;
+  //RecToSimHitMap recToSimHitMap;
 
   for ( SimHitIter simHitIter = simHitHandle->begin();
         simHitIter != simHitHandle->end(); ++simHitIter )
@@ -335,19 +331,18 @@ void RPCRecHitValid::analyze(const edm::Event& event, const edm::EventSetup& eve
       const double newDx = fabs(recX - simX);
 
       // Associate SimHit to RecHit
-      RecToSimHitMap::const_iterator prevMatch = recToSimHitMap.find(recHitIter);
-      if ( prevMatch == recToSimHitMap.end() )
+      SimToRecHitMap::const_iterator prevSimToReco = simToRecHitMap.find(simHitIter);
+      if ( prevSimToReco == simToRecHitMap.end() )
       {
-        recToSimHitMap.insert(std::make_pair(recHitIter, simHitIter));
+        simToRecHitMap.insert(std::make_pair(simHitIter, recHitIter));
       }
       else
       {
-        const double prevX = prevMatch->first->localPosition().x();
-        const double prevDx = fabs(prevX - simX);
-        
-        if ( newDx < prevDx )
+        const double oldDx = fabs(prevSimToReco->second->localPosition().x() - simX);
+
+        if ( newDx < oldDx )
         {
-          recToSimHitMap[recHitIter] = simHitIter;
+          simToRecHitMap[simHitIter] = recHitIter;
         }
       }
     }
@@ -355,11 +350,11 @@ void RPCRecHitValid::analyze(const edm::Event& event, const edm::EventSetup& eve
 
   // Now we have simHit-recHit mapping
   // So we can fill up relavant histograms
-  for ( RecToSimHitMap::const_iterator match = recToSimHitMap.begin();
-        match != recToSimHitMap.end(); ++match )
+  for ( SimToRecHitMap::const_iterator match = simToRecHitMap.begin();
+        match != simToRecHitMap.end(); ++match )
   {
-    RecHitIter recHitIter = match->first;
-    SimHitIter simHitIter = match->second;
+    SimHitIter simHitIter = match->first;
+    RecHitIter recHitIter = match->second;
 
     const RPCDetId detId = static_cast<const RPCDetId>(simHitIter->detUnitId());
     const RPCRoll* roll = dynamic_cast<const RPCRoll*>(rpcGeom->roll(detId));
@@ -385,41 +380,41 @@ void RPCRecHitValid::analyze(const edm::Event& event, const edm::EventSetup& eve
       const GlobalPoint simPos = roll->toGlobal(simHitIter->localPosition());
       const GlobalPoint recPos = roll->toGlobal(recHitIter->localPosition());
 
-      h_[HName::NSimHitMatchRZ]->Fill(simPos.z(), simPos.perp());
-      h_[HName::NRecHitMatchRZ]->Fill(recPos.z(), recPos.perp());
+      h_[HName::NMatchedSimHitRZ]->Fill(simPos.z(), simPos.perp());
+      h_[HName::NMatchedRecHitRZ]->Fill(recPos.z(), recPos.perp());
 
       if ( region == 0 )
       {
-        h_[HName::NSimHitMatchXY_W00+ring]->Fill(simPos.x(), simPos.y());
-        h_[HName::NRecHitMatchXY_W00+ring]->Fill(recPos.x(), recPos.y());
+        h_[HName::NMatchedSimHitXY_W00+ring]->Fill(simPos.x(), simPos.y());
+        h_[HName::NMatchedRecHitXY_W00+ring]->Fill(recPos.x(), recPos.y());
       }
       else if ( region == -1 and station < 4 )
       {
-        h_[HName::NSimHitMatchXY_DM1-(station-1)]->Fill(simPos.x(), simPos.y());
-        h_[HName::NRecHitMatchXY_DM1-(station-1)]->Fill(recPos.x(), recPos.y());
+        h_[HName::NMatchedSimHitXY_DM1-(station-1)]->Fill(simPos.x(), simPos.y());
+        h_[HName::NMatchedRecHitXY_DM1-(station-1)]->Fill(recPos.x(), recPos.y());
       }
       else if ( region == 1 and station < 4 )
       {
-        h_[HName::NSimHitMatchXY_DP1+(station-1)]->Fill(simPos.x(), simPos.y());
-        h_[HName::NRecHitMatchXY_DP1+(station-1)]->Fill(recPos.x(), recPos.y());
+        h_[HName::NMatchedSimHitXY_DP1+(station-1)]->Fill(simPos.x(), simPos.y());
+        h_[HName::NMatchedRecHitXY_DP1+(station-1)]->Fill(recPos.x(), recPos.y());
       }
     }
 
     if ( region == 0 )
     {
-      h_[HName::NRecHitMatch_Wheel]->Fill(ring);
+      h_[HName::NMatchedRecHit_Wheel]->Fill(ring);
       h_[HName::Res_W00+ring]->Fill(dX);
       h_[HName::Pull_W00+ring]->Fill(pull);
     }
     else if ( region == -1 and station < 4 )
     {
-      h_[HName::NRecHitMatch_Disk]->Fill(region*station);
+      h_[HName::NMatchedRecHit_Disk]->Fill(region*station);
       h_[HName::Res_DM1-(station-1)]->Fill(dX);
       h_[HName::Pull_DM1-(station-1)]->Fill(pull);
     }
     else if ( region == 1 and station < 4 )
     {
-      h_[HName::NRecHitMatch_Disk]->Fill(region*station);
+      h_[HName::NMatchedRecHit_Disk]->Fill(region*station);
       h_[HName::Res_DP1+(station-1)]->Fill(dX);
       h_[HName::Pull_DP1+(station-1)]->Fill(pull);
     }
@@ -440,10 +435,10 @@ void RPCRecHitValid::analyze(const edm::Event& event, const edm::EventSetup& eve
     //const int subsector = roll->id().subsector();
 
     bool matched = false;
-    for ( RecToSimHitMap::const_iterator match = recToSimHitMap.begin();
-          match != recToSimHitMap.end(); ++match )
+    for ( SimToRecHitMap::const_iterator match = simToRecHitMap.begin();
+          match != simToRecHitMap.end(); ++match )
     {
-      if ( simHitIter == match->second )
+      if ( simHitIter == match->first )
       {
         matched = true;
         break;
@@ -472,10 +467,10 @@ void RPCRecHitValid::analyze(const edm::Event& event, const edm::EventSetup& eve
     //const int subsector = roll->id().subsector();
 
     bool matched = false;
-    for ( RecToSimHitMap::const_iterator match = recToSimHitMap.begin();
-          match != recToSimHitMap.end(); ++match )
+    for ( SimToRecHitMap::const_iterator match = simToRecHitMap.begin();
+          match != simToRecHitMap.end(); ++match )
     {
-      if ( recHitIter == match->first )
+      if ( recHitIter == match->second )
       {
         matched = true;
         break;
