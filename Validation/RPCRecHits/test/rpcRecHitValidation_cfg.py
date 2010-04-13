@@ -72,16 +72,17 @@ process.options = cms.untracked.PSet(
 #process.MEtoEDMConverter_step = cms.Sequence(process.MEtoEDMConverter)
 
 ### User analyzers
-process.rpcRecHitValidation = cms.EDAnalyzer("RPCRecHitValid",
+#### Sim-Reco validation
+process.rpcRecHitV = cms.EDAnalyzer("RPCRecHitValid",
+  subDir = cms.string("RPCRecHitsV/SimToReco"),
   simHit = cms.InputTag("g4SimHits", "MuonRPCHits"),
   recHit = cms.InputTag("rpcRecHits"),
   standAloneMode = cms.untracked.bool(True),
   rootFileName = cms.untracked.string("") 
-  #rootFileName = cms.untracked.string("dqm_%s.root" % sampleName)
 )
 
 process.rpcRecHitPostProcessor = cms.EDAnalyzer("DQMGenericClient",
-  subDirs = cms.untracked.vstring("RPCRecHitsV"),
+  subDirs = cms.untracked.vstring("RPCRecHitsV/SimToReco"),
   efficiency = cms.vstring(
     "Effic_Wheel 'Barrel SimHit to RecHit matching efficiency;Wheel' NMatchedRecHit_Wheel NSimHit_Wheel",
     "Effic_Disk 'Endcap SimHit to RecHit matching efficiency;Disk' NMatchedRecHit_Disk NSimHit_Disk",
@@ -94,14 +95,54 @@ process.rpcRecHitPostProcessor = cms.EDAnalyzer("DQMGenericClient",
   outputFileName = cms.untracked.string("")
 )
 
-process.validation = cms.Sequence(process.rpcRecHitValidation+process.rpcRecHitPostProcessor+process.dqmSaver)
+#### RPCPorintProducer-Reco validation
+process.load("RecoLocalMuon.RPCRecHit.rpcPointProducer_cfi")
+
+process.rpcDTVsRecHitV = cms.EDAnalyzer("RPCPointVsRecHit",
+  subDir = cms.string("RPCRecHitsV/DTToReco"),
+  refHit = cms.InputTag("rpcPointProducer", "RPCDTExtrapolatedPoints"),
+  recHit = cms.InputTag("rpcRecHits"),
+  standAloneMode = cms.untracked.bool(True),
+  rootFileName = cms.untracked.string("")
+)
+
+process.rpcCSCVsRecHitV = cms.EDAnalyzer("RPCPointVsRecHit",
+  subDir = cms.string("RPCRecHitsV/CSCToReco"),
+  refHit = cms.InputTag("rpcPointProducer", "RPCCSCExtrapolatedPoints"),
+  recHit = cms.InputTag("rpcRecHits"),
+  standAloneMode = cms.untracked.bool(True),
+  rootFileName = cms.untracked.string("")
+)
+
+process.rpcPointVsRecHitPostProcessor = cms.EDAnalyzer("DQMGenericClient",
+  subDirs = cms.untracked.vstring("RPCRecHitsV/DTToReco",
+                                  "RPCRecHitsV/CSCToReco"),
+  efficiency = cms.vstring(
+    "Effic_Wheel 'Barrel RPCPoint to RecHit matching efficiency;Wheel' NMatchedRecHit_Wheel NRefHit_Wheel",
+    "Effic_Disk 'Endcap RPCPoint to RecHit matching efficiency;Disk' NMatchedRecHit_Disk NRefHit_Disk",
+    "NoiseRate_Wheel 'Barrel un-matched RecHit to RPCPoint rate;Wheel' NNoisyHit_Wheel NRecHit_Wheel",
+    "NoiseRate_Disk 'Endcap un-matched RecHit to RPCPoint rate;Disk' NNoisyHit_Disk NRecHit_Disk",
+    "LostRate_Wheel 'Barrel un-matched RPCPoint to RecHit rate;Wheel' NLostHit_Wheel NRefHit_Wheel",
+    "LostRate_Disk 'Endcap un-matched RPCPoint to RecHit rate;Disk' NLostHit_Disk NRefHit_Disk"
+  ),
+  resolution = cms.vstring(""),
+  outputFileName = cms.untracked.string("")
+)
+
+### Path
+process.simHitVsRecHit_step = cms.Sequence(process.rpcRecHitV+process.rpcRecHitPostProcessor)
+process.rpcPointVsRecHit_step = cms.Sequence(process.rpcPointProducer*process.rpcDTVsRecHitV*process.rpcCSCVsRecHitV)
+process.postValidation_step = cms.Sequence(process.rpcRecHitPostProcessor+
+                                           process.rpcPointVsRecHitPostProcessor+
+                                           process.dqmSaver)
 
 #process.out = cms.OutputModule("PoolOutputModule",
-#                               outputCommands = cms.untracked.vstring('drop *', "keep *_MEtoEDMConverter_*_*"),
+#                               outputCommands = cms.untracked.vstring('drop *', "keep *_*_*_RPCRecHitValidation"), 
+##"keep *_MEtoEDMConverter_*_*"),
 #                               fileName = cms.untracked.string('output.SAMPLE.root')
 #)
 
-process.p = cms.Path(process.validation)#+process.MEtoEDMConverter_step)
+process.p = cms.Path(process.simHitVsRecHit_step+process.rpcPointVsRecHit_step+process.postValidation_step)
 #process.outPath = cms.EndPath(process.out)
 
 
