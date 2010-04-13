@@ -65,7 +65,7 @@ RPCPointVsRecHit::RPCPointVsRecHit(const edm::ParameterSet& pset)
 
   // Book MonitorElements
   std::string subDir = pset.getParameter<std::string>("subDir");
-  dbe_->setCurrentFolder("RPCRecHitV/"+subDir);
+  dbe_->setCurrentFolder(subDir);
 
   // Global plots
   h_[HName::ClusterSize] = dbe_->book1D("ClusterSize", "Cluster size;Cluster size", 21, -10.5, 10.5);
