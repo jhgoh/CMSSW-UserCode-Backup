@@ -229,6 +229,8 @@ void RPCRecHitValid::analyze(const edm::Event& event, const edm::EventSetup& eve
   for ( SimHitIter simHitIter = simHitHandle->begin();
         simHitIter != simHitHandle->end(); ++simHitIter )
   {
+    if ( abs(simHitIter->particleType()) != 13 ) continue;
+
     const RPCDetId detId = static_cast<const RPCDetId>(simHitIter->detUnitId());
     const RPCRoll* roll = dynamic_cast<const RPCRoll*>(rpcGeom->roll(detId()));
     if ( !roll ) continue;
@@ -312,6 +314,8 @@ void RPCRecHitValid::analyze(const edm::Event& event, const edm::EventSetup& eve
   for ( SimHitIter simHitIter = simHitHandle->begin();
         simHitIter != simHitHandle->end(); ++simHitIter )
   {
+    if ( abs(simHitIter->particleType()) != 13 ) continue;
+
     const RPCDetId simDetId = static_cast<const RPCDetId>(simHitIter->detUnitId());
     const RPCRoll* simRoll = dynamic_cast<const RPCRoll*>(rpcGeom->roll(simDetId));
     if ( !simRoll ) continue;
