@@ -6,6 +6,7 @@
 #include "DataFormats/PatCandidates/interface/CompositeCandidate.h"
 #include "DataFormats/PatCandidates/interface/Muon.h"
 #include "DataFormats/PatCandidates/interface/Electron.h"
+#include "DataFormats/Candidate/interface/OverlapChecker.h"
 #include "PhysicsTools/CandUtils/interface/AddFourMomenta.h"
 
 using namespace std;
@@ -51,6 +52,9 @@ DileptonProducer::DileptonProducer(const edm::ParameterSet& pset)
   }
 
   // Compositing options
+  massMin_ = pset.getParameter<double>("massMin");
+  massMax_ = pset.getParameter<double>("massMax");
+
   chargeConj_ = pset.getParameter<bool>("chargeConjugation"); // Do charge conjugation?
   isSameCollection_ = (lepton1Label_ == lepton2Label_);
 
@@ -87,7 +91,7 @@ void DileptonProducer::produce(edm::Event& event, const edm::EventSetup& eventSe
   if ( (lepton1Type_ | lepton2Type_ ) == LeptonTypes::Electron )
   {
     edm::Handle<pat::ElectronCollection> e1Handle;
-    event.getByLabel(lepton1Label_, e1Handle);
+    if ( !event.getByLabel(lepton1Label_, e1Handle) ) return;
 
     if ( isSameCollection_ )
     {
@@ -96,7 +100,7 @@ void DileptonProducer::produce(edm::Event& event, const edm::EventSetup& eventSe
     else
     {
       edm::Handle<pat::ElectronCollection> e2Handle;
-      event.getByLabel(lepton2Label_, e2Handle);
+      if ( !event.getByLabel(lepton2Label_, e2Handle) ) return;
     
       combineLeptons(e1Handle->begin(), e1Handle->end(), e2Handle->begin(), e2Handle->end(), dileptonCands);
     }
@@ -105,7 +109,7 @@ void DileptonProducer::produce(edm::Event& event, const edm::EventSetup& eventSe
   else if ( (lepton1Type_ | lepton2Type_) == LeptonTypes::Muon )
   {
     edm::Handle<pat::MuonCollection> mu1Handle;
-    event.getByLabel(lepton1Label_, mu1Handle);
+    if ( !event.getByLabel(lepton1Label_, mu1Handle) ) return;
 
     if ( isSameCollection_ )
     {
@@ -114,7 +118,7 @@ void DileptonProducer::produce(edm::Event& event, const edm::EventSetup& eventSe
     else
     {
       edm::Handle<pat::MuonCollection> mu2Handle;
-      event.getByLabel(lepton2Label_, mu2Handle);
+      if ( !event.getByLabel(lepton2Label_, mu2Handle) ) return;
 
       combineLeptons(mu1Handle->begin(), mu1Handle->end(), mu2Handle->begin(), mu2Handle->end(), dileptonCands);
     }
@@ -127,13 +131,13 @@ void DileptonProducer::produce(edm::Event& event, const edm::EventSetup& eventSe
 
     if ( lepton1Type_ == LeptonTypes::Electron )
     {
-      event.getByLabel(lepton1Label_, eHandle); 
-      event.getByLabel(lepton2Label_, muHandle);
+      if ( !event.getByLabel(lepton1Label_, eHandle) ) return;
+      if ( !event.getByLabel(lepton2Label_, muHandle) ) return;
     }
     else
     {
-      event.getByLabel(lepton1Label_, muHandle);
-      event.getByLabel(lepton2Label_, eHandle);
+      if ( !event.getByLabel(lepton1Label_, muHandle) ) return;
+      if ( !event.getByLabel(lepton2Label_, eHandle) ) return;
     }
     
     combineLeptons(eHandle->begin(), eHandle->end(), muHandle->begin(), muHandle->end(), dileptonCands);
@@ -154,6 +158,8 @@ template<typename LeptonIter, typename OutCollection>
 void DileptonProducer::combineLeptons(const LeptonIter begin, const LeptonIter end,
                                       OutCollection& dileptonCands)
 {
+  OverlapChecker isOverlap;
+
   for ( LeptonIter lepton1 = begin; lepton1 != end; ++lepton1 )
   {
     // Check charges
@@ -163,6 +169,9 @@ void DileptonProducer::combineLeptons(const LeptonIter begin, const LeptonIter e
 
     for ( LeptonIter lepton2 = lepton1+1; lepton2 != end; ++lepton2 )
     {
+      // Check overlap
+      if ( isOverlap(*lepton1, *lepton2) ) continue;
+
       const int lepton2Charge = lepton2->charge();
       if (  chargeConj_ && abs(lepton1Charge+lepton2Charge) != dileptonCharge_ ) continue;
       if ( !chargeConj_ && lepton2Charge != lepton2Charge_ ) continue;
@@ -173,6 +182,9 @@ void DileptonProducer::combineLeptons(const LeptonIter begin, const LeptonIter e
 
       AddFourMomenta addP4;
       addP4.set(dileptonCand);
+
+      if ( dileptonCand.mass() < massMin_ or 
+           dileptonCand.mass() > massMax_ ) continue;
 
       // FIXME :: Add vertex fit routine here
       dileptonCands->push_back(dileptonCand);
@@ -186,6 +198,8 @@ void DileptonProducer::combineLeptons(const LeptonIter1 begin1, const LeptonIter
                                       const LeptonIter2 begin2, const LeptonIter2 end2, 
                                       OutCollection& dileptonCands)
 {
+  OverlapChecker isOverlap;
+
   for ( LeptonIter1 lepton1 = begin1; lepton1 != end1; ++lepton1 )
   {
     // Check charges
@@ -195,6 +209,9 @@ void DileptonProducer::combineLeptons(const LeptonIter1 begin1, const LeptonIter
 
     for ( LeptonIter2 lepton2 = begin2; lepton2 != end2; ++lepton2 )
     {
+      // Check overlap
+      if ( isOverlap(*lepton1, *lepton2) ) continue;
+
       const int lepton2Charge = lepton2->charge();
       if (  chargeConj_ && abs(lepton1Charge+lepton2Charge) != dileptonCharge_ ) continue;
       if ( !chargeConj_ && lepton2Charge != lepton2Charge_ ) continue;
@@ -205,6 +222,9 @@ void DileptonProducer::combineLeptons(const LeptonIter1 begin1, const LeptonIter
 
       AddFourMomenta addP4;
       addP4.set(dileptonCand);
+
+      if ( dileptonCand.mass() < massMin_ or 
+           dileptonCand.mass() > massMax_ ) continue;
 
       // FIXME :: Add vertex fit routine here
       dileptonCands->push_back(dileptonCand);
