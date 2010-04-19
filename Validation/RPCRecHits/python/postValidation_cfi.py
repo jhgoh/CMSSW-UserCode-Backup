@@ -1,7 +1,7 @@
 import FWCore.ParameterSet.Config as cms
 
 rpcRecHitPostValidation = cms.EDAnalyzer("DQMGenericClient",
-    subDirs = cms.untracked.vstring("RPC/RPCRecHitV/SimToReco"),
+    subDirs = cms.untracked.vstring("RPC/RPCRecHitV/SimVsReco"),
     efficiency = cms.vstring(
         "Effic_Wheel 'Barrel SimHit to RecHit matching efficiency;Wheel' NMatchedRecHit_Wheel NSimHit_Wheel",
         "Effic_Disk 'Endcap SimHit to RecHit matching efficiency;Disk' NMatchedRecHit_Disk NSimHit_Disk",
