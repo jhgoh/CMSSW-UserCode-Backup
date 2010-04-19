@@ -74,10 +74,14 @@ process.options = cms.untracked.PSet(
 ### User analyzers
 #### Sim-Reco validation
 process.load("Validation.RPCRecHits.rpcRecHitValidation_cfi")
+process.rpcRecHitV.standAloneMode = True
 
 #### RPCPorintProducer-Reco validation
 process.load("RecoLocalMuon.RPCRecHit.rpcPointProducer_cfi")
 process.load("Validation.RPCRecHits.rpcPointValidation_cfi")
+process.dtVsRPCRecHitV.standAloneMode = True
+process.cscVsRPCRecHitV.standAloneMode = True
+process.trackVsRPCRecHitV.standAloneMode = True
 
 #### Post validation steps
 process.load("Validation.RPCRecHits.postValidation_cfi")
