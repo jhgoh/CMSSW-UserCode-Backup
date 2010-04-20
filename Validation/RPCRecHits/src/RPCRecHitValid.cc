@@ -26,6 +26,8 @@ struct HName
     NMatchedSimHit_Wheel, NMatchedSimHit_Disk,
     NMatchedRecHit_Wheel, NMatchedRecHit_Disk,
 
+    SimHitEta, RecHitEta, MatchedRecHitEta, NoisyHitEta,
+
     NSimHitRZ, NRecHitRZ,
     NMatchedSimHitRZ, NMatchedRecHitRZ,
 
@@ -58,7 +60,7 @@ RPCRecHitValid::RPCRecHitValid(const edm::ParameterSet& pset)
   isStandAloneMode_ = pset.getUntrackedParameter<bool>("standAloneMode", false);
 
   dbe_ = edm::Service<DQMStore>().operator->();
-  if ( !dbe_ ) 
+  if ( !dbe_ )
   {
     edm::LogError("RPCRecHitValid") << "No DQMStore instance\n";
     return;
@@ -92,6 +94,11 @@ RPCRecHitValid::RPCRecHitValid(const edm::ParameterSet& pset)
   h_[HName::NMatchedRecHit_Wheel] = dbe_->book1D("NMatchedRecHit_Wheel", "Number of Matched RecHits;Wheel", 5, -2.5, 2.5);
   h_[HName::NMatchedRecHit_Disk] = dbe_->book1D("NMatchedRecHit_Disk", "Number of Matched RecHits;Disk", 7, -3.5, 3.5);
 
+  h_[HName::SimHitEta] = dbe_->book1D("SimHitEta", "Number of simHits vs #eta;Pseudorapidity #eta", 100, -2.5, 2.5);
+  h_[HName::RecHitEta] = dbe_->book1D("RecHitEta", "Number of recHits vs #eta;Pseudorapidity #eta", 100, -2.5, 2.5);
+  h_[HName::NoisyHitEta] = dbe_->book1D("NoisyHiEta", "Number of noisy recHits vs #eta;Pseudorapidity #eta", 100, -2.5, 2.5);
+  h_[HName::MatchedRecHitEta] = dbe_->book1D("MatchedRecHit_Eta", "Number of matched recHits vs Eta;Pseudorapidity #eta", 100, -2.5, 2.5);
+
   // XY overview
   if ( isStandAloneMode_ )
   {
@@ -110,20 +117,20 @@ RPCRecHitValid::RPCRecHitValid(const edm::ParameterSet& pset)
     h_[HName::NSimHitXY_W00] = dbe_->book2D("NSimHitXY_W00", "Number of SimHits Wheel 0;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
     h_[HName::NSimHitXY_WP1] = dbe_->book2D("NSimHitXY_WP1", "Number of SimHits Wheel +1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
     h_[HName::NSimHitXY_WP2] = dbe_->book2D("NSimHitXY_WP2", "Number of SimHits Wheel +2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
-                                                                                   
+
     h_[HName::NSimHitXY_DM3] = dbe_->book2D("NSimHitXY_DM3", "Number of SimHits Disk -3;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
     h_[HName::NSimHitXY_DM2] = dbe_->book2D("NSimHitXY_DM2", "Number of SimHits Disk -2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
     h_[HName::NSimHitXY_DM1] = dbe_->book2D("NSimHitXY_DM1", "Number of SimHits Disk -1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
     h_[HName::NSimHitXY_DP1] = dbe_->book2D("NSimHitXY_DP1", "Number of SimHits Disk +1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
     h_[HName::NSimHitXY_DP2] = dbe_->book2D("NSimHitXY_DP2", "Number of SimHits Disk +2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
     h_[HName::NSimHitXY_DP3] = dbe_->book2D("NSimHitXY_DP3", "Number of SimHits Disk +3;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
-                                                                                   
+
     h_[HName::NRecHitXY_WM2] = dbe_->book2D("NRecHitXY_WM2", "Number of RecHits Wheel -2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
     h_[HName::NRecHitXY_WM1] = dbe_->book2D("NRecHitXY_WM1", "Number of RecHits Wheel -1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
     h_[HName::NRecHitXY_W00] = dbe_->book2D("NRecHitXY_W00", "Number of RecHits Wheel 0;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
     h_[HName::NRecHitXY_WP1] = dbe_->book2D("NRecHitXY_WP1", "Number of RecHits Wheel +1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
     h_[HName::NRecHitXY_WP2] = dbe_->book2D("NRecHitXY_WP2", "Number of RecHits Wheel +2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
-                                                                                   
+
     h_[HName::NRecHitXY_DM3] = dbe_->book2D("NRecHitXY_DM3", "Number of RecHits Disk -3;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
     h_[HName::NRecHitXY_DM2] = dbe_->book2D("NRecHitXY_DM2", "Number of RecHits Disk -2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
     h_[HName::NRecHitXY_DM1] = dbe_->book2D("NRecHitXY_DM1", "Number of RecHits Disk -1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
@@ -136,20 +143,20 @@ RPCRecHitValid::RPCRecHitValid(const edm::ParameterSet& pset)
     h_[HName::NMatchedSimHitXY_W00] = dbe_->book2D("NMatchedSimHitXY_W00", "Number of Matched SimHits Wheel 0;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
     h_[HName::NMatchedSimHitXY_WP1] = dbe_->book2D("NMatchedSimHitXY_WP1", "Number of Matched SimHits Wheel +1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
     h_[HName::NMatchedSimHitXY_WP2] = dbe_->book2D("NMatchedSimHitXY_WP2", "Number of Matched SimHits Wheel +2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
-                                                                                   
+
     h_[HName::NMatchedSimHitXY_DM3] = dbe_->book2D("NMatchedSimHitXY_DM3", "Number of Matched SimHits Disk -3;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
     h_[HName::NMatchedSimHitXY_DM2] = dbe_->book2D("NMatchedSimHitXY_DM2", "Number of Matched SimHits Disk -2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
     h_[HName::NMatchedSimHitXY_DM1] = dbe_->book2D("NMatchedSimHitXY_DM1", "Number of Matched SimHits Disk -1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
     h_[HName::NMatchedSimHitXY_DP1] = dbe_->book2D("NMatchedSimHitXY_DP1", "Number of Matched SimHits Disk +1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
     h_[HName::NMatchedSimHitXY_DP2] = dbe_->book2D("NMatchedSimHitXY_DP2", "Number of Matched SimHits Disk +2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
     h_[HName::NMatchedSimHitXY_DP3] = dbe_->book2D("NMatchedSimHitXY_DP3", "Number of Matched SimHits Disk +3;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
-                                                                                   
+
     h_[HName::NMatchedRecHitXY_WM2] = dbe_->book2D("NMatchedRecHitXY_WM2", "Number of Matched RecHits Wheel -2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
     h_[HName::NMatchedRecHitXY_WM1] = dbe_->book2D("NMatchedRecHitXY_WM1", "Number of Matched RecHits Wheel -1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
     h_[HName::NMatchedRecHitXY_W00] = dbe_->book2D("NMatchedRecHitXY_W00", "Number of Matched RecHits Wheel 0;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
     h_[HName::NMatchedRecHitXY_WP1] = dbe_->book2D("NMatchedRecHitXY_WP1", "Number of Matched RecHits Wheel +1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
     h_[HName::NMatchedRecHitXY_WP2] = dbe_->book2D("NMatchedRecHitXY_WP2", "Number of Matched RecHits Wheel +2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
-                                                                                   
+
     h_[HName::NMatchedRecHitXY_DM3] = dbe_->book2D("NMatchedRecHitXY_DM3", "Number of Matched RecHits Disk -3;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
     h_[HName::NMatchedRecHitXY_DM2] = dbe_->book2D("NMatchedRecHitXY_DM2", "Number of Matched RecHits Disk -2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
     h_[HName::NMatchedRecHitXY_DM1] = dbe_->book2D("NMatchedRecHitXY_DM1", "Number of Matched RecHits Disk -1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
@@ -204,7 +211,7 @@ void RPCRecHitValid::endJob()
 
 void RPCRecHitValid::analyze(const edm::Event& event, const edm::EventSetup& eventSetup)
 {
-  if ( !dbe_ ) 
+  if ( !dbe_ )
   {
     edm::LogError("RPCRecHitValid") << "No DQMStore instance\n";
     return;
@@ -245,10 +252,11 @@ void RPCRecHitValid::analyze(const edm::Event& event, const edm::EventSetup& eve
     if ( region == 0 ) h_[HName::NSimHit_Wheel]->Fill(ring);
     else h_[HName::NSimHit_Disk]->Fill(region*station);
 
+    const GlobalPoint pos = roll->toGlobal(simHitIter->localPosition());
+    h_[HName::SimHitEta]->Fill(pos.eta());
+
     if ( isStandAloneMode_ )
     {
-      const GlobalPoint pos = roll->toGlobal(simHitIter->localPosition());
-
       h_[HName::NSimHitRZ]->Fill(pos.z(), pos.perp());
       if ( region == 0 )
       {
@@ -285,10 +293,11 @@ void RPCRecHitValid::analyze(const edm::Event& event, const edm::EventSetup& eve
     if ( region == 0 ) h_[HName::NRecHit_Wheel]->Fill(ring);
     else h_[HName::NRecHit_Disk]->Fill(region*station);
 
+    const GlobalPoint pos = roll->toGlobal(recHitIter->localPosition());
+    h_[HName::RecHitEta]->Fill(pos.eta());
+
     if ( isStandAloneMode_ )
     {
-      const GlobalPoint pos = roll->toGlobal(recHitIter->localPosition());
-
       h_[HName::NRecHitRZ]->Fill(pos.z(), pos.perp());
       if ( region == 0 )
       {
@@ -307,9 +316,7 @@ void RPCRecHitValid::analyze(const edm::Event& event, const edm::EventSetup& eve
 
   // Start matching SimHits to RecHits
   typedef std::map<SimHitIter, RecHitIter> SimToRecHitMap;
-  //typedef std::map<RecHitIter, SimHitIter> RecToSimHitMap;
   SimToRecHitMap simToRecHitMap;
-  //RecToSimHitMap recToSimHitMap;
 
   for ( SimHitIter simHitIter = simHitHandle->begin();
         simHitIter != simHitHandle->end(); ++simHitIter )
@@ -375,15 +382,16 @@ void RPCRecHitValid::analyze(const edm::Event& event, const edm::EventSetup& eve
     const double errX = recHitIter->localPositionError().xx();
     const double dX = recX - simX;
     const double pull = errX == 0 ? -999 : dX/errX;
-    
+
     h_[HName::Res]->Fill(dX);
     h_[HName::Pull]->Fill(pull);
 
+    const GlobalPoint simPos = roll->toGlobal(simHitIter->localPosition());
+    const GlobalPoint recPos = roll->toGlobal(recHitIter->localPosition());
+    h_[HName::MatchedRecHitEta]->Fill(recPos.eta());
+
     if ( isStandAloneMode_ )
     {
-      const GlobalPoint simPos = roll->toGlobal(simHitIter->localPosition());
-      const GlobalPoint recPos = roll->toGlobal(recHitIter->localPosition());
-
       h_[HName::NMatchedSimHitRZ]->Fill(simPos.z(), simPos.perp());
       h_[HName::NMatchedRecHitRZ]->Fill(recPos.z(), recPos.perp());
 
@@ -485,6 +493,9 @@ void RPCRecHitValid::analyze(const edm::Event& event, const edm::EventSetup& eve
     {
       if ( region == 0 ) h_[HName::NNoisyHit_Wheel]->Fill(ring);
       else h_[HName::NNoisyHit_Disk]->Fill(region*station);
+
+      const GlobalPoint pos = roll->toGlobal(recHitIter->localPosition());
+      h_[HName::NoisyHitEta]->Fill(pos.eta());
     }
   }
 }
