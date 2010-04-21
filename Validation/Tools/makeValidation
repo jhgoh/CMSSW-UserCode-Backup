@@ -110,7 +110,7 @@ EOF
   echo "@@@@ Finished Validation environment setup for $CMSSW_VERSION @@@@"
 
   echo "@@@ Submitting jobs @@@"
-  bsub -q 8nh run.sh
+  #bsub -q 8nh run.sh
 
   cd $BASEDIR
   echo "@@@ Finished @@@"
