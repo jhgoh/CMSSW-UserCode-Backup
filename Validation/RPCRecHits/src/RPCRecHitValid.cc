@@ -71,7 +71,7 @@ RPCRecHitValid::RPCRecHitValid(const edm::ParameterSet& pset)
   dbe_->setCurrentFolder(subDir);
 
   // Global plots
-  h_[HName::ClusterSize] = dbe_->book1D("ClusterSize", "Cluster size;Cluster size", 21, -10.5, 10.5);
+  h_[HName::ClusterSize] = dbe_->book1D("ClusterSize", "Cluster size;Cluster size", 11, -0.5, 10.5);
 
   h_[HName::Res] = dbe_->book1D("Res", "Global residuals;Residual [cm]", 100, -8, 8);
   h_[HName::Pull] = dbe_->book1D("Pull", "Global pulls;Pull", 100, -5, 5);
