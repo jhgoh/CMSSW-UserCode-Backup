@@ -9,6 +9,9 @@ if len(sys.argv) == 1:
     print 'Usage : ', sys.argv[0], ' CMSSW_RELEASE1 CMSSW_RELEASE2 ...'
     sys.exit(2)
 
+# Make ROOT session to be run in batch mode
+sys.argv = [sys.argv[0], '-b']+sys.argv[1:]
+
 import ROOT
 
 # Set constants
@@ -36,7 +39,7 @@ ext = ".gif"
 # Get list of files
 rootFiles = {}
 releases = []
-for release in sys.argv[1:]:
+for release in sys.argv[2:]:
     srcDir = os.path.join(release, 'src/Validation/RPCRecHits/test')
 
     if not os.path.isdir(srcDir):
@@ -72,7 +75,7 @@ for release in sys.argv[1:]:
 releases.sort()
 
 # Set up base directory to store images
-basedir = "./" + '-'.join(releases).replace('-CMSSW_', '-')
+basedir = "data/" + '-'.join(releases).replace('-CMSSW_', '-')
 
 # Start comparisons
 for sample in samples:
