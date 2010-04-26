@@ -8,23 +8,9 @@
 #include "DataFormats/PatCandidates/interface/Electron.h"
 #include "PhysicsTools/CandUtils/interface/AddFourMomenta.h"
 
-using namespace std;
+#include "HiggsAnalysis/DoublyChargedHiggs/interface/LeptonTypes.h"
 
-class LeptonTypes
-{
-public:
-  enum
-  {
-    None = 0, Electron = 1, Muon = 2, Tau = 4
-  };
-  
-  static int getType(const string& leptonType)
-  {
-    if ( leptonType == "electron" ) return Electron;
-    else if ( leptonType == "muon" ) return Muon;
-    else return None;
-  };
-};
+using namespace std;
 
 DileptonProducer::DileptonProducer(const edm::ParameterSet& pset)
 {
@@ -65,7 +51,7 @@ DileptonProducer::~DileptonProducer()
 {
 }
 
-void DileptonProducer::beginJob(const edm::EventSetup& eventSetup)
+void DileptonProducer::beginJob()
 {
 }
 
