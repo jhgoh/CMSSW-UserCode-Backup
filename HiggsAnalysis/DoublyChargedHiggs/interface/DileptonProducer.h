@@ -17,7 +17,7 @@ public:
   ~DileptonProducer();
 
 protected:
-  virtual void beginJob(const edm::EventSetup& eventSetup);
+  virtual void beginJob();
   virtual void produce(edm::Event& event, const edm::EventSetup& eventSetup);
   virtual void endJob();
 
