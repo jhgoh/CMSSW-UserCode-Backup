@@ -88,8 +88,6 @@ bool DHGenEventFilter::filter(edm::Event& event, const edm::EventSetup& eventSet
     if ( decay == decay2_ ) ++nDecayMode2;
 
     ptcl.pdgId() > 0 ? ++nHpp : ++nHmm;
-
-    cout << dau1->pdgId() << ' ' << dau2->pdgId() << ' ' << decay << ' ' << decay1_ << ' ' << decay2_ <<  ' ' << nHpp << ' ' << nHmm << ' ' << nDecayMode1 << ' ' << nDecayMode2 << endl;
   }
 
   if ( nHpp < 1 or nHmm < 1 ) return false;
