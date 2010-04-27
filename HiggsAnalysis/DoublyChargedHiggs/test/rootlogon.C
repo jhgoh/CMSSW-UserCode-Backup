@@ -7,8 +7,9 @@
     cout << "============================" << endl;
 
     gSystem->Load("libFWCoreFWLite.so");
-    gSystem->Load("libDataFormatsFWLite.so");
-
     AutoLibraryLoader::enable();
+
+    gSystem->Load("libDataFormatsFWLite.so");
+    gSystem->Load("libDataFormatsPatCandidates.so");
   }
 }
