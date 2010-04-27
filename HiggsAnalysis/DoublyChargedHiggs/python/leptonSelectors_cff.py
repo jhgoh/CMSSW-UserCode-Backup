@@ -3,11 +3,11 @@ import FWCore.ParameterSet.Config as cms
 # Lepton selection
 goodPatMuons = cms.EDProducer("PATMuonSelector",
     src = cms.InputTag("cleanPatMuons"),
-    cut = cms.string('pt > 10 & abs(eta) < 2.5 & isGlobalMuon()')
+    cut = cms.string('pt > 5 & fabs(eta) < 2.5 & isGlobalMuon()')
 )
 
 goodPatElectrons = cms.EDProducer("PATElectronSelector",
     src = cms.InputTag("cleanPatElectrons"),
-    cut = cms.string('pt > 10 & abs(eta) < 2.5 & electronID("eidRobustLoose") > 0.5')
+    cut = cms.string('pt > 5 & fabs(eta) < 2.5 & electronID("eidRobustLoose") > 0.5')
 )
 
