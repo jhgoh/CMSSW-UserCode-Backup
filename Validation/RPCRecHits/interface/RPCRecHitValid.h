@@ -1,5 +1,5 @@
-#ifndef RPCRecHitValid_h
-#define RPCRecHitValid_h
+#ifndef Validation_RPCRecHits_RPCRecHitValid_h
+#define Validaiton_RPCRecHits_RPCRecHitValid_h
 
 #include "FWCore/Framework/interface/Frameworkfwd.h"
 #include "FWCore/Framework/interface/EDAnalyzer.h"

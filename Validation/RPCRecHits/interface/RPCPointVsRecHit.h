@@ -1,5 +1,5 @@
-#ifndef RPCPointVsRecHit_h
-#define RPCPointVsRecHit_h
+#ifndef Validaiton_RPCRecHits_RPCPointVsRecHit_h
+#define Validation_RPCRecHits_RPCPointVsRecHit_h
 
 #include "FWCore/Framework/interface/Frameworkfwd.h"
 #include "FWCore/Framework/interface/EDAnalyzer.h"
