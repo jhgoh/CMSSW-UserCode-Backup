@@ -277,47 +277,6 @@ void RPCPointVsRecHit::analyze(const edm::Event& event, const edm::EventSetup& e
     }
   }
 
-  // Loop over recHits, fill histograms which does not need associations
-  for ( RecHitIter recHitIter = recHitHandle->begin();
-        recHitIter != recHitHandle->end(); ++recHitIter )
-  {
-    const RPCDetId detId = static_cast<const RPCDetId>(recHitIter->rpcId());
-    const RPCRoll* roll = dynamic_cast<const RPCRoll*>(rpcGeom->roll(detId()));
-    if ( !roll ) continue;
-
-    const int region = roll->id().region();
-    const int ring = roll->id().ring();
-    //const int sector = roll->id().sector();
-    const int station = abs(roll->id().station());
-    //const int layer = roll->id().layer();
-    //const int subSector = roll->id().subsector();
-
-    h_[HName::ClusterSize]->Fill(recHitIter->clusterSize());
-
-    if ( region == 0 ) h_[HName::NRecHit_Wheel]->Fill(ring);
-    else h_[HName::NRecHit_Disk]->Fill(region*station);
-
-    const GlobalPoint pos = roll->toGlobal(recHitIter->localPosition());
-    h_[HName::RecHitEta]->Fill(pos.eta());
-
-    if ( isStandAloneMode_ )
-    {
-      h_[HName::NRecHitRZ]->Fill(pos.z(), pos.perp());
-      if ( region == 0 )
-      {
-        h_[HName::NRecHitXY_W00+ring]->Fill(pos.x(), pos.y());
-      }
-      else if ( region == -1 and station < 4 )
-      {
-        h_[HName::NRecHitXY_DM1-(station-1)]->Fill(pos.x(), pos.y());
-      }
-      else if ( region == 1 and station < 4 )
-      {
-        h_[HName::NRecHitXY_DP1+(station-1)]->Fill(pos.x(), pos.y());
-      }
-    }
-  }
-
   // Start matching RefHits to RecHits
   typedef std::map<RecHitIter, RecHitIter> RecToRecHitMap;
   RecToRecHitMap refToRecHitMap;
