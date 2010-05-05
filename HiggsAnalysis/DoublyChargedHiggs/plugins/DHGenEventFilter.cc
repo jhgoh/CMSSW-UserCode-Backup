@@ -20,13 +20,13 @@ DHGenEventFilter::DHGenEventFilter(const edm::ParameterSet& pset)
   decay1_ = 0;
   decay2_ = 0;
 
-  if ( decayExpr1 == "ee" ) decay1_ = LeptonTypes::Electron;
-  else if ( decayExpr1 == "em" or decayExpr1 == "me" ) decay1_ = LeptonTypes::Electron | LeptonTypes::Muon;
-  else if ( decayExpr1 == "mm" ) decay1_ = LeptonTypes::Muon;
+  if ( decayExpr1[0] == 'e' or decayExpr1[1] == 'e' ) decay1_ |= LeptonTypes::Electron;
+  if ( decayExpr1[0] == 'm' or decayExpr1[1] == 'm' ) decay1_ |= LeptonTypes::Muon;
+  if ( decayExpr1[0] == 't' or decayExpr1[1] == 't' ) decay1_ |= LeptonTypes::Tau;
 
-  if ( decayExpr2 == "ee" ) decay2_ = LeptonTypes::Electron;
-  else if ( decayExpr2 == "em" or decayExpr2 == "me" ) decay2_ = LeptonTypes::Electron | LeptonTypes::Muon;
-  else if ( decayExpr2 == "mm" ) decay2_ = LeptonTypes::Muon;
+  if ( decayExpr2[0] == 'e' or decayExpr2[1] == 'e' ) decay2_ |= LeptonTypes::Electron;
+  if ( decayExpr2[0] == 'm' or decayExpr2[1] == 'm' ) decay2_ |= LeptonTypes::Muon;
+  if ( decayExpr2[0] == 't' or decayExpr2[1] == 't' ) decay2_ |= LeptonTypes::Tau;
 
   hL_pdgId_ = abs(pset.getUntrackedParameter<int>("hL_pdgId", 9900041));
   hR_pdgId_ = abs(pset.getUntrackedParameter<int>("hR_pdgId", 9900042));
