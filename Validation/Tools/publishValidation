@@ -163,7 +163,7 @@ for sample in samples:
                 hFitMean.SetBinContent(bin, fitResult.GetParameter(1))
                 hFitMean.SetBinError(bin, fitResult.GetParError(1))
                 hFitSigma.SetBinContent(bin, fitResult.GetParameter(2))
-                hFitSigma.SetBinContent(bin, fitResult.GetParError(2))
+                hFitSigma.SetBinError(bin, fitResult.GetParError(2))
                 hFitChi2.SetBinContent(bin, fitResult.GetChisquare())
 
                 hFitMean.GetXaxis().SetBinLabel(bin, release)
