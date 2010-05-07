@@ -37,7 +37,7 @@ private:
   int n_;
   const double* x_, * y_;
   
-  const static int n7_ = 20;
+  const static int n7_ = 11;
   const static double x7_[n7_];
   const static double y7_[n7_];
 
@@ -83,6 +83,8 @@ double DHCrossSections::Eval(const double x0)
 
   // Find x bin position
   int bin1 = 0, bin2 = n_-1;
+
+  // Special cases for extrapolation
   if ( x0 < x_[bin1] )
   {
     bin2 = 1;
@@ -97,8 +99,8 @@ double DHCrossSections::Eval(const double x0)
     // Start binary search
     while ( bin2-bin1 > 1 )
     {
-      const int testBin = (bin2+bin1)/2;
-      const int xAtTestBin = x_[testBin];
+      int testBin = (bin2+bin1)/2;
+      int xAtTestBin = x_[testBin];
       if ( x0 < xAtTestBin ) bin2 = testBin;
       else if ( x0 == xAtTestBin ) return y_[testBin];
       else bin1 = testBin;
