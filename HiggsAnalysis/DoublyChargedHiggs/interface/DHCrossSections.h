@@ -51,17 +51,20 @@ private:
 };
 
 // Cross-section table to be filled up
-const double DHCrossSections::x7_[] = { 50, 100, 150, 200, 250, 
-                                       300, 350, 400, 450, 500, 
-                                       550, 600, 650, 700, 750, 
-                                       800, 850, 900, 950, 1000};
-const double DHCrossSections::y7_[] = {};
-
 const double DHCrossSections::x14_[] = { 50, 100, 150, 200, 250,
                                         300, 350, 400, 450, 500, 
                                         550, 600, 650, 700, 750, 
                                         800, 850, 900, 950, 1000};
 const double DHCrossSections::y14_[] = {};
+
+// PYTHIA calculation by Mario Kadastik
+const double DHCrossSections::x7_[] = { 60,  70,  80,  90, 100,
+                                       110, 120, 130, 140, 150,
+                                       160};
+
+const double DHCrossSections::y7_[] = {2342, 1265.93, 768.03, 499.53, 335.1,
+                                       236.87, 168.83, 124.64, 93.84, 71.73, 
+                                       55.52};
 
 // Calculated by M. Spira
 const double DHCrossSections::x10_[] = { 50, 100, 150, 200, 250,
