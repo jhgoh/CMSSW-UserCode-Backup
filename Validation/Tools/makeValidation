@@ -131,7 +131,7 @@ EOF
 
   echo "@@@ Finished Validation environment setup for $CMSSW_VERSION @@@"
 
-  if [ _$NOSUBMIT == _ && -x /usr/bin/bsub ]; then
+  if [ _$NOSUBMIT == _ -a -x /usr/bin/bsub ]; then
     echo "@@@ Submitting jobs @@@"
     bsub -q 8nh run.sh
   fi
