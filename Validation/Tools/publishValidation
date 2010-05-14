@@ -15,7 +15,6 @@ sys.argv = [sys.argv[0], '-b']+sys.argv[1:]
 import ROOT
 
 # Set constants
-samples = ("RelValSingleMuPt10", "RelValSingleMuPt100", "RelValSingleMuPt1000")
 selections = ("SimVsReco", "DTVsReco", "CSCVsReco")#, "TrackVsReco")
 overlayHists = ("ClusterSize", 
                 #"Effic_Eta",
@@ -39,38 +38,40 @@ ext = ".gif"
 # Get list of files
 rootFiles = {}
 releases = []
+samples = set()
 for release in sys.argv[2:]:
     srcDir = os.path.join(release, 'src/Validation/RPCRecHits/test')
-
     if not os.path.isdir(srcDir):
         continue
-
     for fileName in os.listdir(srcDir):
-        ## Consider only root files
-        if fileName[-5:] != ".root" :
+        ## Consider DQM based validation root files only
+        if fileName[-17:] != "__Validation.root" or fileName[:3] != "DQM":
             continue
 
-        ## Get corresponding sample name
-        sample = ""
-        for sampleCand in samples:
-            if sampleCand+"__Validation.root" in fileName:
-                sample = sampleCand
-                break
-        if sample == "":
+        ## Get corresponding sampels name and globaltag
+        (globalTag, sampleName) = fileName.split("__")[1:3]
+        if "MC" == globalTag[:2]:
+            sampleName += "_MC"
+        elif "START" == globalTag[:5]:
+            sampleName += "_START"
+        else:
+            print "@@ Unknown globalTag ", globalTag, "Skip. @@"
             continue
 
         ## Open the root file
-        rootFile = ROOT.TFile(os.path.join(srcDir,fileName))
+        rootFile = ROOT.TFile(os.path.join(srcDir, fileName))
         if not rootFile.IsOpen():
             continue
 
         ## Append to the file list
-        if sample not in rootFiles:
-            rootFiles[sample] = {}
+        if sampleName not in rootFiles:
+            rootFiles[sampleName] = {}
 
-        rootFiles[sample][release] = rootFile
+        rootFiles[sampleName][release] = rootFile
         if release not in releases:
             releases.append(release)
+
+        samples.add(sampleName)
 
 releases.sort()
 
