@@ -55,7 +55,7 @@ for CMSSW_VERSION in $@; do
   eval `scram runtime -sh`
 
   if [ ! -d Validation/RPCRecHits ]; then
-    cvs co -d Validation/RPCRecHits UserCode/JHGoh/Validation/RPCRecHits
+    cvs co Validation/RPCRecHits
   fi
   scram build
 
