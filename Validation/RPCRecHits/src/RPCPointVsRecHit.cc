@@ -17,7 +17,6 @@ struct HName
     ClusterSize, Res, Pull,
 
     NRefHit_Wheel, NRefHit_Disk,
-    NRecHit_Wheel, NRecHit_Disk,
 
     NLostHit_Wheel, NLostHit_Disk,
     NNoisyHit_Wheel, NNoisyHit_Disk,
@@ -27,13 +26,11 @@ struct HName
 
     RefHitEta, RecHitEta, MatchedRecHitEta, NoisyHitEta,
 
-    NRefHitRZ, NRecHitRZ,
+    NRefHitRZ,
     NMatchedRefHitRZ, NMatchedRecHitRZ,
 
     NRefHitXY_WM2, NRefHitXY_WM1, NRefHitXY_W00, NRefHitXY_WP1, NRefHitXY_WP2,
-    NRecHitXY_WM2, NRecHitXY_WM1, NRecHitXY_W00, NRecHitXY_WP1, NRecHitXY_WP2,
     NRefHitXY_DM3, NRefHitXY_DM2, NRefHitXY_DM1, NRefHitXY_DP1, NRefHitXY_DP2, NRefHitXY_DP3,
-    NRecHitXY_DM3, NRecHitXY_DM2, NRecHitXY_DM1, NRecHitXY_DP1, NRecHitXY_DP2, NRecHitXY_DP3,
 
     NMatchedRefHitXY_WM2, NMatchedRefHitXY_WM1, NMatchedRefHitXY_W00, NMatchedRefHitXY_WP1, NMatchedRefHitXY_WP2,
     NMatchedRecHitXY_WM2, NMatchedRecHitXY_WM1, NMatchedRecHitXY_W00, NMatchedRecHitXY_WP1, NMatchedRecHitXY_WP2,
@@ -78,9 +75,6 @@ RPCPointVsRecHit::RPCPointVsRecHit(const edm::ParameterSet& pset)
   h_[HName::NRefHit_Wheel] = dbe_->book1D("NRefHit_Wheel", "Number of reference Hits;Wheel", 5, -2.5, 2.5);
   h_[HName::NRefHit_Disk] = dbe_->book1D("NRefHit_Disk", "Number of reference Hits;Disk", 7, -3.5, 3.5);
 
-  h_[HName::NRecHit_Wheel] = dbe_->book1D("NRecHit_Wheel", "Number of RecHits;Wheel", 5, -2.5, 2.5);
-  h_[HName::NRecHit_Disk] = dbe_->book1D("NRecHit_Disk", "Number of RecHits;Disk", 7, -3.5, 3.5);
-
   h_[HName::NLostHit_Wheel] = dbe_->book1D("NLostHit_Wheel", "Number of lost hits;Wheel", 5, -2.5, 2.5);
   h_[HName::NLostHit_Disk] = dbe_->book1D("NLostHit_Disk", "Number of lost hits;Disk", 7, -3.5, 3.5);
 
@@ -95,7 +89,7 @@ RPCPointVsRecHit::RPCPointVsRecHit(const edm::ParameterSet& pset)
 
   h_[HName::RefHitEta] = dbe_->book1D("RefHitEta", "Number of reference Hits vs #eta;Pseudorapidity #eta", 100, -2.5, 2.5);
   h_[HName::RecHitEta] = dbe_->book1D("RecHitEta", "Number of recHits vs #eta;Pseudorapidity #eta", 100, -2.5, 2.5);
-  h_[HName::NoisyHitEta] = dbe_->book1D("NoisyHiEta", "Number of noisy recHits vs #eta;Pseudorapidity #eta", 100, -2.5, 2.5);
+  h_[HName::NoisyHitEta] = dbe_->book1D("NoisyHitEta", "Number of noisy recHits vs #eta;Pseudorapidity #eta", 100, -2.5, 2.5);
   h_[HName::MatchedRecHitEta] = dbe_->book1D("MatchedRecHitEta", "Number of matched recHits vs Eta;Pseudorapidity #eta", 100, -2.5, 2.5);
 
   // XY overview
@@ -106,7 +100,6 @@ RPCPointVsRecHit::RPCPointVsRecHit(const edm::ParameterSet& pset)
     const double ymin = -1000, ymax = 1000;
 
     h_[HName::NRefHitRZ] = dbe_->book2D("NRefHitRZ", "Number of RefHits;Z;R", nBin, -1100, 1100, nBin, 0, xmax);
-    h_[HName::NRecHitRZ] = dbe_->book2D("NRecHitRZ", "Number of RecHits;Z;R", nBin, -1100, 1100, nBin, 0, xmax);
 
     h_[HName::NMatchedRefHitRZ] = dbe_->book2D("NMatchedRefHitRZ", "Number of Matched RefHits;Z;R", nBin, -1100, 1100, nBin, 0, xmax);
     h_[HName::NMatchedRecHitRZ] = dbe_->book2D("NMatchedRecHitRZ", "Number of Matched RecHits;Z;R", nBin, -1100, 1100, nBin, 0, xmax);
@@ -123,19 +116,6 @@ RPCPointVsRecHit::RPCPointVsRecHit(const edm::ParameterSet& pset)
     h_[HName::NRefHitXY_DP1] = dbe_->book2D("NRefHitXY_DP1", "Number of RefHits Disk +1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
     h_[HName::NRefHitXY_DP2] = dbe_->book2D("NRefHitXY_DP2", "Number of RefHits Disk +2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
     h_[HName::NRefHitXY_DP3] = dbe_->book2D("NRefHitXY_DP3", "Number of RefHits Disk +3;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
-
-    h_[HName::NRecHitXY_WM2] = dbe_->book2D("NRecHitXY_WM2", "Number of RecHits Wheel -2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
-    h_[HName::NRecHitXY_WM1] = dbe_->book2D("NRecHitXY_WM1", "Number of RecHits Wheel -1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
-    h_[HName::NRecHitXY_W00] = dbe_->book2D("NRecHitXY_W00", "Number of RecHits Wheel 0;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
-    h_[HName::NRecHitXY_WP1] = dbe_->book2D("NRecHitXY_WP1", "Number of RecHits Wheel +1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
-    h_[HName::NRecHitXY_WP2] = dbe_->book2D("NRecHitXY_WP2", "Number of RecHits Wheel +2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
-
-    h_[HName::NRecHitXY_DM3] = dbe_->book2D("NRecHitXY_DM3", "Number of RecHits Disk -3;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
-    h_[HName::NRecHitXY_DM2] = dbe_->book2D("NRecHitXY_DM2", "Number of RecHits Disk -2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
-    h_[HName::NRecHitXY_DM1] = dbe_->book2D("NRecHitXY_DM1", "Number of RecHits Disk -1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
-    h_[HName::NRecHitXY_DP1] = dbe_->book2D("NRecHitXY_DP1", "Number of RecHits Disk +1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
-    h_[HName::NRecHitXY_DP2] = dbe_->book2D("NRecHitXY_DP2", "Number of RecHits Disk +2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
-    h_[HName::NRecHitXY_DP3] = dbe_->book2D("NRecHitXY_DP3", "Number of RecHits Disk +3;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
 
     h_[HName::NMatchedRefHitXY_WM2] = dbe_->book2D("NMatchedRefHitXY_WM2", "Number of Matched RefHits Wheel -2;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
     h_[HName::NMatchedRefHitXY_WM1] = dbe_->book2D("NMatchedRefHitXY_WM1", "Number of Matched RefHits Wheel -1;X;Y", nBin, xmin, xmax, nBin, ymin, ymax);
