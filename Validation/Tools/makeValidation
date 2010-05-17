@@ -78,6 +78,11 @@ EOF
 
   for DATASET in $DATASETS; do
     DATASETNAME=`echo $DATASET | cut -d/ -f 2`
+    if [ `echo $DATASET | cut -d/ -f 3 | sed "s/${CMSSW_VERSION}-//g" | cut -b -2` == 'MC' ]; then
+      DATASETNAME=${DATASETNAME}_MC
+    elif [ `echo $DATASET | cut -d/ -f 3 | sed "s/${CMSSW_VERSION}-//g" | cut -b -2` == 'ST' ]; then
+      DATASETNAME=${DATASETNAME}_START
+    fi
 
     DBSQUERY_PREFIX="find dataset where release = $CMSSW_VERSION and dataset like $DATASET"
     
@@ -140,5 +145,5 @@ EOF
   echo "@@ Finished $CMSSW_VERSION @@"
 done
 
-bjobs
+[ -x /usr/bin/bjobs ] && bjobs
 echo "@@ All done! @@"
