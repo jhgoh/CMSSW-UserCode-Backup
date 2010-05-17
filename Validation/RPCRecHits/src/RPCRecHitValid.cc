@@ -96,7 +96,7 @@ RPCRecHitValid::RPCRecHitValid(const edm::ParameterSet& pset)
 
   h_[HName::SimHitEta] = dbe_->book1D("SimHitEta", "Number of simHits vs #eta;Pseudorapidity #eta", 100, -2.5, 2.5);
   h_[HName::RecHitEta] = dbe_->book1D("RecHitEta", "Number of recHits vs #eta;Pseudorapidity #eta", 100, -2.5, 2.5);
-  h_[HName::NoisyHitEta] = dbe_->book1D("NoisyHiEta", "Number of noisy recHits vs #eta;Pseudorapidity #eta", 100, -2.5, 2.5);
+  h_[HName::NoisyHitEta] = dbe_->book1D("NoisyHitEta", "Number of noisy recHits vs #eta;Pseudorapidity #eta", 100, -2.5, 2.5);
   h_[HName::MatchedRecHitEta] = dbe_->book1D("MatchedRecHitEta", "Number of matched recHits vs Eta;Pseudorapidity #eta", 100, -2.5, 2.5);
 
   // XY overview
