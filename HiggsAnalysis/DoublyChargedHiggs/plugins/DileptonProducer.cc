@@ -1,4 +1,4 @@
-#include "HiggsAnalysis/DoublyChargedHiggs/interface/DileptonProducer.h"
+#include "HiggsAnalysis/DoublyChargedHiggs/plugins/DileptonProducer.h"
 
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "FWCore/Framework/interface/ESHandle.h"
@@ -20,13 +20,14 @@ DileptonProducer::DileptonProducer(const edm::ParameterSet& pset)
   lepton1Label_ = lepton1Set.getParameter<edm::InputTag>("src");
   lepton1Type_ = LeptonTypes::getType(lepton1Set.getParameter<string>("type"));
   lepton1Charge_ = lepton1Set.getParameter<int>("charge");
-  
+
   // Set lepton2 input
   edm::ParameterSet lepton2Set = pset.getParameter<edm::ParameterSet>("lepton2");
   
   lepton2Label_ = lepton2Set.getParameter<edm::InputTag>("src");
   lepton2Type_ = LeptonTypes::getType(lepton2Set.getParameter<string>("type"));
   lepton2Charge_ = lepton2Set.getParameter<int>("charge");
+
 
   if ( lepton1Type_ == LeptonTypes::None or lepton2Type_ == LeptonTypes::None ) 
   {
@@ -42,6 +43,17 @@ DileptonProducer::DileptonProducer(const edm::ParameterSet& pset)
 
   dileptonCharge_ = lepton1Charge_ + lepton2Charge_;
   if ( chargeConj_ ) dileptonCharge_ = abs(dileptonCharge_);
+
+  // Raw cuts
+  lepton1MinPt_ = lepton1Set.getParameter<double>("minPt");
+  lepton1MaxEta_ = lepton1Set.getParameter<double>("maxEta");
+  
+  lepton2MinPt_ = lepton2Set.getParameter<double>("minPt");
+  lepton2MaxEta_ = lepton2Set.getParameter<double>("maxEta");
+
+  dileptonMinMass_ = pset.getParameter<double>("minMass");
+  dileptonMinPt_ = pset.getParameter<double>("minPt");
+  dileptonMaxEta_ = pset.getParameter<double>("maxEta");
 
   // Register output product
   produces<pat::CompositeCandidateCollection>();
@@ -142,6 +154,10 @@ void DileptonProducer::combineLeptons(const LeptonIter begin, const LeptonIter e
 {
   for ( LeptonIter lepton1 = begin; lepton1 != end; ++lepton1 )
   {
+    // Precuts for lepton1
+    if ( lepton1->pt() < lepton1MinPt_ ) continue;
+    if ( fabs(lepton1->eta()) > lepton1MaxEta_ ) continue;
+
     // Check charges
     const int lepton1Charge = lepton1->charge();
     if (  chargeConj_ && abs(lepton1Charge) != abs(lepton1Charge_) ) continue;
@@ -149,6 +165,10 @@ void DileptonProducer::combineLeptons(const LeptonIter begin, const LeptonIter e
 
     for ( LeptonIter lepton2 = lepton1+1; lepton2 != end; ++lepton2 )
     {
+      // Precuts for lepton2
+      if ( lepton2->pt() < lepton2MinPt_ ) continue;
+      if ( fabs(lepton2->eta()) > lepton2MaxEta_ ) continue;
+
       const int lepton2Charge = lepton2->charge();
       if (  chargeConj_ && abs(lepton1Charge+lepton2Charge) != dileptonCharge_ ) continue;
       if ( !chargeConj_ && lepton2Charge != lepton2Charge_ ) continue;
@@ -160,7 +180,13 @@ void DileptonProducer::combineLeptons(const LeptonIter begin, const LeptonIter e
       AddFourMomenta addP4;
       addP4.set(dileptonCand);
 
+      // Precuts for dilepton candidate
+      if ( dileptonCand.mass() < dileptonMinMass_ ) continue;
+      if ( dileptonCand.pt() < dileptonMinPt_ ) continue;
+      if ( fabs(dileptonCand.eta()) > dileptonMaxEta_ ) continue;
+
       // FIXME :: Add vertex fit routine here
+
       dileptonCands->push_back(dileptonCand);
     }
   }
@@ -174,6 +200,10 @@ void DileptonProducer::combineLeptons(const LeptonIter1 begin1, const LeptonIter
 {
   for ( LeptonIter1 lepton1 = begin1; lepton1 != end1; ++lepton1 )
   {
+    // Precuts for lepton1
+    if ( lepton1->pt() < lepton1MinPt_ ) continue;
+    if ( fabs(lepton1->eta()) > lepton1MaxEta_ ) continue;
+
     // Check charges
     const int lepton1Charge = lepton1->charge();
     if (  chargeConj_ && abs(lepton1Charge) != abs(lepton1Charge_) ) continue;
@@ -181,6 +211,10 @@ void DileptonProducer::combineLeptons(const LeptonIter1 begin1, const LeptonIter
 
     for ( LeptonIter2 lepton2 = begin2; lepton2 != end2; ++lepton2 )
     {
+      // Precuts for lepton2
+      if ( lepton2->pt() < lepton2MinPt_ ) continue;
+      if ( fabs(lepton2->eta()) > lepton2MaxEta_ ) continue;
+
       const int lepton2Charge = lepton2->charge();
       if (  chargeConj_ && abs(lepton1Charge+lepton2Charge) != dileptonCharge_ ) continue;
       if ( !chargeConj_ && lepton2Charge != lepton2Charge_ ) continue;
@@ -192,7 +226,13 @@ void DileptonProducer::combineLeptons(const LeptonIter1 begin1, const LeptonIter
       AddFourMomenta addP4;
       addP4.set(dileptonCand);
 
+      // Precuts for dilepton candidate
+      if ( dileptonCand.mass() < dileptonMinMass_ ) continue;
+      if ( dileptonCand.pt() < dileptonMinPt_ ) continue;
+      if ( fabs(dileptonCand.eta()) > dileptonMaxEta_ ) continue;
+
       // FIXME :: Add vertex fit routine here
+
       dileptonCands->push_back(dileptonCand);
     }
   }

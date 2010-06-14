@@ -1,4 +1,4 @@
-#include "HiggsAnalysis/DoublyChargedHiggs/interface/DHGenEventFilter.h"
+#include "HiggsAnalysis/DoublyChargedHiggs/plugins/DHGenEventFilter.h"
 
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "FWCore/Framework/interface/ESHandle.h"
@@ -13,20 +13,12 @@ DHGenEventFilter::DHGenEventFilter(const edm::ParameterSet& pset)
 {
   genLabel_ = pset.getParameter<edm::InputTag>("genLabel");
 
-  // decay modes input : ee, em(=me), mm
-  std::string decayExpr1 = pset.getParameter<std::string>("decay1");
-  std::string decayExpr2 = pset.getParameter<std::string>("decay2");
+  // decay modes input : ee, mm, tt, em, et, mt
+  const std::string decayExpr1 = pset.getParameter<std::string>("decay1");
+  const std::string decayExpr2 = pset.getParameter<std::string>("decay2");
 
-  decay1_ = 0;
-  decay2_ = 0;
-
-  if ( decayExpr1[0] == 'e' or decayExpr1[1] == 'e' ) decay1_ |= LeptonTypes::Electron;
-  if ( decayExpr1[0] == 'm' or decayExpr1[1] == 'm' ) decay1_ |= LeptonTypes::Muon;
-  if ( decayExpr1[0] == 't' or decayExpr1[1] == 't' ) decay1_ |= LeptonTypes::Tau;
-
-  if ( decayExpr2[0] == 'e' or decayExpr2[1] == 'e' ) decay2_ |= LeptonTypes::Electron;
-  if ( decayExpr2[0] == 'm' or decayExpr2[1] == 'm' ) decay2_ |= LeptonTypes::Muon;
-  if ( decayExpr2[0] == 't' or decayExpr2[1] == 't' ) decay2_ |= LeptonTypes::Tau;
+  decay1_ = LeptonTypes::getType(&decayExpr1[0]) | LeptonTypes::getType(&decayExpr1[1]);
+  decay2_ = LeptonTypes::getType(&decayExpr2[0]) | LeptonTypes::getType(&decayExpr2[1]);
 
   hL_pdgId_ = abs(pset.getUntrackedParameter<int>("hL_pdgId", 9900041));
   hR_pdgId_ = abs(pset.getUntrackedParameter<int>("hR_pdgId", 9900042));
@@ -47,7 +39,7 @@ void DHGenEventFilter::endJob()
 bool DHGenEventFilter::filter(edm::Event& event, const edm::EventSetup& eventSetup)
 {
   edm::Handle<reco::GenParticleCollection> genHandle;
-  // Assume the event is passed when no genParticle exists
+  // Pass event when no genParticle exists - make ineffective in case of real data
   if ( !event.getByLabel(genLabel_, genHandle) ) return true;
 
   int nHpp = 0, nHmm = 0;
@@ -83,10 +75,10 @@ bool DHGenEventFilter::filter(edm::Event& event, const edm::EventSetup& eventSet
 
     const int decay = (LeptonTypes::getType(dau1->pdgId()) | LeptonTypes::getType(dau2->pdgId()));
     if ( decay & LeptonTypes::None ) continue;
-
+  
     if ( decay == decay1_ ) ++nDecayMode1;
     if ( decay == decay2_ ) ++nDecayMode2;
-
+  
     ptcl.pdgId() > 0 ? ++nHpp : ++nHmm;
   }
 
