@@ -11,3 +11,5 @@ goodPatElectrons = cms.EDProducer("PATElectronSelector",
     cut = cms.string('pt > 5 & abs(eta) < 2.5 & electronID("eidRobustLoose") > 0.5')
 )
 
+leptonSelectionSeq = cms.Sequence(goodPatElectrons+goodPatMuons)
+
