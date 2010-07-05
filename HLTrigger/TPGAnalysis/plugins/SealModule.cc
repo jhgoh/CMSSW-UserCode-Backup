@@ -1,5 +1,7 @@
 #include "FWCore/Framework/interface/MakerMacros.h"
 
-//#include "HLTrigger/TPGAnalysis/plugins/MuonAnalyzer.h"
+#include "HLTrigger/TPGAnalysis/plugins/MuonHLTAnalyzer.h"
+#include "HLTrigger/TPGAnalysis/plugins/JetMETHLTAnalyzer.h"
 
-//DEFINE_FWK_MODULE(MuonAnalyzer)
+DEFINE_FWK_MODULE(MuonHLTAnalyzer)
+DEFINE_FWK_MODULE(JetMETHLTAnalyzer)
