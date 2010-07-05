@@ -5,11 +5,11 @@
 
 #include "TH1F.h"
 
-class MuonAnalyzer : public edm::EDAnalyzer
+class MuonHLTAnalyzer : public edm::EDAnalyzer
 {
 public:
-  explicit MuonAnalyzer(const edm::ParameterSet& pset);
-  ~MuonAnalyzer();
+  explicit MuonHLTAnalyzer(const edm::ParameterSet& pset);
+  ~MuonHLTAnalyzer();
 
   virtual void beginJob();
   virtual void beginRun(const edm::Run& run, const edm::EventSetup& eventSetup);
