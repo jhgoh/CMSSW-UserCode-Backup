@@ -1,35 +1,81 @@
+#ifndef HLTrigger_TPGAnalysis_MuonHLTAnalyzer_H
+#define HLTrigger_TPGAnalysis_MuonHLTAnalyzer_H
+
 #include "FWCore/Framework/interface/Frameworkfwd.h"
 #include "FWCore/Framework/interface/EDAnalyzer.h"
-#include "FWCore/Utilities/interface/InputTag.h"
-#include "FWCore/Framework/interface/Event.h"
 
-#include "TH1F.h"
+#include "FWCore/Framework/interface/Event.h"
+#include "FWCore/Framework/interface/EventSetup.h"
+#include "FWCore/Framework/interface/ESHandle.h"
+#include "FWCore/ParameterSet/interface/InputTag.h"
+#include "FWCore/ParameterSet/interface/ParameterSet.h"
+
+#include "MuonAnalysis/MuonAssociators/interface/L1MuonMatcherAlgo.h"
+
+#include <TH1F.h>
+#include <TH2F.h>
+
+#include <vector>
+
+namespace reco
+{
+  class Muon;
+}
+
+class TrajectoryStateOnSurface;
+class MagneticField;
+class Propagator;
+class GlobalTrackingGeometry;
 
 class MuonHLTAnalyzer : public edm::EDAnalyzer
 {
 public:
-  explicit MuonHLTAnalyzer(const edm::ParameterSet& pset);
+  MuonHLTAnalyzer(const edm::ParameterSet& pset);
   ~MuonHLTAnalyzer();
 
-  virtual void beginJob();
-  virtual void beginRun(const edm::Run& run, const edm::EventSetup& eventSetup);
-  virtual void analyze(const edm::Event& event, const edm::EventSetup& eventSetup);
-  virtual void endJob();
+  void beginRun(const edm::Run& run, const edm::EventSetup& eventSetup);
+  void endRun();
+  void analyze(const edm::Event& event, const edm::EventSetup& eventSetup);
 
 private:
-  edm::ESHandle<MagneticField> theBField;
-  edm::ESHandle<GlobalTrackingGeometry> theGeometry;
-  edm::ESHandle<Propagator> thePropagator;
-  PropagateToMuon theL1Matcher;
+  typedef std::vector<std::string> VString;
 
-  edm::InputTag l1Label_, l2SeedLabel_, l3SeedLabel_, l2Label_, l3Label_;
-  edm::InputTag muonLabel_;
-  edm::InputTag trigLabel_;
+  edm::InputTag l1MuonTag_, recoMuonTag_;
+  VString muonTrigNames_;
+  
+  L1MuonMatcherAlgo l1Matcher_;
+  edm::ESHandle<MagneticField> bField_;
+  edm::ESHandle<GlobalTrackingGeometry> geometry_;
+  edm::ESHandle<Propagator> propagator_;
 
-  // Histograms
-  typedef TH1F* TH1FP;
-  typedef TH2F* TH2FP;
+  // Cut variables
+  double minPt_, maxRelIso_;
 
-  TH1FP hGlbMu_N_, hGlbMu_Pt_, hGlbMu_Eta_, hGlbMu_Phi_, hGlbMu_Charge_;
-  TH1FP hL1Mu_N_, hL1Mu_Pt_, hL1Mu_Eta_, hL1Mu_Phi_;
+  // List of histograms
+  TH1F* hNEvent_;
+  TH1F* hNRecoMuon_;
+
+  // List of histograms : track varialbes for each cut steps
+  std::vector<TH1F*> hPt_, hEta_, hPhi_, hQ_;
+  std::vector<TH1F*> hNGlbHit_, hGlbX2_, hNTrkHit_, hTrkX2_;
+  std::vector<TH1F*> hRelIso_;
+  std::vector<TH1F*> hDeltaR_, hDeltaPhi_, hDeltaEta_;
+  std::vector<TH1F*> hL1Pt_, hL1Eta_, hL1Phi_;
+  std::vector<TH1F*> hMatchedL1Pt_, hMatchedL1Eta_, hMatchedL1Phi_;
+  std::vector<TH1F*> hL1MatchedGlbPt_, hL1MatchedGlbEta_, hL1MatchedGlbPhi_;
+
+  std::vector<TH1F*> hPtBarrel_, hEtaBarrel_, hPhiBarrel_, hQBarrel_;
+  std::vector<TH1F*> hNGlbHitBarrel_, hGlbX2Barrel_, hNTrkHitBarrel_, hTrkX2Barrel_;
+  std::vector<TH1F*> hRelIsoBarrel_;
+
+  std::vector<TH1F*> hPtOverlap_, hEtaOverlap_, hPhiOverlap_, hQOverlap_;
+  std::vector<TH1F*> hNGlbHitOverlap_, hGlbX2Overlap_, hNTrkHitOverlap_, hTrkX2Overlap_;
+  std::vector<TH1F*> hRelIsoOverlap_;
+
+  std::vector<TH1F*> hPtEndcap_, hEtaEndcap_, hPhiEndcap_, hQEndcap_;
+  std::vector<TH1F*> hNGlbHitEndcap_, hGlbX2Endcap_, hNTrkHitEndcap_, hTrkX2Endcap_;
+  std::vector<TH1F*> hRelIsoEndcap_;
 };
+
+#endif
+
