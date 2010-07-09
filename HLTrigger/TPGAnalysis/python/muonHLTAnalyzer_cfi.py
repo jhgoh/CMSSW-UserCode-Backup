@@ -23,6 +23,7 @@ muonHLTAnalyzer = cms.EDAnalyzer("MuonHLTAnalyzer",
   minPt = cms.double(15.0),
   maxRelIso = cms.double(0.15),
   l1MatcherConfig = cms.PSet(
+    maxDeltaR = cms.double(0.3),
     useTrack = cms.string('tracker'),
     useState = cms.string('atVertex'),
     useSimpleGeometry = cms.bool(True),
