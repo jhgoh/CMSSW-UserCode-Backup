@@ -18,7 +18,7 @@ muonHLTAnalyzer = cms.EDAnalyzer("MuonHLTAnalyzer",
     "HLT_DoubleMu0",
     "HLT_DoubleMu3"
   ),
-  l1Muon = cms.InputTag("hltL1extraParticles"),
+  l1Muon = cms.InputTag("l1extraParticles"),
   recoMuon = cms.InputTag("muons"),
   minPt = cms.double(15.0),
   maxRelIso = cms.double(0.15),
