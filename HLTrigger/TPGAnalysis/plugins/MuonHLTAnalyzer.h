@@ -53,7 +53,8 @@ private:
 
   // List of histograms
   TH1F* hNEvent_;
-  TH1F* hNRecoMuon_;
+  std::vector<TH1F*> hNRecoMuon_;
+  std::vector<TH1F*> hNL1MatchedRecoMuon_;
 
   // List of histograms : track varialbes for each cut steps
   std::vector<TH1F*> hPt_, hEta_, hPhi_, hQ_;
