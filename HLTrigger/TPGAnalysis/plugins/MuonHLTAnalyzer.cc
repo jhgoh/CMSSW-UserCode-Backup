@@ -27,6 +27,7 @@
 #include "DataFormats/Math/interface/deltaPhi.h"
 
 #include <TString.h>
+#include <iostream>
 
 const static int nRecoMuonCutStep = 6;
 const static char* recoMuonCutStepNames[nRecoMuonCutStep] = {
@@ -65,17 +66,13 @@ MuonHLTAnalyzer::MuonHLTAnalyzer(const edm::ParameterSet& pset):
     hNEvent_->GetXaxis()->SetBinLabel(i+2, muonTrigNames_[i].c_str());
   }
 
-  hNRecoMuon_ = fs->make<TH1F>("hNRecoMuon", "Number of recoMuons per event", nRecoMuonCutStep, 0, nRecoMuonCutStep);
-
-  for ( int i=0; i<nRecoMuonCutStep; ++i )
-  {
-    hNRecoMuon_->GetXaxis()->SetBinLabel(i+1, recoMuonCutStepNames[i]);
-  }
-
   // Book histograms for each cut steps
   for ( int i=0; i<nRecoMuonCutStep; ++i )
   {
     TFileDirectory dir = fs->mkdir(Form("CutStep%d_%s", i, recoMuonCutStepNames[i]));
+
+    hNRecoMuon_.push_back(dir.make<TH1F>("hNRecoMuon", "Number of recoMuons per event", nRecoMuonCutStep, 0, nRecoMuonCutStep));
+    hNL1MatchedRecoMuon_.push_back(dir.make<TH1F>("hNL1MatchedRecoMuon", "Number of L1 matched recoMuons per event", nRecoMuonCutStep, 0, nRecoMuonCutStep));
 
     // Histograms for track variables
     hPt_.push_back(dir.make<TH1F>("hPt", "Global muon Transverse momentum", 100, 0, 100));
@@ -149,6 +146,7 @@ MuonHLTAnalyzer::~MuonHLTAnalyzer()
 
 void MuonHLTAnalyzer::beginRun(const edm::Run& run, const edm::EventSetup& eventSetup)
 {
+  l1Matcher_.init(eventSetup);
 }
 
 void MuonHLTAnalyzer::endRun()
@@ -158,17 +156,33 @@ void MuonHLTAnalyzer::endRun()
 void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& eventSetup)
 {
   edm::Handle<edm::TriggerResults> trigResultHandle;
-  if ( !event.getByLabel("TriggerResults", trigResultHandle) ) return;
+  if ( !event.getByLabel(edm::InputTag("TriggerResults", "", "HLT"), trigResultHandle) ) 
+  {
+    edm::LogError("MuonHLTAnalyzer") << "Cannot find TriggerResults\n";
+    return;
+  }
   const edm::TriggerResults* trigResult = trigResultHandle.product();
 
   edm::Handle<edm::View<l1extra::L1MuonParticle> > l1MuonHandle;
-  if ( !event.getByLabel(l1MuonTag_, l1MuonHandle) ) return;
+  if ( !event.getByLabel(l1MuonTag_, l1MuonHandle) )
+  {
+    edm::LogError("MuonHLTAnalyzer") << "Cannot find L1MuonParticle\n";
+    return;
+  }
 
   edm::Handle<edm::View<reco::Muon> > recoMuonHandle;
-  if ( !event.getByLabel(recoMuonTag_, recoMuonHandle) ) return;
+  if ( !event.getByLabel(recoMuonTag_, recoMuonHandle) ) 
+  {
+    edm::LogError("MuonHLTAnalyzer") << "Cannot find recoMuon\n";
+    return;
+  }
 
   edm::Handle<reco::BeamSpot> beamSpotHandle;
-  if ( !event.getByLabel("offlineBeamSpot", beamSpotHandle) ) return;
+  if ( !event.getByLabel("offlineBeamSpot", beamSpotHandle) ) 
+  {
+    edm::LogError("MuonHLTAnalyzer") << "Cannot find offlineBeamSpot\n";
+    return;
+  }
 
   // Count how much event passed each trigger paths
   if ( trigResult->wasrun() and trigResult->accept() )
@@ -200,7 +214,9 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
     }
   }
 
-  // Start GlobalMuon-L1Muon matching
+  // Loop over all global muons
+  std::vector<int> nRecoMuon(nRecoMuonCutStep);
+  std::vector<int> nL1MatchedRecoMuon(nRecoMuonCutStep);
   for ( edm::View<reco::Muon>::const_iterator recoMuon = recoMuonHandle->begin();
         recoMuon != recoMuonHandle->end(); ++recoMuon )
   {
@@ -252,6 +268,8 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
     {
       if ( !muonQuality[i] ) continue;
 
+      ++nRecoMuon[i];
+
       hPt_[i]->Fill(recoPt);
       hEta_[i]->Fill(recoEta);
       hPhi_[i]->Fill(recoPhi);
@@ -267,21 +285,18 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
         hPtBarrel_[i]->Fill(recoPt);
         hEtaBarrel_[i]->Fill(recoEta);
         hPhiBarrel_[i]->Fill(recoPhi);
-        hQBarrel_[i]->Fill(recoQ);
       }
       else if ( fabs(recoEta) < 1.2 )
       {
         hPtOverlap_[i]->Fill(recoPt);
         hEtaOverlap_[i]->Fill(recoEta);
         hPhiOverlap_[i]->Fill(recoPhi);
-        hQOverlap_[i]->Fill(recoQ);
       }
       else
       {
         hPtEndcap_[i]->Fill(recoPt);
         hEtaEndcap_[i]->Fill(recoEta);
         hPhiEndcap_[i]->Fill(recoPhi);
-        hQEndcap_[i]->Fill(recoQ);
       }
     }
 
@@ -323,7 +338,15 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
       hL1MatchedGlbPt_[i]->Fill(recoPt);
       hL1MatchedGlbEta_[i]->Fill(recoEta);
       hL1MatchedGlbPhi_[i]->Fill(recoPhi);
+
+      ++nL1MatchedRecoMuon[i];
     }
+  }
+
+  for ( int i=0; i<nRecoMuonCutStep; ++i )
+  {
+    hNRecoMuon_[i]->Fill(nRecoMuon[i]);
+    hNL1MatchedRecoMuon_[i]->Fill(nL1MatchedRecoMuon[i]);
   }
 }
 
