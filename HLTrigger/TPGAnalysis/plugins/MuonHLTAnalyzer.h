@@ -40,8 +40,8 @@ public:
 private:
   typedef std::vector<std::string> VString;
 
-  edm::InputTag l1MuonTag_, recoMuonTag_;
-  VString muonTrigNames_;
+  edm::InputTag l1MuonTag_, triggerEventTag_, recoMuonTag_;
+  VString muonL1TNames_;
   
   L1MuonMatcherAlgo l1Matcher_;
   edm::ESHandle<MagneticField> bField_;
@@ -55,15 +55,18 @@ private:
   TH1F* hNEvent_;
   std::vector<TH1F*> hNRecoMuon_;
   std::vector<TH1F*> hNL1MatchedRecoMuon_;
+  std::vector<TH1F*> hNHLTMatchedRecoMuon_;
 
   // List of histograms : track varialbes for each cut steps
   std::vector<TH1F*> hPt_, hEta_, hPhi_, hQ_;
+  std::vector<TH1F*> hPtWithL1Bin_, hEtaWithL1Bin_;
   std::vector<TH1F*> hNGlbHit_, hGlbX2_, hNTrkHit_, hTrkX2_;
   std::vector<TH1F*> hRelIso_;
   std::vector<TH1F*> hDeltaR_, hDeltaPhi_, hDeltaEta_;
   std::vector<TH1F*> hL1Pt_, hL1Eta_, hL1Phi_;
   std::vector<TH1F*> hMatchedL1Pt_, hMatchedL1Eta_, hMatchedL1Phi_;
   std::vector<TH1F*> hL1MatchedGlbPt_, hL1MatchedGlbEta_, hL1MatchedGlbPhi_;
+  std::vector<TH1F*> hHLTMatchedGlbPt_, hHLTMatchedGlbEta_, hHLTMatchedGlbPhi_;
 
   std::vector<TH1F*> hPtBarrel_, hEtaBarrel_, hPhiBarrel_, hQBarrel_;
   std::vector<TH1F*> hNGlbHitBarrel_, hGlbX2Barrel_, hNTrkHitBarrel_, hTrkX2Barrel_;

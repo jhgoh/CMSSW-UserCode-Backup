@@ -11,6 +11,7 @@
 #include "DataFormats/L1Trigger/interface/L1MuonParticle.h"
 #include "DataFormats/L1Trigger/interface/L1MuonParticleFwd.h"
 #include "DataFormats/L1GlobalMuonTrigger/interface/L1MuGMTCand.h"
+#include "DataFormats/HLTReco/interface/TriggerEvent.h"
 #include "DataFormats/MuonReco/interface/Muon.h"
 #include "DataFormats/MuonReco/interface/MuonFwd.h"
 #include "DataFormats/MuonReco/interface/MuonSelectors.h"
@@ -37,10 +38,11 @@ const static char* recoMuonCutStepNames[nRecoMuonCutStep] = {
 MuonHLTAnalyzer::MuonHLTAnalyzer(const edm::ParameterSet& pset):
   l1Matcher_(pset.getParameter<edm::ParameterSet>("l1MatcherConfig"))
 {
-  muonTrigNames_ = pset.getParameter<VString>("trigNames");
-  const int nTrigNames = muonTrigNames_.size();
+  muonL1TNames_ = pset.getParameter<VString>("muonL1TNames");
+  const int nMuonL1TNames = muonL1TNames_.size();
 
   l1MuonTag_ = pset.getParameter<edm::InputTag>("l1Muon");
+  triggerEventTag_ = pset.getParameter<edm::InputTag>("triggerEvent");
   recoMuonTag_ = pset.getParameter<edm::InputTag>("recoMuon");
   minPt_ = pset.getParameter<double>("minPt");
   maxRelIso_ = pset.getParameter<double>("maxRelIso");
@@ -59,24 +61,27 @@ MuonHLTAnalyzer::MuonHLTAnalyzer(const edm::ParameterSet& pset):
     -2.40, -2.35, -2.30, -2.25, -2.20, -2.15, -2.10, -2.05,-2.00, -1.95, -1.90, -1.85, -1.80, -1.75, -1.70, -1.60,-1.50, -1.40, -1.30, -1.20, -1.10, -1.00, -0.90, -0.80,-0.70, -0.60, -0.50, -0.40, -0.30, -0.20, -0.10, -0.00,0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80,0.90, 1.00, 1.10, 1.20, 1.30, 1.40, 1.50, 1.60,1.70, 1.75, 1.80, 1.85, 1.90, 1.95, 2.00, 2.05,2.10, 2.15, 2.20, 2.25, 2.30, 2.35, 2.40
   };
 
-  hNEvent_ = fs->make<TH1F>("hNEvent", "Number of events passing trigger paths;Trigger path", nTrigNames+1, 0, nTrigNames+1);
+  hNEvent_ = fs->make<TH1F>("hNEvent", "Number of events passing trigger paths;Trigger path", nMuonL1TNames+1, 0, nMuonL1TNames+1);
   hNEvent_->GetXaxis()->SetBinLabel(1, "All");
-  for ( int i=0; i<nTrigNames; ++i )
+  for ( int muonL1TIdx=0; muonL1TIdx<nMuonL1TNames; ++muonL1TIdx )
   {
-    hNEvent_->GetXaxis()->SetBinLabel(i+2, muonTrigNames_[i].c_str());
+    hNEvent_->GetXaxis()->SetBinLabel(muonL1TIdx+2, muonL1TNames_[muonL1TIdx].c_str());
   }
 
   // Book histograms for each cut steps
-  for ( int i=0; i<nRecoMuonCutStep; ++i )
+  for ( int recoCutStep=0; recoCutStep<nRecoMuonCutStep; ++recoCutStep )
   {
-    TFileDirectory dir = fs->mkdir(Form("CutStep%d_%s", i, recoMuonCutStepNames[i]));
+    TFileDirectory dir = fs->mkdir(Form("CutStep%d_%s", recoCutStep, recoMuonCutStepNames[recoCutStep]));
 
     hNRecoMuon_.push_back(dir.make<TH1F>("hNRecoMuon", "Number of recoMuons per event", nRecoMuonCutStep, 0, nRecoMuonCutStep));
     hNL1MatchedRecoMuon_.push_back(dir.make<TH1F>("hNL1MatchedRecoMuon", "Number of L1 matched recoMuons per event", nRecoMuonCutStep, 0, nRecoMuonCutStep));
+    hNHLTMatchedRecoMuon_.push_back(dir.make<TH1F>("hNHLTMatchedRecoMuon", "Number of HLT matched recoMuons per event", nRecoMuonCutStep, 0, nRecoMuonCutStep));
 
     // Histograms for track variables
     hPt_.push_back(dir.make<TH1F>("hPt", "Global muon Transverse momentum", 100, 0, 100));
+    hPtWithL1Bin_.push_back(dir.make<TH1F>("hPtWithL1Bin", "Global muon Transverse momentum", l1PtNBin, l1PtBins));
     hEta_.push_back(dir.make<TH1F>("hEta", "Global muon Pseudorapidity", 100, -2.5, 2.5));
+    hEtaWithL1Bin_.push_back(dir.make<TH1F>("hEtaWithL1Bin", "Global muon Pseudorapidity", l1EtaNBin, l1EtaBins));
     hPhi_.push_back(dir.make<TH1F>("hPhi", "Global muon Azimuthal angle", 100, -3.15, 3.15));
     hQ_.push_back(dir.make<TH1F>("hQ", "Global muon charge", 3, -1.5, 1.5));
 
@@ -93,17 +98,14 @@ MuonHLTAnalyzer::MuonHLTAnalyzer(const edm::ParameterSet& pset):
     hDeltaEta_.push_back(dir.make<TH1F>("hDeltaEta", "Global muon - L1 muon matching #Delta#eta;#Delta#eta", 50, 0, 2));
 
     // Histograms for L1 variables
-    hL1Pt_.push_back(dir.make<TH1F>("hL1Pt", "L1 muon p_{T}", l1PtNBin, l1PtBins));
-    hL1Eta_.push_back(dir.make<TH1F>("hL1Eta", "L1 muon #eta", l1EtaNBin, l1EtaBins));
-    hL1Phi_.push_back(dir.make<TH1F>("hL1Phi", "L1 muon #phi", 50, -3.15, 3.15));
-
-    hMatchedL1Pt_.push_back(dir.make<TH1F>("hMatchedL1Pt", "Matched L1 muon p_{T}", l1PtNBin, l1PtBins));
-    hMatchedL1Eta_.push_back(dir.make<TH1F>("hMatchedL1Eta", "Matched L1 muon #eta", l1EtaNBin, l1EtaBins));
-    hMatchedL1Phi_.push_back(dir.make<TH1F>("hMatchedL1Phi", "Matched L1 muon #phi", 50, -3.15, 3.15));
-
     hL1MatchedGlbPt_.push_back(dir.make<TH1F>("hL1MatchedGlbPt", "L1 matched global muon p_{T};global muon p_{T} [GeV/c]", l1PtNBin, l1PtBins));
     hL1MatchedGlbEta_.push_back(dir.make<TH1F>("hL1MatchedGlbEta", "L1 matched global muon #eta;global muon #eta", l1EtaNBin, l1EtaBins));
     hL1MatchedGlbPhi_.push_back(dir.make<TH1F>("hL1MatchedGlbPhi", "L1 matched global muon #phi;global muon #phi", 50, -3.15, 3.15));
+
+    // Histograms for HLT variables
+    hHLTMatchedGlbPt_.push_back(dir.make<TH1F>("hHLTMatchedGlbPt", "HLT matched global muon p_{T};global muon p_{T} [GeV/c]", 50, 0, 250));
+    hHLTMatchedGlbEta_.push_back(dir.make<TH1F>("hHLTMatchedGlbEta", "HLT matched global muon #eta;global muon #eta", 50, -2.5, 2.5));
+    hHLTMatchedGlbPhi_.push_back(dir.make<TH1F>("hHLTMatchedGlbPhi", "HLT matched global muon #phi;global muon #phi", 50, -3.15, 3.15));
 
     // Histograms in Barrel region
     hPtBarrel_.push_back(dir.make<TH1F>("hPtBarrel", "Global muon Transverse momentum", 100, 0, 100));
@@ -170,6 +172,14 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
     return;
   }
 
+  edm::Handle<trigger::TriggerEvent> triggerEventHandle;
+  if ( !event.getByLabel(triggerEventTag_, triggerEventHandle) )
+  {
+    edm::LogError("MuonHLTAnalyzer") << "Cannot find TriggerEvvent\n";
+    return;
+  }
+  const trigger::TriggerObjectCollection& triggerObjects = triggerEventHandle->getObjects();
+
   edm::Handle<edm::View<reco::Muon> > recoMuonHandle;
   if ( !event.getByLabel(recoMuonTag_, recoMuonHandle) ) 
   {
@@ -192,20 +202,20 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
     const int nTrigResult = trigResult->size();
     const edm::TriggerNames& trigNames = event.triggerNames(*trigResult);
 
-    for ( int i=0; i<nTrigResult; ++i )
+    for ( int idxL1T=0; idxL1T<nTrigResult; ++idxL1T )
     {
-      if ( !trigResult->accept(i) ) continue;
+      if ( !trigResult->accept(idxL1T) ) continue;
 
-      const std::string triggerName = trigNames.triggerName(i);
+      const std::string triggerName = trigNames.triggerName(idxL1T);
 
       // Find Muon-HLT in the triggerResult
       int bin = -1;
-      const int nMuonTrigNames = muonTrigNames_.size();
-      for ( int j=0; j<nMuonTrigNames; ++j )
+      const int nMuonL1TNames = muonL1TNames_.size();
+      for ( int muonL1TIdx=0; muonL1TIdx<nMuonL1TNames; ++muonL1TIdx )
       {
-        if ( muonTrigNames_[j] == triggerName )
+        if ( muonL1TNames_[muonL1TIdx] == triggerName )
         {
-          bin = j;
+          bin = muonL1TIdx;
           break;
         }
       }
@@ -217,6 +227,7 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
   // Loop over all global muons
   std::vector<int> nRecoMuon(nRecoMuonCutStep);
   std::vector<int> nL1MatchedRecoMuon(nRecoMuonCutStep);
+  std::vector<int> nHLTMatchedRecoMuon(nRecoMuonCutStep);
   for ( edm::View<reco::Muon>::const_iterator recoMuon = recoMuonHandle->begin();
         recoMuon != recoMuonHandle->end(); ++recoMuon )
   {
@@ -264,39 +275,41 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
       muonQuality[5] = ( muonQuality[4] and relIso < maxRelIso_ );
     }
 
-    for ( int i=0; i<nRecoMuonCutStep; ++i )
+    for ( int recoCutStep=0; recoCutStep<nRecoMuonCutStep; ++recoCutStep )
     {
-      if ( !muonQuality[i] ) continue;
+      if ( !muonQuality[recoCutStep] ) continue;
 
-      ++nRecoMuon[i];
+      ++nRecoMuon[recoCutStep];
 
-      hPt_[i]->Fill(recoPt);
-      hEta_[i]->Fill(recoEta);
-      hPhi_[i]->Fill(recoPhi);
-      hQ_[i]->Fill(recoQ);
+      hPt_[recoCutStep]->Fill(recoPt);
+      hPtWithL1Bin_[recoCutStep]->Fill(recoPt);
+      hEta_[recoCutStep]->Fill(recoEta);
+      hEtaWithL1Bin_[recoCutStep]->Fill(recoEta);
+      hPhi_[recoCutStep]->Fill(recoPhi);
+      hQ_[recoCutStep]->Fill(recoQ);
 
-      hNGlbHit_[i]->Fill(nMuonHit);
-      hNTrkHit_[i]->Fill(nTrkHit);
-      hGlbX2_[i]->Fill(glbX2);
-      hTrkX2_[i]->Fill(trkX2);
+      hNGlbHit_[recoCutStep]->Fill(nMuonHit);
+      hNTrkHit_[recoCutStep]->Fill(nTrkHit);
+      hGlbX2_[recoCutStep]->Fill(glbX2);
+      hTrkX2_[recoCutStep]->Fill(trkX2);
 
       if ( fabs(recoEta) < 0.9 )
       {
-        hPtBarrel_[i]->Fill(recoPt);
-        hEtaBarrel_[i]->Fill(recoEta);
-        hPhiBarrel_[i]->Fill(recoPhi);
+        hPtBarrel_[recoCutStep]->Fill(recoPt);
+        hEtaBarrel_[recoCutStep]->Fill(recoEta);
+        hPhiBarrel_[recoCutStep]->Fill(recoPhi);
       }
       else if ( fabs(recoEta) < 1.2 )
       {
-        hPtOverlap_[i]->Fill(recoPt);
-        hEtaOverlap_[i]->Fill(recoEta);
-        hPhiOverlap_[i]->Fill(recoPhi);
+        hPtOverlap_[recoCutStep]->Fill(recoPt);
+        hEtaOverlap_[recoCutStep]->Fill(recoEta);
+        hPhiOverlap_[recoCutStep]->Fill(recoPhi);
       }
       else
       {
-        hPtEndcap_[i]->Fill(recoPt);
-        hEtaEndcap_[i]->Fill(recoEta);
-        hPhiEndcap_[i]->Fill(recoPhi);
+        hPtEndcap_[recoCutStep]->Fill(recoPt);
+        hEtaEndcap_[recoCutStep]->Fill(recoEta);
+        hPhiEndcap_[recoCutStep]->Fill(recoPhi);
       }
     }
 
@@ -321,32 +334,79 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
       const double l1PosEta = l1Muon->eta();
       const double l1PosPhi = l1Muon->phi();
       const double dR = deltaR(recoPosEta, recoPosPhi, l1PosEta, l1PosPhi);
-      if ( matchedDeltaR < 0 or dR < matchedDeltaR ) 
+      if ( matchedDeltaR < 0 or (dR < matchedDeltaR and dR < 0.3) ) 
       {
         matchedDeltaR = dR;
         bestMatchingL1Muon = *l1Muon;
       }
     }
 
-    if ( matchedDeltaR < 0 or matchedDeltaR > 0.3 ) continue;
+    if ( matchedDeltaR < 0 ) continue;
 
     // Now we have best matching l1Muon
-    for ( int i=0; i<nRecoMuonCutStep; ++i )
+    for ( int recoCutStep=0; recoCutStep<nRecoMuonCutStep; ++recoCutStep )
     {
-      if ( !muonQuality[i] ) continue;
+      if ( !muonQuality[recoCutStep] ) continue;
 
-      hL1MatchedGlbPt_[i]->Fill(recoPt);
-      hL1MatchedGlbEta_[i]->Fill(recoEta);
-      hL1MatchedGlbPhi_[i]->Fill(recoPhi);
+      hL1MatchedGlbPt_[recoCutStep]->Fill(recoPt);
+      hL1MatchedGlbEta_[recoCutStep]->Fill(recoEta);
+      hL1MatchedGlbPhi_[recoCutStep]->Fill(recoPhi);
 
-      ++nL1MatchedRecoMuon[i];
+      ++nL1MatchedRecoMuon[recoCutStep];
+    }
+
+    // Now start recoMuon-HLT matching
+    for ( unsigned int filterIdx = 0; filterIdx < triggerEventHandle->sizeFilters(); ++filterIdx )
+    {
+      std::string filterName = triggerEventHandle->filterTag(filterIdx).encode();
+      const size_t fsPos = filterName.find_first_of(':');
+      if ( fsPos == std::string::npos )
+      {
+        filterName = filterName.substr(0, fsPos);
+      }
+      if ( filterName != "hltSingleMu9L3Filtered9" ) continue;
+
+      double matchedDeltaR = -999;
+      double matchedPtRes = -999;
+      const trigger::Keys& trgKeys = triggerEventHandle->filterKeys(filterIdx);
+      for ( trigger::Keys::const_iterator trgKey = trgKeys.begin(); 
+            trgKey != trgKeys.end(); ++trgKey )
+      {
+        const double hltPt = triggerObjects[*trgKey].pt();
+        const double hltEta = triggerObjects[*trgKey].eta();
+        const double hltPhi = triggerObjects[*trgKey].phi();
+
+        const double dR = deltaR(recoEta, hltEta, recoPhi, hltPhi);
+        const double ptRes = hltPt == 0 ? 1e14 : (hltPt-recoPt)/hltPt;
+
+        if ( matchedDeltaR < 0 or (matchedDeltaR > dR and dR < 0.5 and ptRes < 10) ) 
+        {
+          matchedDeltaR = dR;
+          matchedPtRes = ptRes;
+        }
+      }
+
+      if ( matchedDeltaR < 0 ) continue;
+
+      // Now we have best matching candidate for HLT-global muon pair
+      for ( int recoCutStep=0; recoCutStep<nRecoMuonCutStep; ++recoCutStep )
+      {
+        if ( !muonQuality[recoCutStep] ) continue;
+
+        hHLTMatchedGlbPt_[recoCutStep]->Fill(recoPt);
+        hHLTMatchedGlbPt_[recoCutStep]->Fill(recoEta);
+        hHLTMatchedGlbPhi_[recoCutStep]->Fill(recoPhi);
+
+        ++nHLTMatchedRecoMuon[recoCutStep];
+      }
     }
   }
 
-  for ( int i=0; i<nRecoMuonCutStep; ++i )
+  for ( int recoCutStep=0; recoCutStep<nRecoMuonCutStep; ++recoCutStep )
   {
-    hNRecoMuon_[i]->Fill(nRecoMuon[i]);
-    hNL1MatchedRecoMuon_[i]->Fill(nL1MatchedRecoMuon[i]);
+    hNRecoMuon_[recoCutStep]->Fill(nRecoMuon[recoCutStep]);
+    hNL1MatchedRecoMuon_[recoCutStep]->Fill(nL1MatchedRecoMuon[recoCutStep]);
+    hNHLTMatchedRecoMuon_[recoCutStep]->Fill(nHLTMatchedRecoMuon[recoCutStep]);
   }
 }
 
