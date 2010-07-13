@@ -63,7 +63,6 @@ private:
   std::vector<TH1F*> hNGlbHit_, hGlbX2_, hNTrkHit_, hTrkX2_;
   std::vector<TH1F*> hRelIso_;
   std::vector<TH1F*> hL1DeltaR_, hL1DeltaPhi_, hL1DeltaEta_;
-  std::vector<TH1F*> hL1Pt_, hL1Eta_, hL1Phi_;
   std::vector<TH1F*> hMatchedL1Pt_, hMatchedL1Eta_, hMatchedL1Phi_;
   std::vector<TH1F*> hHLTDeltaR_, hHLTDeltaPhi_, hHLTDeltaEta_;
   std::vector<TH1F*> hL1MatchedGlbPt_, hL1MatchedGlbEta_, hL1MatchedGlbPhi_;
@@ -74,7 +73,6 @@ private:
   std::vector<TH1F*> hNGlbHitBarrel_, hGlbX2Barrel_, hNTrkHitBarrel_, hTrkX2Barrel_;
   std::vector<TH1F*> hRelIsoBarrel_;
   std::vector<TH1F*> hL1DeltaRBarrel_, hL1DeltaPhiBarrel_, hL1DeltaEtaBarrel_;
-  std::vector<TH1F*> hL1PtBarrel_, hL1EtaBarrel_, hL1PhiBarrel_;
   std::vector<TH1F*> hMatchedL1PtBarrel_, hMatchedL1EtaBarrel_, hMatchedL1PhiBarrel_;
   std::vector<TH1F*> hL1MatchedGlbPtBarrel_, hL1MatchedGlbEtaBarrel_, hL1MatchedGlbPhiBarrel_;
   std::vector<TH1F*> hHLTDeltaRBarrel_, hHLTDeltaPhiBarrel_, hHLTDeltaEtaBarrel_;
@@ -85,7 +83,6 @@ private:
   std::vector<TH1F*> hNGlbHitOverlap_, hGlbX2Overlap_, hNTrkHitOverlap_, hTrkX2Overlap_;
   std::vector<TH1F*> hRelIsoOverlap_;
   std::vector<TH1F*> hL1DeltaROverlap_, hL1DeltaPhiOverlap_, hL1DeltaEtaOverlap_;
-  std::vector<TH1F*> hL1PtOverlap_, hL1EtaOverlap_, hL1PhiOverlap_;
   std::vector<TH1F*> hMatchedL1PtOverlap_, hMatchedL1EtaOverlap_, hMatchedL1PhiOverlap_;
   std::vector<TH1F*> hHLTDeltaROverlap_, hHLTDeltaPhiOverlap_, hHLTDeltaEtaOverlap_;
   std::vector<TH1F*> hL1MatchedGlbPtOverlap_, hL1MatchedGlbEtaOverlap_, hL1MatchedGlbPhiOverlap_;
@@ -96,7 +93,6 @@ private:
   std::vector<TH1F*> hNGlbHitEndcap_, hGlbX2Endcap_, hNTrkHitEndcap_, hTrkX2Endcap_;
   std::vector<TH1F*> hRelIsoEndcap_;
   std::vector<TH1F*> hL1DeltaREndcap_, hL1DeltaPhiEndcap_, hL1DeltaEtaEndcap_;
-  std::vector<TH1F*> hL1PtEndcap_, hL1EtaEndcap_, hL1PhiEndcap_;
   std::vector<TH1F*> hMatchedL1PtEndcap_, hMatchedL1EtaEndcap_, hMatchedL1PhiEndcap_;
   std::vector<TH1F*> hHLTDeltaREndcap_, hHLTDeltaPhiEndcap_, hHLTDeltaEtaEndcap_;
   std::vector<TH1F*> hL1MatchedGlbPtEndcap_, hL1MatchedGlbEtaEndcap_, hL1MatchedGlbPhiEndcap_;
