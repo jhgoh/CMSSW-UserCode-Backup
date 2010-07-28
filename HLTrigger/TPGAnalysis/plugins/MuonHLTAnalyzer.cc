@@ -25,15 +25,199 @@
 #include "TrackingTools/GeomPropagators/interface/Propagator.h"
 
 #include "DataFormats/Math/interface/deltaR.h"
-#include "DataFormats/Math/interface/deltaPhi.h"
 
 #include <TString.h>
 #include <iostream>
 #include <memory>
 
-const static int nRecoMuonCutStep = 6;
+const static int nRecoMuonCutStep = 3;
 const static char* recoMuonCutStepNames[nRecoMuonCutStep] = {
-  "All", "Prompt", "MuonSTN", "MisHit", "EWK", "EWK+Iso"
+  "Prompt+Muon station", "Prompt+Muon station+MisHit", "EWK"
+};
+
+//// Basic constants
+const static int ptNBin = 11;
+const static double ptBins[ptNBin+1] = {
+  0.,4.,8.,10.,15.,18.,21.,25.,30.,40.,70.,100.
+};
+
+/*
+  const int l1EtaNBin = 62;
+  const double l1EtaBins[l1EtaNBin+1] = {
+    -2.40, -2.35, -2.30, -2.25, -2.20, -2.15, -2.10, -2.05,-2.00, -1.95, -1.90, -1.85, -1.80, -1.75, -1.70, -1.60,-1.50, -1.40, -1.30, -1.20, -1.10, -1.00, -0.90, -0.80,-0.70, -0.60, -0.50, -0.40, -0.30, -0.20, -0.10, -0.00,0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80,0.90, 1.00, 1.10, 1.20, 1.30, 1.40, 1.50, 1.60,1.70, 1.75, 1.80, 1.85, 1.90, 1.95, 2.00, 2.05,2.10, 2.15, 2.20, 2.25, 2.30, 2.35, 2.40
+  };
+*/
+
+const static int etaNBin = 8;
+const static double etaBins[etaNBin+1] = {
+  -2.40, -1.95, -1.20, -0.90, 0.00, 0.90, 1.20, 1.95, 2.40
+};
+
+struct Histograms
+{
+  typedef TH1F* TH1FP;
+
+  Histograms(const std::string dirName)
+  {
+    edm::Service<TFileService> fs;
+
+    TFileDirectory dir = fs->mkdir(dirName);
+
+    hNRecoMuon = dir.make<TH1F>("hNRecoMuon", "Number of reco muons per event", 4, 1, 5);
+    hNL1Muon = dir.make<TH1F>("hNL1Muon", "Number of L1 matched reco muons per event", 4, 1, 5);
+    hNHLTMuon = dir.make<TH1F>("hNHLTMuon", "Number of HLT matched reco muons per event", 4, 1, 5);
+
+    // Basic Kinematic variables
+    hPt = dir.make<TH1F>("hPt", "Global muon Transverse momentum;Global muon Transverse momentum [GeV/c]", ptNBin, ptBins);
+    hEta = dir.make<TH1F>("hEta", "Global muon Pseudorapidity;Global muon Pseudorapidity #eta", etaNBin, etaBins);
+    hPhi = dir.make<TH1F>("hPhi", "Global muon Azimuthal angle;Global muon Azimuthal angle #phi [Radian]", 50, -3.15, 3.15);
+    hQ = dir.make<TH1F>("hQ", "Global muon charge;Global muon charge", 3, -1.5, 1.5);
+
+    hPt_B = dir.make<TH1F>("hPt_B", "Global muon Transverse momentum;Global muon Transverse momentum [GeV/c]", ptNBin, ptBins);
+    hPhi_B = dir.make<TH1F>("hPhi_B", "Global muon Azimuthal angle;Global muon Azimuthal angle #phi [Radian]", 50, -3.15, 3.15);
+    hQ_B = dir.make<TH1F>("hQ_B", "Global muon charge;Global muon charge", 3, -1.5, 1.5);
+
+    hPt_O = dir.make<TH1F>("hPt_O", "Global muon Transverse momentum;Global muon Transverse momentum [GeV/c]", ptNBin, ptBins);
+    hPhi_O = dir.make<TH1F>("hPhi_O", "Global muon Azimuthal angle;Global muon Azimuthal angle #phi [Radian]", 50, -3.15, 3.15);
+    hQ_O = dir.make<TH1F>("hQ_O", "Global muon charge;Global muon charge", 3, -1.5, 1.5);
+
+    hPt_E = dir.make<TH1F>("hPt_E", "Global muon Transverse momentum;Global muon Transverse momentum [GeV/c]", ptNBin, ptBins);
+    hPhi_E = dir.make<TH1F>("hPhi_E", "Global muon Azimuthal angle;Global muon Azimuthal angle #phi [Radian]", 50, -3.15, 3.15);
+    hQ_E = dir.make<TH1F>("hQ_E", "Global muon charge;Global muon charge", 3, -1.5, 1.5);
+
+    // Kinematic variables matched to L1 objects
+    hL1Pt = dir.make<TH1F>("hL1Pt", "L1 matched global muon Transverse momentum;Global muon Transverse momentum [GeV/c]", ptNBin, ptBins);
+    hL1Eta = dir.make<TH1F>("hL1Eta", "L1 matched global muon Pseudorapidity;Global muon Pseudorapidity #eta", etaNBin, etaBins);
+    hL1Phi = dir.make<TH1F>("hL1Phi", "L1 matched global muon Azumuthal angle;Global muon Azimuthal angle #phi [Radian]", 50, -3.15, 3.15);
+    hL1Q = dir.make<TH1F>("hL1Q", "L1 matched global muon charge;Global muon charge", 3, -1.5, 1.5);
+
+    hL1Pt_B = dir.make<TH1F>("hL1Pt_B", "L1 matched global muon Transverse momentum;Global muon Transverse momentum [GeV/c]", ptNBin, ptBins);
+    hL1Phi_B = dir.make<TH1F>("hL1Phi_B", "L1 matched global muon Azumuthal angle;Global muon Azimuthal angle #phi [Radian]", 50, -3.15, 3.15);
+    hL1Q_B = dir.make<TH1F>("hL1Q_B", "L1 matched global muon charge;Global muon charge", 3, -1.5, 1.5);
+
+    hL1Pt_O = dir.make<TH1F>("hL1Pt_O", "L1 matched global muon Transverse momentum;Global muon Transverse momentum [GeV/c]", ptNBin, ptBins);
+    hL1Phi_O = dir.make<TH1F>("hL1Phi_O", "L1 matched global muon Azumuthal angle;Global muon Azimuthal angle #phi [Radian]", 50, -3.15, 3.15);
+    hL1Q_O = dir.make<TH1F>("hL1Q_O", "L1 matched global muon charge;Global muon charge", 3, -1.5, 1.5);
+
+    hL1Pt_E = dir.make<TH1F>("hL1Pt_E", "L1 matched global muon Transverse momentum;Global muon Transverse momentum [GeV/c]", ptNBin, ptBins);
+    hL1Phi_E = dir.make<TH1F>("hL1Phi_E", "L1 matched global muon Azumuthal angle;Global muon Azimuthal angle #phi [Radian]", 50, -3.15, 3.15);
+    hL1Q_E = dir.make<TH1F>("hL1Q_E", "L1 matched global muon charge;Global muon charge", 3, -1.5, 1.5);
+
+    // Kinematic variables matched to HLT objects
+    hHLTPt = dir.make<TH1F>("hHLTPt", "HLT matched global muon Transverse momentum;Global muon Transverse momentum [GeV/c];Global muon Transverse momentum [GeV/c]", ptNBin, ptBins);
+    hHLTEta = dir.make<TH1F>("hHLTEta", "HLT matched global muon Pseudorapidity;Global muon Pseudorapidity #eta", etaNBin, etaBins);
+    hHLTPhi = dir.make<TH1F>("hHLTPhi", "HLT matched global muon Azumuthal angle;Global muon Azimuthal angle #phi [Radian]", 50, -3.15, 3.15);
+    hHLTQ = dir.make<TH1F>("hHLTQ", "HLT matched global muon charge;Global muon charge", 3, -1.5, 1.5);
+
+    hHLTPt_B = dir.make<TH1F>("hHLTPt_B", "HLT matched global muon Transverse momentum;Global muon Transverse momentum [GeV/c]", ptNBin, ptBins);
+    hHLTPhi_B = dir.make<TH1F>("hHLTPhi_B", "HLT matched global muon Azumuthal angle;Global muon Azimuthal angle #phi [Radian]", 50, -3.15, 3.15);
+    hHLTQ_B = dir.make<TH1F>("hHLTQ_B", "HLT matched global muon charge;Global muon charge", 3, -1.5, 1.5);
+
+    hHLTPt_O = dir.make<TH1F>("hHLTPt_O", "HLT matched global muon Transverse momentum;Global muon Transverse momentum [GeV/c]", ptNBin, ptBins);
+    hHLTPhi_O = dir.make<TH1F>("hHLTPhi_O", "HLT matched global muon Azumuthal angle;Global muon Azimuthal angle #phi [Radian]", 50, -3.15, 3.15);
+    hHLTQ_O = dir.make<TH1F>("hHLTQ_O", "HLT matched global muon charge;Global muon charge", 3, -1.5, 1.5);
+
+    hHLTPt_E = dir.make<TH1F>("hHLTPt_E", "HLT matched global muon Transverse momentum;Global muon Transverse momentum [GeV/c]", ptNBin, ptBins);
+    hHLTPhi_E = dir.make<TH1F>("hHLTPhi_E", "HLT matched global muon Azumuthal angle;Global muon Azimuthal angle #phi [Radian]", 50, -3.15, 3.15);
+    hHLTQ_E = dir.make<TH1F>("hHLTQ_E", "HLT matched global muon charge;Global muon charge", 3, -1.5, 1.5);
+
+    // Number of hits and Chi^2
+    hGlbNHit = dir.make<TH1F>("hGlbNHit", "Global muon Number of valid muon hits", 100, 0, 100);
+    hGlbX2 = dir.make<TH1F>("hGlbX2", "Global muon Normalized #Chi^{2} of global track", 50, 0, 50);
+    hTrkNHit = dir.make<TH1F>("hTrkNHit", "Global muon Number of valid tracker hits", 100, 0, 100);
+    hTrkX2 = dir.make<TH1F>("hTrkX2", "Global muon Normalized #Chi^{2} of tracker track", 50, 0, 50);
+
+    hGlbNHit_B = dir.make<TH1F>("hGlbNHit_B", "Global muon Number of valid muon hits", 100, 0, 100);
+    hGlbX2_B = dir.make<TH1F>("hGlbX2_B", "Global muon Normalized #Chi^{2} of global track", 50, 0, 50);
+    hTrkNHit_B = dir.make<TH1F>("hTrkNHit_B", "Global muon Number of valid tracker hits", 100, 0, 100);
+    hTrkX2_B = dir.make<TH1F>("hTrkX2_B", "Global muon Normalized #Chi^{2} of tracker track", 50, 0, 50);
+
+    hGlbNHit_O = dir.make<TH1F>("hGlbNHit_O", "Global muon Number of valid muon hits", 100, 0, 100);
+    hGlbX2_O = dir.make<TH1F>("hGlbX2_O", "Global muon Normalized #Chi^{2} of global track", 50, 0, 50);
+    hTrkNHit_O = dir.make<TH1F>("hTrkNHit_O", "Global muon Number of valid tracker hits", 100, 0, 100);
+    hTrkX2_O = dir.make<TH1F>("hTrkX2_O", "Global muon Normalized #Chi^{2} of tracker track", 50, 0, 50);
+
+    hGlbNHit_E = dir.make<TH1F>("hGlbNHit_E", "Global muon Number of valid muon hits", 100, 0, 100);
+    hGlbX2_E = dir.make<TH1F>("hGlbX2_E", "Global muon Normalized #Chi^{2} of global track", 50, 0, 50);
+    hTrkNHit_E = dir.make<TH1F>("hTrkNHit_E", "Global muon Number of valid tracker hits", 100, 0, 100);
+    hTrkX2_E = dir.make<TH1F>("hTrkX2_E", "Global muon Normalized #Chi^{2} of tracker track", 50, 0, 50);
+
+    // L1 Matching information
+    hL1DeltaR = dir.make<TH1F>("hL1DeltaR", "Global muon - L1 matching #DeltaR;Position #DeltaR = #sqrt{#Delta#eta^{2} + #Delta#phi^{2}}", 100, 0, 1);
+    hL1DeltaPhi = dir.make<TH1F>("hL1DeltaPhi", "Global muon - L1 matching #Delta#phi;Position #Delta#phi", 100, -1, 1);
+    hL1DeltaEta = dir.make<TH1F>("hL1DeltaEta", "Global muon - L1 matching #Delta#eta;Position #Delta#eta", 100, -1, 1);
+
+    hL1DeltaR_B = dir.make<TH1F>("hL1DeltaR_B", "Global muon - L1 matching #DeltaR;Position #DeltaR = #sqrt{#Delta#eta^{2} + #Delta#phi^{2}}", 100, 0, 1);
+    hL1DeltaPhi_B = dir.make<TH1F>("hL1DeltaPhi_B", "Global muon - L1 matching #Delta#phi;Position #Delta#phi [Radian]", 100, -1, 1);
+    hL1DeltaEta_B = dir.make<TH1F>("hL1DeltaEta_B", "Global muon - L1 matching #Delta#eta;Position #Delta#eta", 100, -1, 1);
+
+    hL1DeltaR_O = dir.make<TH1F>("hL1DeltaR_O", "Global muon - L1 matching #DeltaR;Position #DeltaR = #sqrt{#Delta#eta^{2} + #Delta#phi^{2}}", 100, 0, 1);
+    hL1DeltaPhi_O = dir.make<TH1F>("hL1DeltaPhi_O", "Global muon - L1 matching #Delta#phi;Position #Delta#phi [Radian]", 100, -1, 1);
+    hL1DeltaEta_O = dir.make<TH1F>("hL1DeltaEta_O", "Global muon - L1 matching #Delta#eta;Position #Delta#eta", 100, -1, 1);
+
+    hL1DeltaR_E = dir.make<TH1F>("hL1DeltaR_E", "Global muon - L1 matching #DeltaR;Position #DeltaR = #sqrt{#Delta#eta^{2} + #Delta#phi^{2}}", 100, 0, 1);
+    hL1DeltaPhi_E = dir.make<TH1F>("hL1DeltaPhi_E", "Global muon - L1 matching #Delta#phi;Position #Delta#phi [Radian]", 100, -1, 1);
+    hL1DeltaEta_E = dir.make<TH1F>("hL1DeltaEta_E", "Global muon - L1 matching #Delta#eta;Position #Delta#eta", 100, -1, 1);
+
+    // HLT Matching information
+    hHLTDeltaR = dir.make<TH1F>("hHLTDeltaR", "Global muon - HLT matching #DeltaR;#DeltaR = #sqrt{#Delta#eta^{2} + #Delta#phi^{2}}", 100, 0, 1);
+    hHLTDeltaPhi = dir.make<TH1F>("hHLTDeltaPhi", "Global muon - HLT matching #Delta#phi;#Delta#phi [Radian]", 100, -1, 1);
+    hHLTDeltaEta = dir.make<TH1F>("hHLTDeltaEta", "Global muon - HLT matching #Delta#eta;#Delta#eta", 100, -1, 1);
+
+    hHLTDeltaR_B = dir.make<TH1F>("hHLTDeltaR_B", "Global muon - HLT matching #DeltaR;#DeltaR = #sqrt{#Delta#eta^{2} + #Delta#phi^{2}}", 100, 0, 1);
+    hHLTDeltaPhi_B = dir.make<TH1F>("hHLTDeltaPhi_B", "Global muon - HLT matching #Delta#phi;#Delta#phi [Radian]", 100, -1, 1);
+    hHLTDeltaEta_B = dir.make<TH1F>("hHLTDeltaEta_B", "Global muon - HLT matching #Delta#eta;#Delta#eta", 100, -1, 1);
+
+    hHLTDeltaR_O = dir.make<TH1F>("hHLTDeltaR_O", "Global muon - HLT matching #DeltaR;#DeltaR = #sqrt{#Delta#eta^{2} + #Delta#phi^{2}}", 100, 0, 1);
+    hHLTDeltaPhi_O = dir.make<TH1F>("hHLTDeltaPhi_O", "Global muon - HLT matching #Delta#phi;#Delta#phi [Radian]", 100, -1, 1);
+    hHLTDeltaEta_O = dir.make<TH1F>("hHLTDeltaEta_O", "Global muon - HLT matching #Delta#eta;#Delta#eta", 100, -1, 1);
+
+    hHLTDeltaR_E = dir.make<TH1F>("hHLTDeltaR_E", "Global muon - HLT matching #DeltaR;#DeltaR = #sqrt{#Delta#eta^{2} + #Delta#phi^{2}}", 100, 0, 1);
+    hHLTDeltaPhi_E = dir.make<TH1F>("hHLTDeltaPhi_E", "Global muon - HLT matching #Delta#phi;#Delta#phi [Radian]", 100, -1, 1);
+    hHLTDeltaEta_E = dir.make<TH1F>("hHLTDeltaEta_E", "Global muon - HLT matching #Delta#eta;#Delta#eta", 100, -1, 1);
+
+    // Other cut variables
+    hRelIso   = dir.make<TH1F>("hRelIso", "Global muon relative isolation", 100, 0, 10);
+    hRelIso_B = dir.make<TH1F>("hRelIsoBarrel", "Global muon relative isolation", 100, 0, 10);
+    hRelIso_O = dir.make<TH1F>("hRelIsoOverlap", "Global muon relative isolation", 100, 0, 10);
+    hRelIso_E = dir.make<TH1F>("hRelIsoEndcap", "Global muon relative isolation", 100, 0, 10);
+  }
+
+  TH1FP hNRecoMuon, hNL1Muon, hNHLTMuon;
+
+  // Basic kinematic variables
+  TH1FP hPt, hEta, hPhi, hQ;
+  TH1FP hPt_B, hPhi_B, hQ_B;
+  TH1FP hPt_O, hPhi_O, hQ_O;
+  TH1FP hPt_E, hPhi_E, hQ_E;
+
+  // Kinematic variables matched to L1 object
+  TH1FP hL1Pt, hL1Eta, hL1Phi, hL1Q;
+  TH1FP hL1Pt_B, hL1Phi_B, hL1Q_B;
+  TH1FP hL1Pt_O, hL1Phi_O, hL1Q_O;
+  TH1FP hL1Pt_E, hL1Phi_E, hL1Q_E;
+
+  // Kinematic variables matched to HLT object
+  TH1FP hHLTPt, hHLTEta, hHLTPhi, hHLTQ;
+  TH1FP hHLTPt_B, hHLTPhi_B, hHLTQ_B;
+  TH1FP hHLTPt_O, hHLTPhi_O, hHLTQ_O;
+  TH1FP hHLTPt_E, hHLTPhi_E, hHLTQ_E;
+
+  // Number of hits and Chi^2
+  TH1FP hGlbNHit, hGlbX2, hTrkNHit, hTrkX2;
+  TH1FP hGlbNHit_B, hGlbX2_B, hTrkNHit_B, hTrkX2_B;
+  TH1FP hGlbNHit_O, hGlbX2_O, hTrkNHit_O, hTrkX2_O;
+  TH1FP hGlbNHit_E, hGlbX2_E, hTrkNHit_E, hTrkX2_E;
+
+  // Matching information
+  TH1FP hL1DeltaR, hL1DeltaPhi, hL1DeltaEta, hHLTDeltaR, hHLTDeltaPhi, hHLTDeltaEta;
+  TH1FP hL1DeltaR_B, hL1DeltaPhi_B, hL1DeltaEta_B, hHLTDeltaR_B, hHLTDeltaPhi_B, hHLTDeltaEta_B;
+  TH1FP hL1DeltaR_O, hL1DeltaPhi_O, hL1DeltaEta_O, hHLTDeltaR_O, hHLTDeltaPhi_O, hHLTDeltaEta_O;
+  TH1FP hL1DeltaR_E, hL1DeltaPhi_E, hL1DeltaEta_E, hHLTDeltaR_E, hHLTDeltaPhi_E, hHLTDeltaEta_E;
+
+  // Other cut variables
+  TH1FP hRelIso, hRelIso_B, hRelIso_O, hRelIso_E;
+
 };
 
 MuonHLTAnalyzer::MuonHLTAnalyzer(const edm::ParameterSet& pset):
@@ -51,17 +235,6 @@ MuonHLTAnalyzer::MuonHLTAnalyzer(const edm::ParameterSet& pset):
   // Book histograms
   edm::Service<TFileService> fs;
 
-  //// Basic constants
-  const int l1PtNBin = 11;
-  const double l1PtBins[l1PtNBin+1] = {
-    0.,4.,8.,10.,15.,18.,21.,25.,30.,40.,70.,100.
-  };
-
-  const int l1EtaNBin = 62;
-  const double l1EtaBins[l1EtaNBin+1] = {
-    -2.40, -2.35, -2.30, -2.25, -2.20, -2.15, -2.10, -2.05,-2.00, -1.95, -1.90, -1.85, -1.80, -1.75, -1.70, -1.60,-1.50, -1.40, -1.30, -1.20, -1.10, -1.00, -0.90, -0.80,-0.70, -0.60, -0.50, -0.40, -0.30, -0.20, -0.10, -0.00,0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80,0.90, 1.00, 1.10, 1.20, 1.30, 1.40, 1.50, 1.60,1.70, 1.75, 1.80, 1.85, 1.90, 1.95, 2.00, 2.05,2.10, 2.15, 2.20, 2.25, 2.30, 2.35, 2.40
-  };
-
   hNEvent_ = fs->make<TH1F>("hNEvent", "Number of events passing trigger paths;Trigger path", nMuonL1TNames+1, 0, nMuonL1TNames+1);
   hNEvent_->GetXaxis()->SetBinLabel(1, "All");
   for ( int muonL1TIdx=0; muonL1TIdx<nMuonL1TNames; ++muonL1TIdx )
@@ -72,145 +245,7 @@ MuonHLTAnalyzer::MuonHLTAnalyzer(const edm::ParameterSet& pset):
   // Book histograms for each cut steps
   for ( int recoCutStep=0; recoCutStep<nRecoMuonCutStep; ++recoCutStep )
   {
-    TFileDirectory dir = fs->mkdir(Form("CutStep%d_%s", recoCutStep, recoMuonCutStepNames[recoCutStep]));
-
-    hNRecoMuon_.push_back(dir.make<TH1F>("hNRecoMuon", "Number of recoMuons per event", nRecoMuonCutStep, 0, nRecoMuonCutStep));
-    hNL1MatchedRecoMuon_.push_back(dir.make<TH1F>("hNL1MatchedRecoMuon", "Number of L1 matched recoMuons per event", nRecoMuonCutStep, 0, nRecoMuonCutStep));
-    hNHLTMatchedRecoMuon_.push_back(dir.make<TH1F>("hNHLTMatchedRecoMuon", "Number of HLT matched recoMuons per event", nRecoMuonCutStep, 0, nRecoMuonCutStep));
-
-    // Histograms for track variables
-    hPt_.push_back(dir.make<TH1F>("hPt", "Global muon Transverse momentum", 50, 0, 50));
-    hEta_.push_back(dir.make<TH1F>("hEta", "Global muon Pseudorapidity", 100, -2.5, 2.5));
-    hPhi_.push_back(dir.make<TH1F>("hPhi", "Global muon Azimuthal angle", 100, -3.15, 3.15));
-    hQ_.push_back(dir.make<TH1F>("hQ", "Global muon charge", 3, -1.5, 1.5));
-    hPtWithL1Bin_.push_back(dir.make<TH1F>("hPtWithL1Bin", "Global muon Transverse momentum", l1PtNBin, l1PtBins));
-    hEtaWithL1Bin_.push_back(dir.make<TH1F>("hEtaWithL1Bin", "Global muon Pseudorapidity", l1EtaNBin, l1EtaBins));
-
-    hNGlbHit_.push_back(dir.make<TH1F>("hNGlbHit", "Global muon Number of valid muon hits", 100, 0, 100));
-    hNTrkHit_.push_back(dir.make<TH1F>("hNTrkHit", "Global muon Number of valid tracker hits", 100, 0, 100));
-    hGlbX2_.push_back(dir.make<TH1F>("hGlbX2", "Global muon Normalized #Chi^{2} of global track", 50, 0, 50));
-    hTrkX2_.push_back(dir.make<TH1F>("hTrkX2", "Global muon Normalized #Chi^{2} of tracker track", 50, 0, 50));
-    hRelIso_.push_back(dir.make<TH1F>("hRelIso", "Global muon relative isolation", 100, 0, 20));
-
-    // Histograms for L1 matching
-    hL1DeltaR_.push_back(dir.make<TH1F>("hL1DeltaR", "Global muon - L1 muon matching #DeltaR;#DeltaR = #sqrt{#Delta#phi^{2} + #Delta#eta^{2}}", 50, 0, 2));
-    hL1DeltaPhi_.push_back(dir.make<TH1F>("hL1DeltaPhi", "Global muon - L1 muon matching #DeltaR;#Delta#phi [Radian]", 50, 0, 2));
-    hL1DeltaEta_.push_back(dir.make<TH1F>("hL1DeltaEta", "Global muon - L1 muon matching #Delta#eta;#Delta#eta", 50, 0, 2));
-
-    // Histograms for L1 variables
-    hMatchedL1Pt_.push_back(dir.make<TH1F>("hMatchedL1Pt", "Matched L1 p_{T};L1 muon p_{T} [GeV/c]", l1PtNBin, l1PtBins));
-    hMatchedL1Eta_.push_back(dir.make<TH1F>("hMatchedL1Eta", "Matched L1 #eta;#eta", l1EtaNBin, l1EtaBins));
-    hMatchedL1Phi_.push_back(dir.make<TH1F>("hMatchedL1Phi", "MatchedL1 #phi;#phi [Radian]", 50, -3.15, 3.15));
-    hL1MatchedGlbPt_.push_back(dir.make<TH1F>("hL1MatchedGlbPt", "L1 matched global muon p_{T};global muon p_{T} [GeV/c]", l1PtNBin, l1PtBins));
-    hL1MatchedGlbEta_.push_back(dir.make<TH1F>("hL1MatchedGlbEta", "L1 matched global muon #eta;global muon #eta", l1EtaNBin, l1EtaBins));
-    hL1MatchedGlbPhi_.push_back(dir.make<TH1F>("hL1MatchedGlbPhi", "L1 matched global muon #phi;global muon #phi", 50, -3.15, 3.15));
-
-    // Histograms for HLT matching
-    hHLTDeltaR_.push_back(dir.make<TH1F>("hHLTDeltaR", "Global muon - HLT muon matching #DeltaR;#DeltaR = #sqrt{#Delta#phi^{2} + #Delta#eta^{2}}", 50, 0, 2));
-    hHLTDeltaPhi_.push_back(dir.make<TH1F>("hHLTDeltaPhi", "Global muon - HLT muon matching #Delta#phi;#Delta#phi [Radian]", 50, 0, 2));
-    hHLTDeltaEta_.push_back(dir.make<TH1F>("hHLTDeltaEta", "Global muon - HLT muon matching #Delta#eta;#Delta#eta", 50, 0, 2));
-
-    // Histograms for HLT variables
-    hHLTMatchedGlbPt_.push_back(dir.make<TH1F>("hHLTMatchedGlbPt", "HLT matched global muon p_{T};global muon p_{T} [GeV/c]", 50, 0, 50));
-    hHLTMatchedGlbEta_.push_back(dir.make<TH1F>("hHLTMatchedGlbEta", "HLT matched global muon #eta;global muon #eta", 50, -2.5, 2.5));
-    hHLTMatchedGlbPhi_.push_back(dir.make<TH1F>("hHLTMatchedGlbPhi", "HLT matched global muon #phi;global muon #phi", 50, -3.15, 3.15));
-
-    // Histograms in Barrel region
-    hPtBarrel_.push_back(dir.make<TH1F>("hPtBarrel", "Global muon Transverse momentum", 50, 0, 50));
-    hEtaBarrel_.push_back(dir.make<TH1F>("hEtaBarrel", "Global muon Pseudorapidity", 100, -2.5, 2.5));
-    hPhiBarrel_.push_back(dir.make<TH1F>("hPhiBarrel", "Global muon Azimuthal angle", 100, -3.15, 3.15));
-    hPtWithL1BinBarrel_.push_back(dir.make<TH1F>("hPtWithL1BinBarrel", "Global muon Transverse momentum", l1PtNBin, l1PtBins));
-    hEtaWithL1BinBarrel_.push_back(dir.make<TH1F>("hEtaWithL1BinBarrel", "Global muon Pseudorapidity", l1EtaNBin, l1EtaBins));
-
-    hNGlbHitBarrel_.push_back(dir.make<TH1F>("hNGlbHitBarrel", "Global muon Number of valid muon hits", 100, 0, 100));
-    hNTrkHitBarrel_.push_back(dir.make<TH1F>("hNTrkHitBarrel", "Global muon Number of valid tracker hits", 100, 0, 100));
-    hGlbX2Barrel_.push_back(dir.make<TH1F>("hGlbX2Barrel", "Global muon Normalized #Chi^{2} of global track", 50, 0, 50));
-    hTrkX2Barrel_.push_back(dir.make<TH1F>("hTrkX2Barrel", "Global muon Normalized #Chi^{2} of tracker track", 50, 0, 50));
-    hRelIsoBarrel_.push_back(dir.make<TH1F>("hRelIsoBarrel", "Global muon relative isolation", 100, 0, 20));
-
-    hL1DeltaRBarrel_.push_back(dir.make<TH1F>("hL1DeltaRBarrel", "Global muon - L1 muon matching #DeltaR;#DeltaR = #sqrt{#Delta#phi^{2} + #Delta#eta^{2}}", 50, 0, 2));
-    hL1DeltaPhiBarrel_.push_back(dir.make<TH1F>("hL1DeltaPhiBarrel", "Global muon - L1 muon matching #DeltaR;#Delta#phi [Radian]", 50, 0, 2));
-    hL1DeltaEtaBarrel_.push_back(dir.make<TH1F>("hL1DeltaEtaBarrel", "Global muon - L1 muon matching #Delta#eta;#Delta#eta", 50, 0, 2));
-
-    hMatchedL1PtBarrel_.push_back(dir.make<TH1F>("hMatchedL1PtBarrel", "Matched L1 p_{T};L1 muon p_{T} [GeV/c]", l1PtNBin, l1PtBins));
-    hMatchedL1EtaBarrel_.push_back(dir.make<TH1F>("hMatchedL1EtaBarrel", "Matched L1 #eta;#eta", l1EtaNBin, l1EtaBins));
-    hMatchedL1PhiBarrel_.push_back(dir.make<TH1F>("hMatchedL1PhiBarrel", "MatchedL1 #phi;#phi [Radian]", 50, -3.15, 3.15));
-    hL1MatchedGlbPtBarrel_.push_back(dir.make<TH1F>("hL1MatchedGlbPtBarrel", "L1 matched global muon p_{T};global muon p_{T} [GeV/c]", l1PtNBin, l1PtBins));
-    hL1MatchedGlbEtaBarrel_.push_back(dir.make<TH1F>("hL1MatchedGlbEtaBarrel", "L1 matched global muon #eta;global muon #eta", l1EtaNBin, l1EtaBins));
-    hL1MatchedGlbPhiBarrel_.push_back(dir.make<TH1F>("hL1MatchedGlbPhiBarrel", "L1 matched global muon #phi;global muon #phi", 50, -3.15, 3.15));
-
-    hHLTDeltaRBarrel_.push_back(dir.make<TH1F>("hHLTDeltaRBarrel", "Global muon - HLT muon matching #DeltaR;#DeltaR = #sqrt{#Delta#phi^{2} + #Delta#eta^{2}}", 50, 0, 2));
-    hHLTDeltaPhiBarrel_.push_back(dir.make<TH1F>("hHLTDeltaPhiBarrel", "Global muon - HLT muon matching #Delta#phi;#Delta#phi [Radian]", 50, 0, 2));
-    hHLTDeltaEtaBarrel_.push_back(dir.make<TH1F>("hHLTDeltaEtaBarrel", "Global muon - HLT muon matching #Delta#eta;#Delta#eta", 50, 0, 2));
-
-    hHLTMatchedGlbPtBarrel_.push_back(dir.make<TH1F>("hHLTMatchedGlbPtBarrel", "HLT matched global muon p_{T};global muon p_{T} [GeV/c]", 50, 0, 50));
-    hHLTMatchedGlbEtaBarrel_.push_back(dir.make<TH1F>("hHLTMatchedGlbEtaBarrel", "HLT matched global muon #eta;global muon #eta", 50, -2.5, 2.5));
-    hHLTMatchedGlbPhiBarrel_.push_back(dir.make<TH1F>("hHLTMatchedGlbPhiBarrel", "HLT matched global muon #phi;global muon #phi", 50, -3.15, 3.15));
-
-    // Histograms in Overlap region
-    hPtOverlap_.push_back(dir.make<TH1F>("hPtOverlap", "Global muon Transverse momentum", 50, 0, 50));
-    hEtaOverlap_.push_back(dir.make<TH1F>("hEtaOverlap", "Global muon Pseudorapidity", 100, -2.5, 2.5));
-    hPhiOverlap_.push_back(dir.make<TH1F>("hPhiOverlap", "Global muon Azimuthal angle", 100, -3.15, 3.15));
-    hPtWithL1BinOverlap_.push_back(dir.make<TH1F>("hPtWithL1BinOverlap", "Global muon Transverse momentum", l1PtNBin, l1PtBins));
-    hEtaWithL1BinOverlap_.push_back(dir.make<TH1F>("hEtaWithL1BinOverlap", "Global muon Pseudorapidity", l1EtaNBin, l1EtaBins));
-
-    hNGlbHitOverlap_.push_back(dir.make<TH1F>("hNGlbHitOverlap", "Global muon Number of valid muon hits", 100, 0, 100));
-    hNTrkHitOverlap_.push_back(dir.make<TH1F>("hNTrkHitOverlap", "Global muon Number of valid tracker hits", 100, 0, 100));
-    hGlbX2Overlap_.push_back(dir.make<TH1F>("hGlbX2Overlap", "Global muon Normalized #Chi^{2} of global track", 50, 0, 50));
-    hTrkX2Overlap_.push_back(dir.make<TH1F>("hTrkX2Overlap", "Global muon Normalized #Chi^{2} of tracker track", 50, 0, 50));
-    hRelIsoOverlap_.push_back(dir.make<TH1F>("hRelIsoOverlap", "Global muon relative isolation", 100, 0, 20));
-
-    hL1DeltaROverlap_.push_back(dir.make<TH1F>("hL1DeltaROverlap", "Global muon - L1 muon matching #DeltaR;#DeltaR = #sqrt{#Delta#phi^{2} + #Delta#eta^{2}}", 50, 0, 2));
-    hL1DeltaPhiOverlap_.push_back(dir.make<TH1F>("hL1DeltaPhiOverlap", "Global muon - L1 muon matching #DeltaR;#Delta#phi [Radian]", 50, 0, 2));
-    hL1DeltaEtaOverlap_.push_back(dir.make<TH1F>("hL1DeltaEtaOverlap", "Global muon - L1 muon matching #Delta#eta;#Delta#eta", 50, 0, 2));
-
-    hMatchedL1PtOverlap_.push_back(dir.make<TH1F>("hMatchedL1PtOverlap", "Matched L1 p_{T};L1 muon p_{T} [GeV/c]", l1PtNBin, l1PtBins));
-    hMatchedL1EtaOverlap_.push_back(dir.make<TH1F>("hMatchedL1EtaOverlap", "Matched L1 #eta;#eta", l1EtaNBin, l1EtaBins));
-    hMatchedL1PhiOverlap_.push_back(dir.make<TH1F>("hMatchedL1PhiOverlap", "MatchedL1 #phi;#phi [Radian]", 50, -3.15, 3.15));
-    hL1MatchedGlbPtOverlap_.push_back(dir.make<TH1F>("hL1MatchedGlbPtOverlap", "L1 matched global muon p_{T};global muon p_{T} [GeV/c]", l1PtNBin, l1PtBins));
-    hL1MatchedGlbEtaOverlap_.push_back(dir.make<TH1F>("hL1MatchedGlbEtaOverlap", "L1 matched global muon #eta;global muon #eta", l1EtaNBin, l1EtaBins));
-    hL1MatchedGlbPhiOverlap_.push_back(dir.make<TH1F>("hL1MatchedGlbPhiOverlap", "L1 matched global muon #phi;global muon #phi", 50, -3.15, 3.15));
-
-    hHLTDeltaROverlap_.push_back(dir.make<TH1F>("hHLTDeltaROverlap", "Global muon - HLT muon matching #DeltaR;#DeltaR = #sqrt{#Delta#phi^{2} + #Delta#eta^{2}}", 50, 0, 2));
-    hHLTDeltaPhiOverlap_.push_back(dir.make<TH1F>("hHLTDeltaPhiOverlap", "Global muon - HLT muon matching #Delta#phi;#Delta#phi [Radian]", 50, 0, 2));
-    hHLTDeltaEtaOverlap_.push_back(dir.make<TH1F>("hHLTDeltaEtaOverlap", "Global muon - HLT muon matching #Delta#eta;#Delta#eta", 50, 0, 2));
-
-    hHLTMatchedGlbPtOverlap_.push_back(dir.make<TH1F>("hHLTMatchedGlbPtOverlap", "HLT matched global muon p_{T};global muon p_{T} [GeV/c]", 50, 0, 50));
-    hHLTMatchedGlbEtaOverlap_.push_back(dir.make<TH1F>("hHLTMatchedGlbEtaOverlap", "HLT matched global muon #eta;global muon #eta", 50, -2.5, 2.5));
-    hHLTMatchedGlbPhiOverlap_.push_back(dir.make<TH1F>("hHLTMatchedGlbPhiOverlap", "HLT matched global muon #phi;global muon #phi", 50, -3.15, 3.15));
-
-    // Histograms in Endcap region
-    hPtEndcap_.push_back(dir.make<TH1F>("hPtEndcap", "Global muon Transverse momentum", 50, 0, 50));
-    hEtaEndcap_.push_back(dir.make<TH1F>("hEtaEndcap", "Global muon Pseudorapidity", 100, -2.5, 2.5));
-    hPhiEndcap_.push_back(dir.make<TH1F>("hPhiEndcap", "Global muon Azimuthal angle", 100, -3.15, 3.15));
-    hPtWithL1BinEndcap_.push_back(dir.make<TH1F>("hPtWithL1BinEndcap", "Global muon Transverse momentum", l1PtNBin, l1PtBins));
-    hEtaWithL1BinEndcap_.push_back(dir.make<TH1F>("hEtaWithL1BinEndcap", "Global muon Pseudorapidity", l1EtaNBin, l1EtaBins));
-
-    hNGlbHitEndcap_.push_back(dir.make<TH1F>("hNGlbHitEndcap", "Global muon Number of valid muon hits", 100, 0, 100));
-    hNTrkHitEndcap_.push_back(dir.make<TH1F>("hNTrkHitEndcap", "Global muon Number of valid tracker hits", 100, 0, 100));
-    hGlbX2Endcap_.push_back(dir.make<TH1F>("hGlbX2Endcap", "Global muon Normalized #Chi^{2} of global track", 50, 0, 50));
-    hTrkX2Endcap_.push_back(dir.make<TH1F>("hTrkX2Endcap", "Global muon Normalized #Chi^{2} of tracker track", 50, 0, 50));
-    hRelIsoEndcap_.push_back(dir.make<TH1F>("hRelIsoEndcap", "Global muon relative isolation", 100, 0, 20));
-
-    hL1DeltaREndcap_.push_back(dir.make<TH1F>("hL1DeltaREndcap", "Global muon - L1 muon matching #DeltaR;#DeltaR = #sqrt{#Delta#phi^{2} + #Delta#eta^{2}}", 50, 0, 2));
-    hL1DeltaPhiEndcap_.push_back(dir.make<TH1F>("hL1DeltaPhiEndcap", "Global muon - L1 muon matching #DeltaR;#Delta#phi [Radian]", 50, 0, 2));
-    hEtaWithL1BinBarrel_.push_back(dir.make<TH1F>("hEtaWithL1BinBarrel", "Global muon Pseudorapidity", l1EtaNBin, l1EtaBins));
-    hL1DeltaEtaEndcap_.push_back(dir.make<TH1F>("hL1DeltaEtaEndcap", "Global muon - L1 muon matching #Delta#eta;#Delta#eta", 50, 0, 2));
-
-    hMatchedL1PtEndcap_.push_back(dir.make<TH1F>("hMatchedL1PtEndcap", "Matched L1 p_{T};L1 muon p_{T} [GeV/c]", l1PtNBin, l1PtBins));
-    hMatchedL1EtaEndcap_.push_back(dir.make<TH1F>("hMatchedL1EtaEndcap", "Matched L1 #eta;#eta", l1EtaNBin, l1EtaBins));
-    hMatchedL1PhiEndcap_.push_back(dir.make<TH1F>("hMatchedL1PhiEndcap", "MatchedL1 #phi;#phi [Radian]", 50, -3.15, 3.15));
-    hL1MatchedGlbPtEndcap_.push_back(dir.make<TH1F>("hL1MatchedGlbPtEndcap", "L1 matched global muon p_{T};global muon p_{T} [GeV/c]", l1PtNBin, l1PtBins));
-    hL1MatchedGlbEtaEndcap_.push_back(dir.make<TH1F>("hL1MatchedGlbEtaEndcap", "L1 matched global muon #eta;global muon #eta", l1EtaNBin, l1EtaBins));
-    hL1MatchedGlbPhiEndcap_.push_back(dir.make<TH1F>("hL1MatchedGlbPhiEndcap", "L1 matched global muon #phi;global muon #phi", 50, -3.15, 3.15));
-
-    hHLTDeltaREndcap_.push_back(dir.make<TH1F>("hHLTDeltaREndcap", "Global muon - HLT muon matching #DeltaR;#DeltaR = #sqrt{#Delta#phi^{2} + #Delta#eta^{2}}", 50, 0, 2));
-    hHLTDeltaPhiEndcap_.push_back(dir.make<TH1F>("hHLTDeltaPhiEndcap", "Global muon - HLT muon matching #Delta#phi;#Delta#phi [Radian]", 50, 0, 2));
-    hHLTDeltaEtaEndcap_.push_back(dir.make<TH1F>("hHLTDeltaEtaEndcap", "Global muon - HLT muon matching #Delta#eta;#Delta#eta", 50, 0, 2));
-
-    hHLTMatchedGlbPtEndcap_.push_back(dir.make<TH1F>("hHLTMatchedGlbPtEndcap", "HLT matched global muon p_{T};global muon p_{T} [GeV/c]", 50, 0, 50));
-    hHLTMatchedGlbEtaEndcap_.push_back(dir.make<TH1F>("hHLTMatchedGlbEtaEndcap", "HLT matched global muon #eta;global muon #eta", 50, -2.5, 2.5));
-    hHLTMatchedGlbPhiEndcap_.push_back(dir.make<TH1F>("hHLTMatchedGlbPhiEndcap", "HLT matched global muon #phi;global muon #phi", 50, -3.15, 3.15));
+    histograms_.push_back(Histograms(Form("CutStep%d_%s", recoCutStep, recoMuonCutStepNames[recoCutStep])));
   }
 }
 
@@ -230,7 +265,7 @@ void MuonHLTAnalyzer::endRun()
 void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& eventSetup)
 {
   edm::Handle<edm::TriggerResults> trigResultHandle;
-  if ( !event.getByLabel(edm::InputTag("TriggerResults", "", "HLT"), trigResultHandle) ) 
+  if ( !event.getByLabel(edm::InputTag("TriggerResults", "", "HLT"), trigResultHandle) )
   {
     edm::LogError("MuonHLTAnalyzer") << "Cannot find TriggerResults\n";
     return;
@@ -253,14 +288,14 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
   const trigger::TriggerObjectCollection& triggerObjects = triggerEventHandle->getObjects();
 
   edm::Handle<edm::View<reco::Muon> > recoMuonHandle;
-  if ( !event.getByLabel(recoMuonTag_, recoMuonHandle) ) 
+  if ( !event.getByLabel(recoMuonTag_, recoMuonHandle) )
   {
     edm::LogError("MuonHLTAnalyzer") << "Cannot find recoMuon\n";
     return;
   }
 
   edm::Handle<reco::BeamSpot> beamSpotHandle;
-  if ( !event.getByLabel("offlineBeamSpot", beamSpotHandle) ) 
+  if ( !event.getByLabel("offlineBeamSpot", beamSpotHandle) )
   {
     edm::LogError("MuonHLTAnalyzer") << "Cannot find offlineBeamSpot\n";
     return;
@@ -310,7 +345,7 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
     const reco::TrackRef glbTrack = recoMuon->globalTrack();
 
     const reco::HitPattern& trkHit = trkTrack->hitPattern();
-    const reco::HitPattern& staHit = staTrack->hitPattern();
+    //const reco::HitPattern& staHit = staTrack->hitPattern();
     const reco::HitPattern& glbHit = glbTrack->hitPattern();
 
     const int misHitInner = trkTrack->trackerExpectedHitsInner().numberOfHits();
@@ -324,7 +359,7 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
     const double glbX2 = glbTrack->normalizedChi2();
     const double trkX2 = trkTrack->normalizedChi2();
     const int nMuonHit = glbHit.numberOfValidMuonHits();
-    const int nTrkHit = trkHit.numberOfValidTrackerHits();    
+    const int nTrkHit = trkHit.numberOfValidTrackerHits();
     const int nPixelHit = trkHit.numberOfValidPixelHits();
     const int nMatches = recoMuon->numberOfMatches();
 
@@ -338,13 +373,10 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
     std::vector<bool> muonQuality(nRecoMuonCutStep);
     if ( recoPt > minPt_ )
     {
-      muonQuality[0] = true;
-      muonQuality[1] = muon::isGoodMuon(*recoMuon, muon::GlobalMuonPromptTight);
-      muonQuality[2] = nMatches > 1;
-      muonQuality[3] = ( misHitInner < 2 and misHitOuter < 2 );
-      muonQuality[4] = ( muonQuality[2] and fabs(recoEta) < 2.1 and fabs(dxy) < 0.2 and glbX2 < 10 and 
-                         nPixelHit > 0 and nTrkHit > 10 and nMuonHit > 0 );
-      muonQuality[5] = ( muonQuality[4] and relIso < maxRelIso_ );
+      muonQuality[0] = muon::isGoodMuon(*recoMuon, muon::GlobalMuonPromptTight) and nMatches > 1;
+      muonQuality[1] = muonQuality[0] and ( misHitInner < 2 and misHitOuter < 2 );
+      muonQuality[2] = nMatches > 1 and fabs(recoEta) < 2.1 and fabs(dxy) < 0.2 and glbX2 < 10 and
+                       nPixelHit > 0 and nTrkHit > 10 and nMuonHit > 0;
     }
 
     for ( int recoCutStep=0; recoCutStep<nRecoMuonCutStep; ++recoCutStep )
@@ -353,60 +385,51 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
 
       ++nRecoMuon[recoCutStep];
 
-      hPt_[recoCutStep]->Fill(recoPt);
-      hEta_[recoCutStep]->Fill(recoEta);
-      hPhi_[recoCutStep]->Fill(recoPhi);
-      hQ_[recoCutStep]->Fill(recoQ);
-      hPtWithL1Bin_[recoCutStep]->Fill(recoPt);
-      hEtaWithL1Bin_[recoCutStep]->Fill(recoEta);
+      Histograms& h = histograms_[recoCutStep];
 
-      hNGlbHit_[recoCutStep]->Fill(nMuonHit);
-      hNTrkHit_[recoCutStep]->Fill(nTrkHit);
-      hGlbX2_[recoCutStep]->Fill(glbX2);
-      hTrkX2_[recoCutStep]->Fill(trkX2);
-      hRelIso_[recoCutStep]->Fill(relIso);
+      h.hPt->Fill(recoPt);
+      h.hEta->Fill(recoEta);
+      h.hPhi->Fill(recoPhi);
+      h.hQ->Fill(recoQ);
+
+      h.hGlbNHit->Fill(nMuonHit);
+      h.hTrkNHit->Fill(nTrkHit);
+      h.hGlbX2->Fill(glbX2);
+      h.hTrkX2->Fill(trkX2);
+      h.hRelIso->Fill(relIso);
 
       if ( fabs(recoEta) < 0.9 )
       {
-        hPtBarrel_[recoCutStep]->Fill(recoPt);
-        hEtaBarrel_[recoCutStep]->Fill(recoEta);
-        hPhiBarrel_[recoCutStep]->Fill(recoPhi);
-        hPtWithL1BinBarrel_[recoCutStep]->Fill(recoPt);
-        hEtaWithL1BinBarrel_[recoCutStep]->Fill(recoEta);
+        h.hPt_B->Fill(recoPt);
+        h.hPhi_B->Fill(recoPhi);
 
-        hNGlbHitBarrel_[recoCutStep]->Fill(nMuonHit);
-        hNTrkHitBarrel_[recoCutStep]->Fill(nTrkHit);
-        hGlbX2Barrel_[recoCutStep]->Fill(glbX2);
-        hTrkX2Barrel_[recoCutStep]->Fill(trkX2);
-        hRelIsoBarrel_[recoCutStep]->Fill(relIso);
+        h.hGlbNHit_B->Fill(nMuonHit);
+        h.hTrkNHit_B->Fill(nTrkHit);
+        h.hGlbX2_B->Fill(glbX2);
+        h.hTrkX2_B->Fill(trkX2);
+        h.hRelIso_B->Fill(relIso);
       }
       else if ( fabs(recoEta) < 1.2 )
       {
-        hPtOverlap_[recoCutStep]->Fill(recoPt);
-        hEtaOverlap_[recoCutStep]->Fill(recoEta);
-        hPhiOverlap_[recoCutStep]->Fill(recoPhi);
-        hPtWithL1BinOverlap_[recoCutStep]->Fill(recoPt);
-        hEtaWithL1BinOverlap_[recoCutStep]->Fill(recoEta);
+        h.hPt_O->Fill(recoPt);
+        h.hPhi_O->Fill(recoPhi);
 
-        hNGlbHitOverlap_[recoCutStep]->Fill(nMuonHit);
-        hNTrkHitOverlap_[recoCutStep]->Fill(nTrkHit);
-        hGlbX2Overlap_[recoCutStep]->Fill(glbX2);
-        hTrkX2Overlap_[recoCutStep]->Fill(trkX2);
-        hRelIsoOverlap_[recoCutStep]->Fill(relIso);
+        h.hGlbNHit_O->Fill(nMuonHit);
+        h.hTrkNHit_O->Fill(nTrkHit);
+        h.hGlbX2_O->Fill(glbX2);
+        h.hTrkX2_O->Fill(trkX2);
+        h.hRelIso_O->Fill(relIso);
       }
       else
       {
-        hPtEndcap_[recoCutStep]->Fill(recoPt);
-        hEtaEndcap_[recoCutStep]->Fill(recoEta);
-        hPhiEndcap_[recoCutStep]->Fill(recoPhi);
-        hPtWithL1BinEndcap_[recoCutStep]->Fill(recoPt);
-        hEtaWithL1BinEndcap_[recoCutStep]->Fill(recoEta);
+        h.hPt_E->Fill(recoPt);
+        h.hPhi_E->Fill(recoPhi);
 
-        hNGlbHitEndcap_[recoCutStep]->Fill(nMuonHit);
-        hNTrkHitEndcap_[recoCutStep]->Fill(nTrkHit);
-        hGlbX2Endcap_[recoCutStep]->Fill(glbX2);
-        hTrkX2Endcap_[recoCutStep]->Fill(trkX2);
-        hRelIsoEndcap_[recoCutStep]->Fill(relIso);
+        h.hGlbNHit_E->Fill(nMuonHit);
+        h.hTrkNHit_E->Fill(nTrkHit);
+        h.hGlbX2_E->Fill(glbX2);
+        h.hTrkX2_E->Fill(trkX2);
+        h.hRelIso_E->Fill(relIso);
       }
     }
 
@@ -417,7 +440,7 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
     const double recoPosEta = tsos.globalPosition().eta();
     const double recoPosPhi = tsos.globalPosition().phi();
 
-    double matchedDeltaR = -999, matchedDeltaPhi = -999, matchedDeltaEta = -999;
+    double matchedL1DeltaR = -999, matchedL1DeltaPhi = -999, matchedL1DeltaEta = -999;
     l1extra::L1MuonParticle bestMatchingL1Muon;
 
     for ( edm::View<l1extra::L1MuonParticle>::const_iterator l1Muon = l1MuonHandle->begin();
@@ -431,67 +454,72 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
       const double l1PosEta = l1Muon->eta();
       const double l1PosPhi = l1Muon->phi();
       const double dR = deltaR(recoPosEta, recoPosPhi, l1PosEta, l1PosPhi);
-      if ( matchedDeltaR < 0 or (dR < matchedDeltaR and dR < 0.3) ) 
+      if ( matchedL1DeltaR < 0 or dR < matchedL1DeltaR )
       {
-        matchedDeltaR = dR;
-        matchedDeltaPhi = deltaPhi(recoPosPhi, l1PosPhi);
-        matchedDeltaEta = fabs(recoEta - l1PosEta);
+        matchedL1DeltaR = dR;
+        matchedL1DeltaPhi = recoPosPhi - l1PosPhi;
+        matchedL1DeltaEta = recoEta - l1PosEta;
         bestMatchingL1Muon = *l1Muon;
       }
     }
 
-    if ( matchedDeltaR < 0 ) continue;
+    for ( int recoCutStep=0; recoCutStep<nRecoMuonCutStep; ++recoCutStep )
+    {
+      if ( !muonQuality[recoCutStep] ) continue;
+
+      Histograms& h = histograms_[recoCutStep];
+
+      h.hL1DeltaR->Fill(matchedL1DeltaR);
+      h.hL1DeltaPhi->Fill(matchedL1DeltaPhi);
+      h.hL1DeltaEta->Fill(matchedL1DeltaEta);
+
+      if ( fabs(recoEta) < 0.9 )
+      {
+        h.hL1DeltaR_B->Fill(matchedL1DeltaR);
+        h.hL1DeltaPhi_B->Fill(matchedL1DeltaPhi);
+        h.hL1DeltaEta_B->Fill(matchedL1DeltaEta);
+      }
+      else if ( fabs(recoEta) < 1.2 )
+      {
+        h.hL1DeltaR_O->Fill(matchedL1DeltaR);
+        h.hL1DeltaPhi_O->Fill(matchedL1DeltaPhi);
+        h.hL1DeltaEta_O->Fill(matchedL1DeltaEta);
+      }
+      else
+      {
+        h.hL1DeltaR_E->Fill(matchedL1DeltaR);
+        h.hL1DeltaPhi_B->Fill(matchedL1DeltaPhi);
+        h.hL1DeltaEta_B->Fill(matchedL1DeltaEta);
+      }
+    }
+
+    if ( matchedL1DeltaR < 0 or matchedL1DeltaR > 0.3 ) continue;
 
     // Now we have best matching l1Muon
     for ( int recoCutStep=0; recoCutStep<nRecoMuonCutStep; ++recoCutStep )
     {
       if ( !muonQuality[recoCutStep] ) continue;
 
-      hL1DeltaR_[recoCutStep]->Fill(matchedDeltaR);
-      hL1DeltaPhi_[recoCutStep]->Fill(matchedDeltaPhi);
-      hL1DeltaEta_[recoCutStep]->Fill(matchedDeltaEta);
-      hMatchedL1Pt_[recoCutStep]->Fill(recoPt);
-      hMatchedL1Eta_[recoCutStep]->Fill(recoEta);
-      hMatchedL1Phi_[recoCutStep]->Fill(recoPhi);
-      hL1MatchedGlbPt_[recoCutStep]->Fill(recoPt);
-      hL1MatchedGlbEta_[recoCutStep]->Fill(recoEta);
-      hL1MatchedGlbPhi_[recoCutStep]->Fill(recoPhi);
+      Histograms& h = histograms_[recoCutStep];
+
+      h.hL1Pt->Fill(recoPt);
+      h.hL1Eta->Fill(recoEta);
+      h.hL1Phi->Fill(recoPhi);
 
       if ( fabs(recoEta) < 0.9 )
       {
-        hL1DeltaRBarrel_[recoCutStep]->Fill(matchedDeltaR);
-        hL1DeltaPhiBarrel_[recoCutStep]->Fill(matchedDeltaPhi);
-        hL1DeltaEtaBarrel_[recoCutStep]->Fill(matchedDeltaEta);
-        hMatchedL1PtBarrel_[recoCutStep]->Fill(recoPt);
-        hMatchedL1EtaBarrel_[recoCutStep]->Fill(recoEta);
-        hMatchedL1PhiBarrel_[recoCutStep]->Fill(recoPhi);
-        hL1MatchedGlbPtBarrel_[recoCutStep]->Fill(recoPt);
-        hL1MatchedGlbEtaBarrel_[recoCutStep]->Fill(recoEta);
-        hL1MatchedGlbPhiBarrel_[recoCutStep]->Fill(recoPhi);
+        h.hL1Pt_B->Fill(recoPt);
+        h.hL1Phi_B->Fill(recoPhi);
       }
       else if ( fabs(recoEta) < 1.2 )
       {
-        hL1DeltaROverlap_[recoCutStep]->Fill(matchedDeltaR);
-        hL1DeltaPhiOverlap_[recoCutStep]->Fill(matchedDeltaPhi);
-        hL1DeltaEtaOverlap_[recoCutStep]->Fill(matchedDeltaEta);
-        hMatchedL1PtOverlap_[recoCutStep]->Fill(recoPt);
-        hMatchedL1EtaOverlap_[recoCutStep]->Fill(recoEta);
-        hMatchedL1PhiOverlap_[recoCutStep]->Fill(recoPhi);
-        hL1MatchedGlbPtOverlap_[recoCutStep]->Fill(recoPt);
-        hL1MatchedGlbEtaOverlap_[recoCutStep]->Fill(recoEta);
-        hL1MatchedGlbPhiOverlap_[recoCutStep]->Fill(recoPhi);
+        h.hL1Pt_O->Fill(recoPt);
+        h.hL1Phi_O->Fill(recoPhi);
       }
       else
       {
-        hL1DeltaREndcap_[recoCutStep]->Fill(matchedDeltaR);
-        hL1DeltaPhiEndcap_[recoCutStep]->Fill(matchedDeltaPhi);
-        hL1DeltaEtaEndcap_[recoCutStep]->Fill(matchedDeltaEta);
-        hMatchedL1PtEndcap_[recoCutStep]->Fill(recoPt);
-        hMatchedL1EtaEndcap_[recoCutStep]->Fill(recoEta);
-        hMatchedL1PhiEndcap_[recoCutStep]->Fill(recoPhi);
-        hL1MatchedGlbPtEndcap_[recoCutStep]->Fill(recoPt);
-        hL1MatchedGlbEtaEndcap_[recoCutStep]->Fill(recoEta);
-        hL1MatchedGlbPhiEndcap_[recoCutStep]->Fill(recoPhi);
+        h.hL1Pt_E->Fill(recoPt);
+        h.hL1Phi_E->Fill(recoPhi);
       }
 
       ++nL1MatchedRecoMuon[recoCutStep];
@@ -506,65 +534,83 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
 
       if ( filterName != "hltSingleMu9L3Filtered9" ) continue;
 
-      double matchedDeltaR = -999;
-      double matchedPtRes = -999;
+      double matchedHLTDeltaR = -999;
+      double matchedHLTDeltaPhi = -999;
+      double matchedHLTDeltaEta = -999;
+      double matchedHLTPtRes = -999;
       const trigger::Keys& trgKeys = triggerEventHandle->filterKeys(filterIdx);
-      for ( trigger::Keys::const_iterator trgKey = trgKeys.begin(); 
+      for ( trigger::Keys::const_iterator trgKey = trgKeys.begin();
             trgKey != trgKeys.end(); ++trgKey )
       {
         const double hltPt = triggerObjects[*trgKey].pt();
         const double hltEta = triggerObjects[*trgKey].eta();
         const double hltPhi = triggerObjects[*trgKey].phi();
 
-        const double dR = deltaR(recoEta, hltEta, recoPhi, hltPhi);
-        const double ptRes = hltPt == 0 ? 1e14 : (hltPt-recoPt)/hltPt;
+        const double dR = deltaR(recoEta, recoPhi, hltEta, hltPhi);
 
-        if ( matchedDeltaR < 0 or (matchedDeltaR > dR and dR < 0.5 and ptRes < 10) ) 
+        if ( matchedHLTDeltaR < 0 or dR < matchedHLTDeltaR )
         {
-          matchedDeltaR = dR;
-          matchedPtRes = ptRes;
+          matchedHLTDeltaR = dR;
+          matchedHLTPtRes = hltPt == 0 ? 1e14 : (hltPt-recoPt)/hltPt;
         }
       }
 
-      if ( matchedDeltaR < 0 ) continue;
+      for ( int recoCutStep=0; recoCutStep<nRecoMuonCutStep; ++recoCutStep )
+      {
+        if ( !muonQuality[recoCutStep] ) continue;
+
+        Histograms& h = histograms_[recoCutStep];
+
+        h.hHLTDeltaR->Fill(matchedHLTDeltaR);
+        h.hHLTDeltaPhi->Fill(matchedHLTDeltaPhi);
+        h.hHLTDeltaEta->Fill(matchedHLTDeltaEta);
+
+        if ( fabs(recoEta) < 0.9 )
+        {
+          h.hHLTDeltaR_B->Fill(matchedHLTDeltaR);
+          h.hHLTDeltaPhi_B->Fill(matchedHLTDeltaPhi);
+          h.hHLTDeltaEta_B->Fill(matchedHLTDeltaEta);
+        }
+        else if ( fabs(recoEta) < 1.2 )
+        {
+          h.hHLTDeltaR_O->Fill(matchedHLTDeltaR);
+          h.hHLTDeltaPhi_O->Fill(matchedHLTDeltaPhi);
+          h.hHLTDeltaEta_O->Fill(matchedHLTDeltaEta);
+        }
+        else
+        {
+          h.hHLTDeltaR_E->Fill(matchedHLTDeltaR);
+          h.hHLTDeltaPhi_E->Fill(matchedHLTDeltaPhi);
+          h.hHLTDeltaEta_E->Fill(matchedHLTDeltaEta);
+        }
+      }
+
+      if ( matchedHLTDeltaR < 0 or matchedHLTDeltaR > 0.5 or matchedHLTPtRes > 10 ) continue;
 
       // Now we have best matching candidate for HLT-global muon pair
       for ( int recoCutStep=0; recoCutStep<nRecoMuonCutStep; ++recoCutStep )
       {
         if ( !muonQuality[recoCutStep] ) continue;
 
-        hHLTDeltaR_[recoCutStep]->Fill(matchedDeltaR);
-        hHLTDeltaPhi_[recoCutStep]->Fill(matchedDeltaPhi);
-        hHLTDeltaEta_[recoCutStep]->Fill(matchedDeltaEta);
-        hHLTMatchedGlbPt_[recoCutStep]->Fill(recoPt);
-        hHLTMatchedGlbEta_[recoCutStep]->Fill(recoEta);
-        hHLTMatchedGlbPhi_[recoCutStep]->Fill(recoPhi);
+        Histograms& h = histograms_[recoCutStep];
+
+        h.hHLTPt->Fill(recoPt);
+        h.hHLTEta->Fill(recoEta);
+        h.hHLTPhi->Fill(recoPhi);
         if ( fabs(recoEta) < 0.9 )
         {
-          hHLTDeltaRBarrel_[recoCutStep]->Fill(matchedDeltaR);
-          hHLTDeltaPhiBarrel_[recoCutStep]->Fill(matchedDeltaPhi);
-          hHLTDeltaEtaBarrel_[recoCutStep]->Fill(matchedDeltaEta);
-          hHLTMatchedGlbPtBarrel_[recoCutStep]->Fill(recoPt);
-          hHLTMatchedGlbEtaBarrel_[recoCutStep]->Fill(recoEta);
-          hHLTMatchedGlbPhiBarrel_[recoCutStep]->Fill(recoPhi);
+          h.hHLTPt_B->Fill(recoPt);
+          h.hHLTPhi_B->Fill(recoPhi);
         }
         else if ( fabs(recoEta) < 1.2 )
         {
-          hHLTDeltaROverlap_[recoCutStep]->Fill(matchedDeltaR);
-          hHLTDeltaPhiOverlap_[recoCutStep]->Fill(matchedDeltaPhi);
-          hHLTDeltaEtaOverlap_[recoCutStep]->Fill(matchedDeltaEta);
-          hHLTMatchedGlbPtOverlap_[recoCutStep]->Fill(recoPt);
-          hHLTMatchedGlbEtaOverlap_[recoCutStep]->Fill(recoEta);
-          hHLTMatchedGlbPhiOverlap_[recoCutStep]->Fill(recoPhi);
+          h.hHLTPt_O->Fill(recoPt);
+          h.hHLTPhi_O->Fill(recoPhi);
         }
         else
         {
-          hHLTDeltaREndcap_[recoCutStep]->Fill(matchedDeltaR);
-          hHLTDeltaPhiEndcap_[recoCutStep]->Fill(matchedDeltaPhi);
-          hHLTDeltaEtaEndcap_[recoCutStep]->Fill(matchedDeltaEta);
-          hHLTMatchedGlbPtEndcap_[recoCutStep]->Fill(recoPt);
-          hHLTMatchedGlbEtaEndcap_[recoCutStep]->Fill(recoEta);
-          hHLTMatchedGlbPhiEndcap_[recoCutStep]->Fill(recoPhi);
+          h.hHLTPt_E->Fill(recoPt);
+          h.hHLTPhi_E->Fill(recoPhi);
         }
 
         ++nHLTMatchedRecoMuon[recoCutStep];
@@ -574,9 +620,11 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
 
   for ( int recoCutStep=0; recoCutStep<nRecoMuonCutStep; ++recoCutStep )
   {
-    hNRecoMuon_[recoCutStep]->Fill(nRecoMuon[recoCutStep]);
-    hNL1MatchedRecoMuon_[recoCutStep]->Fill(nL1MatchedRecoMuon[recoCutStep]);
-    hNHLTMatchedRecoMuon_[recoCutStep]->Fill(nHLTMatchedRecoMuon[recoCutStep]);
+    Histograms& h = histograms_[recoCutStep];
+
+    h.hNRecoMuon->Fill(nRecoMuon[recoCutStep]);
+    h.hNL1Muon->Fill(nL1MatchedRecoMuon[recoCutStep]);
+    h.hNHLTMuon->Fill(nHLTMatchedRecoMuon[recoCutStep]);
   }
 }
 
