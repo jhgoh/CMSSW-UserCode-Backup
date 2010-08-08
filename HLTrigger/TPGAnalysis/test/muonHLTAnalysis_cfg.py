@@ -13,7 +13,7 @@ process.load("FWCore.MessageService.MessageLogger_cfi")
 
 process.options   = cms.untracked.PSet( wantSummary = cms.untracked.bool(True) )
 process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
-process.GlobalTag.globaltag = cms.string('GR_R_36X_V12::All')
+process.GlobalTag.globaltag = cms.string('GR10_P_V7::All')
 
 process.source = cms.Source("PoolSource",
     duplicateCheckMode = cms.untracked.string('noDuplicateCheck'),
@@ -22,10 +22,10 @@ process.source = cms.Source("PoolSource",
 )
 
 # Set input files and LumiSections
-sys.path.append("samples")
-from muonJetMETSkim_cff import *
-process.source.fileNames = fileNames
-process.source.lumisToProcess = lumisToProcess
+#sys.path.append("samples")
+#from muonJetMETSkim_cff import *
+#process.source.fileNames = fileNames
+#process.source.lumisToProcess = lumisToProcess
 
 # configure HLT
 process.load('L1TriggerConfig.L1GtConfigProducers.L1GtTriggerMaskAlgoTrigConfig_cff')
