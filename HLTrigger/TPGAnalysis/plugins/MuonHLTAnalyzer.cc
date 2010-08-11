@@ -8,6 +8,7 @@
 #include "DataFormats/Common/interface/TriggerResults.h"
 #include "FWCore/Common/interface/TriggerNames.h"
 
+#include "FWCore/Framework/interface/Run.h"
 #include "DataFormats/L1Trigger/interface/L1MuonParticle.h"
 #include "DataFormats/L1Trigger/interface/L1MuonParticleFwd.h"
 #include "DataFormats/L1GlobalMuonTrigger/interface/L1MuGMTCand.h"
@@ -57,11 +58,9 @@ struct Histograms
 {
   typedef TH1F* TH1FP;
 
-  Histograms(const std::string dirName)
+  Histograms(TFileDirectory* baseDir, const std::string dirName)
   {
-    edm::Service<TFileService> fs;
-
-    TFileDirectory dir = fs->mkdir(dirName);
+    TFileDirectory dir = baseDir->mkdir(dirName);
 
     hNRecoMuon = dir.make<TH1F>("hNRecoMuon", "Number of reco muons per event", 4, 1, 5);
     hNL1Muon = dir.make<TH1F>("hNL1Muon", "Number of L1 matched reco muons per event", 4, 1, 5);
@@ -221,32 +220,16 @@ struct Histograms
 };
 
 MuonHLTAnalyzer::MuonHLTAnalyzer(const edm::ParameterSet& pset):
-  l1Matcher_(pset.getParameter<edm::ParameterSet>("l1MatcherConfig"))
+  l1Matcher_(pset.getParameter<edm::ParameterSet>("l1MatcherConfig")),
+  histograms_(nRecoMuonCutStep)
 {
   muonL1TNames_ = pset.getParameter<VString>("muonL1TNames");
-  const int nMuonL1TNames = muonL1TNames_.size();
 
   l1MuonTag_ = pset.getParameter<edm::InputTag>("l1Muon");
   triggerEventTag_ = pset.getParameter<edm::InputTag>("triggerEvent");
   recoMuonTag_ = pset.getParameter<edm::InputTag>("recoMuon");
   minPt_ = pset.getParameter<double>("minPt");
   maxRelIso_ = pset.getParameter<double>("maxRelIso");
-
-  // Book histograms
-  edm::Service<TFileService> fs;
-
-  hNEvent_ = fs->make<TH1F>("hNEvent", "Number of events passing trigger paths;Trigger path", nMuonL1TNames+1, 0, nMuonL1TNames+1);
-  hNEvent_->GetXaxis()->SetBinLabel(1, "All");
-  for ( int muonL1TIdx=0; muonL1TIdx<nMuonL1TNames; ++muonL1TIdx )
-  {
-    hNEvent_->GetXaxis()->SetBinLabel(muonL1TIdx+2, muonL1TNames_[muonL1TIdx].c_str());
-  }
-
-  // Book histograms for each cut steps
-  for ( int recoCutStep=0; recoCutStep<nRecoMuonCutStep; ++recoCutStep )
-  {
-    histograms_.push_back(Histograms(Form("CutStep%d_%s", recoCutStep, recoMuonCutStepNames[recoCutStep])));
-  }
 }
 
 MuonHLTAnalyzer::~MuonHLTAnalyzer()
@@ -256,6 +239,25 @@ MuonHLTAnalyzer::~MuonHLTAnalyzer()
 void MuonHLTAnalyzer::beginRun(const edm::Run& run, const edm::EventSetup& eventSetup)
 {
   l1Matcher_.init(eventSetup);
+
+  // Book histograms
+  edm::Service<TFileService> fs;
+  TFileDirectory runDir = fs->mkdir(Form("Run %d", run.run()));
+
+  const int nMuonL1TNames = muonL1TNames_.size();
+  hNEvent_ = runDir.make<TH1F>("hNEvent", "Number of events passing trigger paths;Trigger path", nMuonL1TNames+1, 0, nMuonL1TNames+1);
+  hNEvent_->GetXaxis()->SetBinLabel(1, "All");
+  for ( int muonL1TIdx=0; muonL1TIdx<nMuonL1TNames; ++muonL1TIdx )
+  {
+    hNEvent_->GetXaxis()->SetBinLabel(muonL1TIdx+2, muonL1TNames_[muonL1TIdx].c_str());
+  }
+
+  // Book histograms for each cut steps
+  for ( int recoCutStep=0; recoCutStep<nRecoMuonCutStep; ++recoCutStep )
+  {
+    histograms_[recoCutStep] = new Histograms(&runDir, Form("CutStep%d_%s", recoCutStep, recoMuonCutStepNames[recoCutStep]));
+  }
+
 }
 
 void MuonHLTAnalyzer::endRun()
@@ -385,7 +387,7 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
 
       ++nRecoMuon[recoCutStep];
 
-      Histograms& h = histograms_[recoCutStep];
+      Histograms& h = *histograms_[recoCutStep];
 
       h.hPt->Fill(recoPt);
       h.hEta->Fill(recoEta);
@@ -467,7 +469,7 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
     {
       if ( !muonQuality[recoCutStep] ) continue;
 
-      Histograms& h = histograms_[recoCutStep];
+      Histograms& h = *histograms_[recoCutStep];
 
       h.hL1DeltaR->Fill(matchedL1DeltaR);
       h.hL1DeltaPhi->Fill(matchedL1DeltaPhi);
@@ -500,7 +502,7 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
     {
       if ( !muonQuality[recoCutStep] ) continue;
 
-      Histograms& h = histograms_[recoCutStep];
+      Histograms& h = *histograms_[recoCutStep];
 
       h.hL1Pt->Fill(recoPt);
       h.hL1Eta->Fill(recoEta);
@@ -559,7 +561,7 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
       {
         if ( !muonQuality[recoCutStep] ) continue;
 
-        Histograms& h = histograms_[recoCutStep];
+        Histograms& h = *histograms_[recoCutStep];
 
         h.hHLTDeltaR->Fill(matchedHLTDeltaR);
         h.hHLTDeltaPhi->Fill(matchedHLTDeltaPhi);
@@ -592,7 +594,7 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
       {
         if ( !muonQuality[recoCutStep] ) continue;
 
-        Histograms& h = histograms_[recoCutStep];
+        Histograms& h = *histograms_[recoCutStep];
 
         h.hHLTPt->Fill(recoPt);
         h.hHLTEta->Fill(recoEta);
@@ -620,7 +622,7 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
 
   for ( int recoCutStep=0; recoCutStep<nRecoMuonCutStep; ++recoCutStep )
   {
-    Histograms& h = histograms_[recoCutStep];
+    Histograms& h = *histograms_[recoCutStep];
 
     h.hNRecoMuon->Fill(nRecoMuon[recoCutStep]);
     h.hNL1Muon->Fill(nL1MatchedRecoMuon[recoCutStep]);

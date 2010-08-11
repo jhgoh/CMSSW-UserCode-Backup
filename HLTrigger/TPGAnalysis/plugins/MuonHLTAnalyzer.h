@@ -56,7 +56,7 @@ private:
   // List of histograms
   TH1F* hNEvent_;
 
-  std::vector<Histograms> histograms_;
+  std::vector<Histograms*> histograms_;
 };
 
 #endif
