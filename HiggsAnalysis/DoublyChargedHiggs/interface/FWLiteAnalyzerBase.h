@@ -25,6 +25,7 @@ namespace pat
 {
   class Muon;
   class Electron;
+  class CompositeCandidate;
 }
 
 struct HMuon
@@ -68,7 +69,7 @@ struct HElectron
     const double ptMin = 0;
     const double ptMax = 500;
     const double ptBinWidth = 5;
-    hPt = new TH1F("hPt", prefix+Form("Electron tansverse momentum;Transverse momentum p_{T} [GeV/c];Entries per %.1f GeV", ptBinWidth), TMath::Nint((ptMax-ptMin)/ptBinWidth), ptMin, ptMax);
+    hPt = new TH1F("hPt", prefix+Form("Electron tansverse momentum;Transverse momentum p_{T} [GeV/c];Entries per %.1f GeV/c", ptBinWidth), TMath::Nint((ptMax-ptMin)/ptBinWidth), ptMin, ptMax);
     hEta = new TH1F("hEta", prefix+"Electron pseudorapidity;Pseudorapidity #eta", 100, -2.5, 2.5);
     hPhi = new TH1F("hPhi", prefix+"Electron azimuthal angle;Azimuthal angle #phi [Radian]", 100, -3.15, 3.15); 
     hQ = new TH1F("hQ", prefix+"Electron charge;Electric charge", 3, -1.5, 1.5);
@@ -89,6 +90,44 @@ struct HElectron
   TH1F* hPt, * hEta, * hPhi, * hQ;
 };
 
+struct HComposite
+{
+  HComposite(TDirectory* baseDir, TString prefix = "")
+  {
+    baseDir->cd();
+    if ( prefix.Length() != 0 ) prefix += " ";
+
+    const double massMin = 0;
+    const double massMax = 200;
+    const double massBinWidth = 5;
+
+    const double ptMin = 0;
+    const double ptMax = 500;
+    const double ptBinWidth = 5;
+
+    hMass = new TH1F("hMass", prefix+Form("Candidate invariant mass;Invariant mass [GeV/c^{2}];Entries per %.1f GeV/c^{2}", massBinWidth), TMath::Nint((massMax-massMin)/massBinWidth), massMin, massMax);
+    hPt = new TH1F("hPt", prefix+Form("Candidate transverse momentum;Transverse momentum p_{T} [GeV/c];Entries per %.1f GeV/c", ptBinWidth), TMath::Nint((ptMax-ptMin)/ptBinWidth), ptMin, ptMax);
+    hEta = new TH1F("hEta", prefix+"Candidate pseudorapidity;Pseudorapidity #eta", 100, -2.5, 2.5);
+    hPhi = new TH1F("hPhi", prefix+"Candidate azimuthal angle;Azimuthal angle #phi [Radian]", 100, -3.15, 3.15);
+    hQ = new TH1F("hQ", prefix+"Candidate charge;Electric charge", 3, -1.5, 1.5);
+
+    hPt->SetMinimum(0);
+    hEta->SetMinimum(0);
+    hPhi->SetMinimum(0);
+    hQ->SetMinimum(0);
+  };
+
+  void Fill(const pat::CompositeCandidate& cand)
+  {
+    hMass->Fill(cand.mass());
+    hPt->Fill(cand.pt());
+    hEta->Fill(cand.eta());
+    hPhi->Fill(cand.phi());
+  };
+
+  TH1F* hMass, * hPt, * hEta, * hPhi, * hQ;
+};
+
 class FWLiteAnalyzerBase
 {
 public:
@@ -98,8 +137,8 @@ public:
     outFile_->Write();
   };
 
-  void AddSignal(const std::string name, const std::string inputFile);
-  void AddBackground(const std::string name, const std::string inputFile);
+  void AddSignal(const std::string name, const std::string inputFile, const double xsec);
+  void AddBackground(const std::string name, const std::string inputFile, const double xsec);
   
   void ProcessEvent();
 
@@ -113,6 +152,7 @@ protected:
 
   TFile* outFile_;
   FileMap signalFiles_, backgroundFiles_;
+  std::map<const std::string, double> signalXSecTable_, backgroundXSecTable_;
 
   bool verbose_;
   bool isEventLoaded_;

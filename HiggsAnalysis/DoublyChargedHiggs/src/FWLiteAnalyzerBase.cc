@@ -15,13 +15,15 @@ FWLiteAnalyzerBase::FWLiteAnalyzerBase(const string outFileName, const bool verb
   outFile_ = TFile::Open(outFileName.c_str(), "RECREATE");
 }
 
-void FWLiteAnalyzerBase::AddSignal(const string name, const string inputFile)
+void FWLiteAnalyzerBase::AddSignal(const string name, const string inputFile, const double xsec)
 {
+  signalXSecTable_[name] = xsec;
   AddFile(inputFile, signalFiles_[name]);
 }
 
-void FWLiteAnalyzerBase::AddBackground(const string name, const string inputFile)
+void FWLiteAnalyzerBase::AddBackground(const string name, const string inputFile, const double xsec)
 {
+  backgroundXSecTable_[name] = xsec;
   AddFile(inputFile, backgroundFiles_[name]);
 }
 
