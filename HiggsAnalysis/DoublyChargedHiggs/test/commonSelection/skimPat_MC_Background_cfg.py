@@ -20,6 +20,9 @@ process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
 process.GlobalTag.globaltag = cms.string('%s::All' % globalTag)
 process.load("Configuration.StandardSequences.MagneticField_cff")
 
+# Require HLT
+process.load("HiggsAnalysis.DoublyChargedHiggs.hltFilters_cfi")
+
 # HZZ Skimming
 #process.load("HiggsAnalysis.Skimming.higgsToZZ4Leptons_Sequences_cff")
 process.load("HiggsAnalysis.Skimming.higgsToZZ4Leptons_Filter_cfi")
@@ -37,6 +40,7 @@ run33xOnReRecoMC( process, "ak5GenJets" )
 process.load("HiggsAnalysis.DoublyChargedHiggs.leptonSelectors_cff")
 
 process.p = cms.Path(
+    process.dhHLTFilters*
     process.higgsToZZ4Leptons_skimFilterSeq*
     process.patDefaultSequence*
     process.leptonSelectionSeq
