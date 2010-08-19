@@ -1,6 +1,6 @@
 import FWCore.ParameterSet.Config as cms
 
-process.dhTriggerFilter = cms.EDFilter("HLTHighLevel",
+dhTriggerFilter = cms.EDFilter("HLTHighLevel",
     #TriggerResultsTag = cms.InputTag("hltTriggerSummaryAOD","","HLT"),
     TriggerResultsTag = cms.InputTag("TriggerResults","","HLT"),
     HLTPaths = cms.vstring('HLT_Mu9', 'HLT_DoubleMu3', 'HLT_Mu15', 'HLT_Ele15_SW_EleId_L1R'),           # provide list of HLT paths (or patterns) you want
