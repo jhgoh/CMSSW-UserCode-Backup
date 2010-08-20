@@ -13,22 +13,19 @@ FWLiteAnalyzerBase::FWLiteAnalyzerBase(const string outFileName, const bool verb
   verbose_(verbose)
 {
   outFile_ = TFile::Open(outFileName.c_str(), "RECREATE");
+  lumi_ = 1.0;
 }
 
-void FWLiteAnalyzerBase::AddSignal(const string name, const string inputFile, const double xsec)
+void FWLiteAnalyzerBase::SetLumi(const double lumi)
 {
-  signalXSecTable_[name] = xsec;
-  AddFile(inputFile, signalFiles_[name]);
+  lumi_ = lumi;
 }
 
-void FWLiteAnalyzerBase::AddBackground(const string name, const string inputFile, const double xsec)
+void FWLiteAnalyzerBase::AddMCSample(const string name, const string inputName, const double xsec, const long nGenEvent)
 {
-  backgroundXSecTable_[name] = xsec;
-  AddFile(inputFile, backgroundFiles_[name]);
-}
+  vector<string>& inputFiles = mcSamples_[name];
+  mcScaleFactors_[name] = xsec/nGenEvent;
 
-void FWLiteAnalyzerBase::AddFile(const string inputName, vector<string>& inputFiles)
-{
   TPRegexp rootFilePattern("\\.root$");
   TPRegexp plainFileExtPattern("\\.[a-zA-Z0-9]\\+$");
 
@@ -87,27 +84,12 @@ void FWLiteAnalyzerBase::AddFile(const string inputName, vector<string>& inputFi
 
 void FWLiteAnalyzerBase::ListDataFiles()
 {
-  cout << "@@ List of signal samples\n";
-  for ( FileMap::const_iterator dataMapIter = signalFiles_.begin();
-        dataMapIter != signalFiles_.end(); ++dataMapIter )
+  cout << "@@ List of samples\n";
+  for ( FileMap::const_iterator dataMapIter = mcSamples_.begin();
+        dataMapIter != mcSamples_.end(); ++dataMapIter )
   {
     const string name = dataMapIter->first;
     const vector<string> files = dataMapIter->second;
-
-    cout << "@@@ Dataset = " << name << endl;
-    for ( vector<string>::const_iterator filesIter = files.begin();
-          filesIter != files.end(); ++filesIter )
-    {
-      cout << *filesIter << endl;
-    }
-  }
-
-  cout << "@@ List of background samples\n";
-  for ( FileMap::const_iterator dataMapIter = backgroundFiles_.begin();
-        dataMapIter != backgroundFiles_.end(); ++dataMapIter )
-  {
-    string name = dataMapIter->first;
-    vector<string> files = dataMapIter->second;
 
     cout << "@@@ Dataset = " << name << endl;
     for ( vector<string>::const_iterator filesIter = files.begin();
@@ -121,8 +103,8 @@ void FWLiteAnalyzerBase::ListDataFiles()
 void FWLiteAnalyzerBase::ProcessEvent()
 {
   if ( verbose_ ) cout << "@@ Processing signal events\n";
-  for ( FileMap::const_iterator fileItem = signalFiles_.begin();
-        fileItem != signalFiles_.end(); ++fileItem )
+  for ( FileMap::const_iterator fileItem = mcSamples_.begin();
+        fileItem != mcSamples_.end(); ++fileItem )
   {
     const string name = fileItem->first;
     const vector<string> files = fileItem->second;
@@ -130,16 +112,46 @@ void FWLiteAnalyzerBase::ProcessEvent()
     if ( verbose_ ) cout << "@@@ Processing dataset " << name << endl;
     Analyze(name, files);
   }
+}
 
-  if ( verbose_ ) cout << "@@ Processing background events\n";
-  for ( FileMap::const_iterator fileItem = backgroundFiles_.begin();
-        fileItem != backgroundFiles_.end(); ++fileItem )
+TDirectory* FWLiteAnalyzerBase::MakeDirectory(const std::string& path)
+{
+  TDirectory* dir = outFile_;
+  string::size_type pos1 = 0, pos2 = 0;
+
+  while ( pos1 != string::npos )
   {
-    const string name = fileItem->first;
-    const vector<string> files = fileItem->second;
+    if ( !dir ) 
+    {
+      cout << "@@@@ MakeDirectory failed. directory is Null\n";
+      return 0;
+    }
 
-    if ( verbose_ ) cout << "@@@ Processing dataset " << name << endl;
-    Analyze(name, files);
+    pos1 = path.find_first_not_of('/', pos2);
+    pos2 = path.find_first_of('/', pos1);
+
+    if ( pos1 == pos2 ) break;
+
+    string subDir = path.substr(pos1, pos2-pos1);
+    if ( verbose_ ) cout << "@@@@ mkdir " << subDir << endl;
+
+    TObject* obj = dir->Get(subDir.c_str());
+    if ( !obj ) 
+    {
+      dir = dir->mkdir(subDir.c_str(), subDir.c_str());
+    }
+    else
+    {
+      dir = dynamic_cast<TDirectory*>(obj);
+    }
+
+    if ( !dir )
+    {
+      cout << "@@@ MakekDirectory failed. Object already exists and not a directory\n";
+      return 0;
+    }
   }
+
+  return dir;
 }
 
