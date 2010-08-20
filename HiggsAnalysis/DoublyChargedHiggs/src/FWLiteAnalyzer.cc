@@ -166,6 +166,7 @@ public:
       if ( nNegEMuCand > 1 ) hNegEMuCand2_->Fill(negEMuCands[1]);
       if ( nNegEMuCand > 0 ) hNegEMuCand1_->Fill(negEMuCands[0]);
     }
+    cout << "@@@@ Finished to process " << channelName << endl;
 
     // Apply scales
     hNMuon_->Scale(scale);
