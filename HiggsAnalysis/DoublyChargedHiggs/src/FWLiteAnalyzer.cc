@@ -58,9 +58,18 @@ public:
     hNegEMuCand2_ = new HComposite(negEMuCandDir->mkdir("negEMu2", "2nd leading H^{--} candidate"), scale, "2nd leading");
 
     fwlite::ChainEvent event(files);
+    const int nTotalEvent = event.size();
+    int nProcessedEvent = 0;
 
     for ( event.toBegin(); !event.atEnd(); ++event )
     {
+      const int eventFraction = 1000*(++nProcessedEvent)/nTotalEvent;
+      if ( eventFraction % 10 == 0 ) 
+      {
+        cout << "@@@@ Processing " << channelName << " : " 
+             << eventFraction/10. << "% done\r";
+      }
+
       // First, scan for the leptons
       fwlite::Handle<std::vector<pat::Muon> > muonHandle;
       muonHandle.getByLabel(event, "goodPatMuons");
@@ -68,8 +77,15 @@ public:
       fwlite::Handle<std::vector<pat::Electron> > electronHandle;
       electronHandle.getByLabel(event, "goodPatElectrons");
 
+      fwlite::Handle<std::vector<pat::CompositeCandidate> > emuHandle;
+      emuHandle.getByLabel(event, "dhCandProducerToEM");
+
       const int nMuon = muonHandle->size();
       const int nElectron = electronHandle->size();
+      const int nEmuCand = emuHandle->size();
+
+      // Basic 4-lepton cut
+      if ( nMuon < 2 || nElectron < 2 || nEmuCand < 2 ) continue;
 
       // Sort by pT
       vector<pat::Muon> muons(nMuon);
@@ -105,15 +121,24 @@ public:
       }
 
       // Scan for the DH candidates
-      fwlite::Handle<std::vector<pat::CompositeCandidate> > emuHandle;
-      emuHandle.getByLabel(event, "dhCandProducerToEM");
-
       // Copy and sort by pT
       vector<pat::CompositeCandidate> posEMuCands, negEMuCands;
       for ( vector<pat::CompositeCandidate>::const_iterator emuCand = emuHandle->begin();
             emuCand != emuHandle->end(); ++emuCand )
       {
         if ( emuCand->pt() < 20 ) continue;
+        const reco::Candidate* dau1 = emuCand->daughter(0);
+        const reco::Candidate* dau2 = emuCand->daughter(1);
+
+        if ( dau1->pt() < 10 || dau2->pt() < 10 ) continue;
+
+        const pat::Muon* muon = dynamic_cast<const pat::Muon*>(dau1->isMuon() ? dau1 : dau2);
+        const pat::Electron* electron = dynamic_cast<const pat::Electron*>(dau1->isElectron() ? dau1 : dau2);
+        if ( !muon || !electron ) continue;
+
+        const double muonRelIso = (muon->trackIso()+muon->caloIso())/muon->pt();
+        const double electronRelIso = (electron->trackIso()+electron->caloIso())/electron->pt();
+        if ( muonRelIso > 0.3 || electronRelIso > 0.2 ) continue;
 
         if ( emuCand->charge() == +2 )
         {
