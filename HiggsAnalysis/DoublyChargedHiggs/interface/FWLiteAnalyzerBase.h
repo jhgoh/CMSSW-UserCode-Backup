@@ -38,20 +38,19 @@ struct HMuon
     const double ptMin = 0;
     const double ptMax = 500;
     const double ptBinWidth = 5;
+
     hPt = new TH1F("hPt", prefix+Form("Muon tansverse momentum;Transverse momentum p_{T} [GeV/c];Entries per %.0f GeV", ptBinWidth), TMath::Nint((ptMax-ptMin)/ptBinWidth), ptMin, ptMax);
     hEta = new TH1F("hEta", prefix+"Muon pseudorapidity;Pseudorapidity #eta", 100, -2.5, 2.5);
     hPhi = new TH1F("hPhi", prefix+"Muon azimuthal angle;Azimuthal angle #phi [Radian]", 100, -3.15, 3.15); 
     hQ = new TH1F("hQ", prefix+"Muon charge;Electric charge", 5, -2.5, 2.5);
 
+    hRelIso = new TH1F("hRelIso", prefix+"Muon relative isolation;Relative isolation", 100, 0, 1);
+
     hPt->SetMinimum(0);
     hEta->SetMinimum(0);
     hPhi->SetMinimum(0);
     hQ->SetMinimum(0);
-
-    hPt->Scale(scale);
-    hEta->Scale(scale);
-    hPhi->Scale(scale);
-    hQ->Scale(scale);
+    hRelIso->SetMinimum(0);
   };
 
   void Fill(const pat::Muon& muon)
@@ -60,6 +59,8 @@ struct HMuon
     hEta->Fill(muon.eta());
     hPhi->Fill(muon.phi());
     hQ->Fill(muon.charge());
+
+    hRelIso->Fill((muon.trackIso()+muon.caloIso())/muon.pt());
   };
 
   void Scale(const double scale)
@@ -71,6 +72,7 @@ struct HMuon
   };
 
   TH1F* hPt, * hEta, * hPhi, * hQ;
+  TH1F* hRelIso;
 };
 
 struct HElectron
@@ -88,15 +90,13 @@ struct HElectron
     hPhi = new TH1F("hPhi", prefix+"Electron azimuthal angle;Azimuthal angle #phi [Radian]", 100, -3.15, 3.15); 
     hQ = new TH1F("hQ", prefix+"Electron charge;Electric charge", 5, -2.5, 2.5);
 
+    hRelIso = new TH1F("hRelIso", prefix+"Electron relative isolation;Relative isolation", 100, 0, 1);
+
     hPt->SetMinimum(0);
     hEta->SetMinimum(0);
     hPhi->SetMinimum(0);
     hQ->SetMinimum(0);
-
-    hPt->Scale(scale);
-    hEta->Scale(scale);
-    hPhi->Scale(scale);
-    hQ->Scale(scale);
+    hRelIso->SetMinimum(0);
   };
 
   void Fill(const pat::Electron& electron)
@@ -105,6 +105,7 @@ struct HElectron
     hEta->Fill(electron.eta());
     hPhi->Fill(electron.phi());
     hQ->Fill(electron.charge());
+    hRelIso->Fill((electron.trackIso()+electron.caloIso())/electron.pt());
   };
 
   void Scale(const double scale)
@@ -113,9 +114,11 @@ struct HElectron
     hEta->Scale(scale);
     hPhi->Scale(scale);
     hQ->Scale(scale);
+    hRelIso->Scale(scale);
   };
 
   TH1F* hPt, * hEta, * hPhi, * hQ;
+  TH1F* hRelIso;
 };
 
 struct HComposite
