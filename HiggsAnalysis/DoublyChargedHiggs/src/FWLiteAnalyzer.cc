@@ -14,45 +14,48 @@ public:
 
   void Analyze(const string& channelName, const vector<string>& files)
   {
-    TDirectory* dir = outFile_->mkdir(channelName.c_str(), channelName.c_str());
+    const double scale = mcScaleFactors_[channelName];
+    if ( verbose_ ) cout << "@@@@ Scale factor is " << scale << endl;
+
+    TDirectory* dir = MakeDirectory(channelName);
 
     TDirectory* muonDir = dir->mkdir("m", "Muons");
     muonDir->cd();
     hNMuon_ = new TH1F("hNMuon", "Number of muons;Number of muons", 6, -0.5, 5.5);
     hNMuon_->SetMinimum(0);
 
-    hMuon_ = new HMuon(muonDir);
-    hMuon1_ = new HMuon(muonDir->mkdir("m1", "Leading muons"), "Leading");
-    hMuon2_ = new HMuon(muonDir->mkdir("m2", "2nd leading muons"), "2nd leading");
-    hMuon3_ = new HMuon(muonDir->mkdir("m3", "3rd leading muons"), "3rd leading");
+    hMuon_ = new HMuon(muonDir, scale);
+    hMuon1_ = new HMuon(muonDir->mkdir("m1", "Leading muons"), scale, "Leading");
+    hMuon2_ = new HMuon(muonDir->mkdir("m2", "2nd leading muons"), scale, "2nd leading");
+    hMuon3_ = new HMuon(muonDir->mkdir("m3", "3rd leading muons"), scale, "3rd leading");
 
     TDirectory* electronDir = dir->mkdir("e", "Electrons");
     electronDir->cd();
     hNElectron_ = new TH1F("hNElectron", "Number of electrons;Number of electrons", 6, -0.5, 5.5);
     hNElectron_->SetMinimum(0);
 
-    hElectron_ = new HElectron(electronDir);
-    hElectron1_ = new HElectron(electronDir->mkdir("e1", "Leading electrons"), "Leading");
-    hElectron2_ = new HElectron(electronDir->mkdir("e2", "2nd leading electrons"), "2nd leading");
-    hElectron3_ = new HElectron(electronDir->mkdir("e3", "3nd leading electrons"), "3rd leading");
+    hElectron_ = new HElectron(electronDir, scale);
+    hElectron1_ = new HElectron(electronDir->mkdir("e1", "Leading electrons"), scale, "Leading");
+    hElectron2_ = new HElectron(electronDir->mkdir("e2", "2nd leading electrons"), scale, "2nd leading");
+    hElectron3_ = new HElectron(electronDir->mkdir("e3", "3nd leading electrons"), scale, "3rd leading");
 
-    TDirectory* posEMuCandDir = dir->mkdir("posEMuCand", "H++ -> e#mu candidates");
+    TDirectory* posEMuCandDir = dir->mkdir("posEMuCand", "H^{++} #rightarrow e#mu candidates");
     posEMuCandDir->cd();
-    hNPosEMuCand_ = new TH1F("hNPosEMuCand", "Number of H++ -> e#mu candidates;Number of candidates", 4, -0.5, 3.5);
+    hNPosEMuCand_ = new TH1F("hNCand", "Number of H^{++} #rightarrow e#mu candidates;Number of candidates", 4, -0.5, 3.5);
     hNPosEMuCand_->SetMinimum(0);
 
-    hPosEMuCand_ = new HComposite(posEMuCandDir);
-    hPosEMuCand1_ = new HComposite(posEMuCandDir->mkdir("posEMu1", "Leading H++ candidate"), "Leading");
-    hPosEMuCand2_ = new HComposite(posEMuCandDir->mkdir("posEMu2", "2nd leading H++ candidate"), "2nd leading");
+    hPosEMuCand_ = new HComposite(posEMuCandDir, scale);
+    hPosEMuCand1_ = new HComposite(posEMuCandDir->mkdir("posEMu1", "Leading H^{++} candidate"), scale, "Leading");
+    hPosEMuCand2_ = new HComposite(posEMuCandDir->mkdir("posEMu2", "2nd leading H^{++} candidate"), scale, "2nd leading");
 
-    TDirectory* negEMuCandDir = dir->mkdir("negEMuCand", "H-- -> e#mu candidates");
+    TDirectory* negEMuCandDir = dir->mkdir("negEMuCand", "H^{--} #rightarrow e#mu candidates");
     negEMuCandDir->cd();
-    hNNegEMuCand_ = new TH1F("hNNegEMuCand", "Number of H-- -> e#mu candidates;Number of candidates", 4, -0.5, 3.5);
+    hNNegEMuCand_ = new TH1F("hNCand", "Number of H^{--} #rightarrow e#mu candidates;Number of candidates", 4, -0.5, 3.5);
     hNNegEMuCand_->SetMinimum(0);
 
-    hNegEMuCand_ = new HComposite(negEMuCandDir);
-    hNegEMuCand1_ = new HComposite(negEMuCandDir->mkdir("negEMu1", "Leading H-- candidate"), "Leading");
-    hNegEMuCand2_ = new HComposite(negEMuCandDir->mkdir("negEMu2", "2nd leading H-- candidate"), "2nd leading");
+    hNegEMuCand_ = new HComposite(negEMuCandDir, scale);
+    hNegEMuCand1_ = new HComposite(negEMuCandDir->mkdir("negEMu1", "Leading H^{--} candidate"), scale, "Leading");
+    hNegEMuCand2_ = new HComposite(negEMuCandDir->mkdir("negEMu2", "2nd leading H^{--} candidate"), scale, "2nd leading");
 
     fwlite::ChainEvent event(files);
 
@@ -110,6 +113,8 @@ public:
       for ( vector<pat::CompositeCandidate>::const_iterator emuCand = emuHandle->begin();
             emuCand != emuHandle->end(); ++emuCand )
       {
+        if ( emuCand->pt() < 20 ) continue;
+
         if ( emuCand->charge() == +2 )
         {
           hPosEMuCand_->Fill(*emuCand);
@@ -127,17 +132,39 @@ public:
       const int nPosEMuCand = posEMuCands.size();
       const int nNegEMuCand = negEMuCands.size();
 
-/*
       hNPosEMuCand_->Fill(nPosEMuCand);
       hNNegEMuCand_->Fill(nNegEMuCand);
 
-      if ( nPosEMuCand > 2 ) hPosEMuCand2_->Fill(posEMuCands[1]);
-      if ( nPosEMuCand > 1 ) hPosEMuCand1_->Fill(posEMuCands[0]);
+      if ( nPosEMuCand > 1 ) hPosEMuCand2_->Fill(posEMuCands[1]);
+      if ( nPosEMuCand > 0 ) hPosEMuCand1_->Fill(posEMuCands[0]);
 
-      if ( nNegEMuCand > 2 ) hNegEMuCand2_->Fill(negEMuCands[1]);
-      if ( nNegEMuCand > 1 ) hNegEMuCand1_->Fill(negEMuCands[0]);
-*/
+      if ( nNegEMuCand > 1 ) hNegEMuCand2_->Fill(negEMuCands[1]);
+      if ( nNegEMuCand > 0 ) hNegEMuCand1_->Fill(negEMuCands[0]);
     }
+
+    // Apply scales
+    hNMuon_->Scale(scale);
+    hNElectron_->Scale(scale);
+    hNPosEMuCand_->Scale(scale);
+    hNNegEMuCand_->Scale(scale);
+
+    hMuon_->Scale(scale);
+    hMuon1_->Scale(scale);
+    hMuon2_->Scale(scale);
+    hMuon3_->Scale(scale);
+
+    hElectron_->Scale(scale);
+    hElectron1_->Scale(scale);
+    hElectron2_->Scale(scale);
+    hElectron3_->Scale(scale);
+
+    hPosEMuCand_->Scale(scale);
+    hPosEMuCand1_->Scale(scale);
+    hPosEMuCand2_->Scale(scale);
+
+    hNegEMuCand_->Scale(scale);
+    hNegEMuCand1_->Scale(scale);
+    hNegEMuCand2_->Scale(scale);
   };
 
 private:
