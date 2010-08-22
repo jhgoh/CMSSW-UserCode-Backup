@@ -1,5 +1,6 @@
 #include "HiggsAnalysis/DoublyChargedHiggs/interface/FWLiteAnalyzerBase.h"
 
+//#include "DataFormats/MuonReco/interface/MuonSelectors.h"
 #include "CommonTools/Utils/interface/PtComparator.h"
 
 using namespace std;
@@ -67,7 +68,7 @@ public:
       if ( eventFraction % 10 == 0 ) 
       {
         cout << "@@@@ Processing " << channelName << " : " 
-             << eventFraction/10. << "% done\r";
+             << eventFraction/10. << "%\r";
       }
 
       // First, scan for the leptons
@@ -84,6 +85,9 @@ public:
       const int nElectron = electronHandle->size();
       const int nEmuCand = emuHandle->size();
 
+      hNMuon_->Fill(nMuon);
+      hNElectron_->Fill(nElectron);
+
       // Basic 4-lepton cut
       if ( nMuon < 2 || nElectron < 2 || nEmuCand < 2 ) continue;
 
@@ -97,9 +101,6 @@ public:
       sort(muons.begin(), muons.end(), GreaterByPt<pat::Muon>());
       sort(electrons.begin(), electrons.end(), GreaterByPt<pat::Electron>());
 
-      hNMuon_->Fill(nMuon);
-      hNElectron_->Fill(nElectron);
-
       if ( nMuon > 2 ) hMuon3_->Fill(muons[2]);
       if ( nMuon > 1 ) hMuon2_->Fill(muons[1]);
       if ( nMuon > 0 ) hMuon1_->Fill(muons[0]);
@@ -108,16 +109,18 @@ public:
       if ( nElectron > 1 ) hElectron2_->Fill(electrons[1]);
       if ( nElectron > 0 ) hElectron1_->Fill(electrons[0]);
 
-      for ( vector<pat::Muon>::const_iterator muon = muons.begin();
-            muon != muons.end(); ++muon )
+      for ( vector<pat::Muon>::const_iterator iMuon = muons.begin();
+            iMuon != muons.end(); ++iMuon )
       {
-        hMuon_->Fill(*muon);
+        if ( iMuon->pt() < 5 ) continue;
+        hMuon_->Fill(*iMuon);
       }
 
-      for ( vector<pat::Electron>::const_iterator electron = electrons.begin();
-            electron != electrons.end(); ++electron )
+      for ( vector<pat::Electron>::const_iterator iElectron = electrons.begin();
+            iElectron != electrons.end(); ++iElectron )
       {
-        hElectron_->Fill(*electron);
+        if ( iElectron->pt() < 5 ) continue;
+        hElectron_->Fill(*iElectron);
       }
 
       // Scan for the DH candidates
@@ -130,14 +133,19 @@ public:
         const reco::Candidate* dau1 = emuCand->daughter(0);
         const reco::Candidate* dau2 = emuCand->daughter(1);
 
-        if ( dau1->pt() < 10 || dau2->pt() < 10 ) continue;
+        if ( dau1->pt() < 5 || dau2->pt() < 5 ) continue;
 
-        const pat::Muon* muon = dynamic_cast<const pat::Muon*>(dau1->isMuon() ? dau1 : dau2);
-        const pat::Electron* electron = dynamic_cast<const pat::Electron*>(dau1->isElectron() ? dau1 : dau2);
-        if ( !muon || !electron ) continue;
+        const pat::Muon* iMuon = dynamic_cast<const pat::Muon*>(dau1->isMuon() ? dau1 : dau2);
+        const pat::Electron* iElectron = dynamic_cast<const pat::Electron*>(dau1->isElectron() ? dau1 : dau2);
+        if ( !iMuon || !iElectron ) continue;
 
-        const double muonRelIso = (muon->trackIso()+muon->caloIso())/muon->pt();
-        const double electronRelIso = (electron->trackIso()+electron->caloIso())/electron->pt();
+        // Basic lepton ID cuts
+        if ( !muon::isGoodMuon(*iMuon, muon::GlobalMuonPromptTight) or
+             !muon::isGoodMuon(*iMuon, muon::TrackerMuonArbitrated) ) continue;
+        if ( iElectron->electronID("eidRobustLoose") < 0.5 ) continue;
+
+        const double muonRelIso = (iMuon->trackIso()+iMuon->caloIso())/iMuon->pt();
+        const double electronRelIso = (iElectron->trackIso()+iElectron->caloIso())/iElectron->pt();
         if ( muonRelIso > 0.3 || electronRelIso > 0.2 ) continue;
 
         if ( emuCand->charge() == +2 )
@@ -166,7 +174,7 @@ public:
       if ( nNegEMuCand > 1 ) hNegEMuCand2_->Fill(negEMuCands[1]);
       if ( nNegEMuCand > 0 ) hNegEMuCand1_->Fill(negEMuCands[0]);
     }
-    cout << "@@@@ Finished to process " << channelName << endl;
+    cout << "@@@@ Finished to process " << channelName endl;
 
     // Apply scales
     hNMuon_->Scale(scale);
