@@ -37,14 +37,14 @@ struct HMuon
     
     const double ptMin = 0;
     const double ptMax = 500;
-    const double ptBinWidth = 5;
+    const double ptBinWidth = 10;
 
     hPt = new TH1F("hPt", prefix+Form("Muon tansverse momentum;Transverse momentum p_{T} [GeV/c];Entries per %.0f GeV", ptBinWidth), TMath::Nint((ptMax-ptMin)/ptBinWidth), ptMin, ptMax);
-    hEta = new TH1F("hEta", prefix+"Muon pseudorapidity;Pseudorapidity #eta", 100, -2.5, 2.5);
-    hPhi = new TH1F("hPhi", prefix+"Muon azimuthal angle;Azimuthal angle #phi [Radian]", 100, -3.15, 3.15); 
+    hEta = new TH1F("hEta", prefix+"Muon pseudorapidity;Pseudorapidity #eta", 25, -2.5, 2.5);
+    hPhi = new TH1F("hPhi", prefix+"Muon azimuthal angle;Azimuthal angle #phi [Radian]", 25, -3.15, 3.15); 
     hQ = new TH1F("hQ", prefix+"Muon charge;Electric charge", 5, -2.5, 2.5);
 
-    hRelIso = new TH1F("hRelIso", prefix+"Muon relative isolation;Relative isolation", 100, 0, 1);
+    hRelIso = new TH1F("hRelIso", prefix+"Muon relative isolation;Relative isolation", 50, 0, 1);
 
     hPt->SetMinimum(0);
     hEta->SetMinimum(0);
@@ -84,13 +84,13 @@ struct HElectron
     
     const double ptMin = 0;
     const double ptMax = 500;
-    const double ptBinWidth = 5;
+    const double ptBinWidth = 10;
     hPt = new TH1F("hPt", prefix+Form("Electron tansverse momentum;Transverse momentum p_{T} [GeV/c];Entries per %.0f GeV/c", ptBinWidth), TMath::Nint((ptMax-ptMin)/ptBinWidth), ptMin, ptMax);
-    hEta = new TH1F("hEta", prefix+"Electron pseudorapidity;Pseudorapidity #eta", 100, -2.5, 2.5);
-    hPhi = new TH1F("hPhi", prefix+"Electron azimuthal angle;Azimuthal angle #phi [Radian]", 100, -3.15, 3.15); 
+    hEta = new TH1F("hEta", prefix+"Electron pseudorapidity;Pseudorapidity #eta", 25, -2.5, 2.5);
+    hPhi = new TH1F("hPhi", prefix+"Electron azimuthal angle;Azimuthal angle #phi [Radian]", 35, -3.15, 3.15); 
     hQ = new TH1F("hQ", prefix+"Electron charge;Electric charge", 5, -2.5, 2.5);
 
-    hRelIso = new TH1F("hRelIso", prefix+"Electron relative isolation;Relative isolation", 100, 0, 1);
+    hRelIso = new TH1F("hRelIso", prefix+"Electron relative isolation;Relative isolation", 50, 0, 1);
 
     hPt->SetMinimum(0);
     hEta->SetMinimum(0);
@@ -130,16 +130,16 @@ struct HComposite
 
     const double massMin = 0;
     const double massMax = 200;
-    const double massBinWidth = 2;
+    const double massBinWidth = 5;
 
     const double ptMin = 0;
     const double ptMax = 500;
-    const double ptBinWidth = 5;
+    const double ptBinWidth = 10;
 
     hMass = new TH1F("hMass", prefix+Form("Candidate invariant mass;Invariant mass [GeV/c^{2}];Entries per %.0f GeV/c^{2}", massBinWidth), TMath::Nint((massMax-massMin)/massBinWidth), massMin, massMax);
     hPt = new TH1F("hPt", prefix+Form("Candidate transverse momentum;Transverse momentum p_{T} [GeV/c];Entries per %.0f GeV/c", ptBinWidth), TMath::Nint((ptMax-ptMin)/ptBinWidth), ptMin, ptMax);
-    hEta = new TH1F("hEta", prefix+"Candidate pseudorapidity;Pseudorapidity #eta", 100, -2.5, 2.5);
-    hPhi = new TH1F("hPhi", prefix+"Candidate azimuthal angle;Azimuthal angle #phi [Radian]", 100, -3.15, 3.15);
+    hEta = new TH1F("hEta", prefix+"Candidate pseudorapidity;Pseudorapidity #eta", 25, -2.5, 2.5);
+    hPhi = new TH1F("hPhi", prefix+"Candidate azimuthal angle;Azimuthal angle #phi [Radian]", 25, -3.15, 3.15);
     hQ = new TH1F("hQ", prefix+"Candidate charge;Electric charge", 5, -2.5, 2.5);
 
     hPt->SetMinimum(0);
