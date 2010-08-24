@@ -155,3 +155,18 @@ TDirectory* FWLiteAnalyzerBase::MakeDirectory(const std::string& path)
   return dir;
 }
 
+bool FWLiteAnalyzerBase::isDuplicatedEvent(const unsigned int runNumber, const unsigned int eventNumber)
+{
+  std::pair<unsigned long, unsigned long> runEventPair(runNumber, eventNumber);
+
+  if ( runEventSet_.find(runEventPair) != runEventSet_.end() )
+  {
+    return true;
+  }
+  else
+  {
+    runEventSet_.insert(runEventPair);
+  }
+
+  return false;
+}

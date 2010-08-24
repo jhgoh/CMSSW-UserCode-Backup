@@ -71,6 +71,11 @@ public:
              << eventFraction/10. << "%\r";
       }
 
+      const unsigned long eventNumber = event.id().event();
+      const unsigned long runNumber = event.id().run();
+
+      if ( isDuplicatedEvent(runNumber, eventNumber) ) continue;
+
       // First, scan for the leptons
       fwlite::Handle<std::vector<pat::Muon> > muonHandle;
       muonHandle.getByLabel(event, "goodPatMuons");

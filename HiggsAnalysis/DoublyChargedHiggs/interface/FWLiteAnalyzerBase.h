@@ -192,6 +192,7 @@ public:
 
 protected:
   virtual void Analyze(const std::string& channelName, const std::vector<std::string>& files) = 0;
+  bool isDuplicatedEvent(const unsigned int runNumber, const unsigned int eventNumber);
 
   TDirectory* MakeDirectory(const std::string& path);
 
@@ -202,7 +203,8 @@ protected:
   std::map<const std::string, double> mcScaleFactors_;
 
   bool verbose_;
-  bool isEventLoaded_;
+
+  std::set<std::pair<unsigned long, unsigned long> > runEventSet_;
 };
 
 #endif
