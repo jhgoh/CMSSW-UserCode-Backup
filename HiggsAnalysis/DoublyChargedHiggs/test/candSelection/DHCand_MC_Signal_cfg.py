@@ -23,7 +23,6 @@ process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(-1))
 
 # Load modules
 process.load("HiggsAnalysis.DoublyChargedHiggs.genEventFilters_cff")
-process.load("HiggsAnalysis.DoublyChargedHiggs.leptonSelectors_cff")
 process.load("HiggsAnalysis.DoublyChargedHiggs.compositeCandProducers_cff")
 
 process.out = cms.OutputModule("PoolOutputModule",
@@ -39,20 +38,6 @@ process.outpath = cms.EndPath(process.out)
 analysisMode = 'EMEM'
 
 process.dhEventFilter_step = cms.Sequence(getattr(process, 'dhGenEventFilterTo'+analysisMode))
-
-leptonSelectors = None
-if 'M' in analysisMode:
-    if leptonSelectors == None:
-        leptonSelectors = process.goodPatMuons
-    else:
-        leptonSelectors += process.goodPatMuons
-if 'E' in analysisMode:
-    if leptonSelectors == None:
-        leptonSelectors = process.goodPatElectrons
-    else:
-        leptonSelectors += process.goodPatElectrons
-
-process.goodLeptonSelector_step = cms.Sequence(leptonSelectors)
 
 candProducerModules = None
 for i in set( (analysisMode[0:2], analysisMode[2:4]) ):
