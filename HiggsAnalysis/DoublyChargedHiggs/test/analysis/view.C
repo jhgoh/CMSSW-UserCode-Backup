@@ -114,6 +114,17 @@ TList* makePlots(TDirectory* baseDir, int colorTable[], bool doFillColor)
   THStack* hStackNegEMuEta = new THStack("hNegEMuEta", "H^{--} #rightarrow e#mu #eta;Pseudorapidity");
   THStack* hStackNegEMuPhi = new THStack("hNegEMuPhi", "H^{--} #rightarrow e#mu #phi;Azimuthal angle");
 
+  THStack* hStackPosEMuZVetoMass = new THStack("hPosEMuZVetoMass", "H^{++} #rightarrow e#mu mass after Z-veto cut;Mass [GeV/c^{2}]");
+  THStack* hStackNegEMuZVetoMass = new THStack("hNegEMuZVetoMass", "H^{--} #rightarrow e#mu mass after Z-veto cut;Mass [GeV/c^{2}]");
+
+  THStack* hStackPosEMuBestMass = new THStack("hPosEMuBestMass", "Best matching H^{++} #rightarrow e#mu mass;Mass [GeV/c^{2}]");
+  THStack* hStackNegEMuBestMass = new THStack("hNegEMuBestMass", "Best matching H^{--} #rightarrow e#mu mass;Mass [GeV/c^{2}]");
+
+  THStack* hStackZMuMuMass = new THStack("hZMuMuMass", "Opposite signed dimuon mass;Mass [GeV/c^{2}]");
+  THStack* hStackZEEMass = new THStack("hZEEMass", "Opposite signed dielectron mass;Mass [GeV/c^{2}]");
+  THStack* hStackFourLeptonSumPt = new THStack("hFourLeptonSumPt", "Scalar sum of four lepton p_{T};#Sigma p_{T} [GeV/c]");
+  THStack* hStackDHDeltaPhi = new THStack("hDHDeltaPhi", "Azimuthal angle difference between two H^{#pm#pm} candidates;#Delta#phi [Radian]");
+
   for ( int i=0; i<nKeys; ++i )
   {
     const int color = colorTable[i];
@@ -157,6 +168,18 @@ TList* makePlots(TDirectory* baseDir, int colorTable[], bool doFillColor)
     addPlot(dir->Get("negEMuCand/hPt"), keyName, color, hStackNegEMuPt, doFillColor);
     addPlot(dir->Get("negEMuCand/hEta"), keyName, color, hStackNegEMuEta, doFillColor);
     addPlot(dir->Get("negEMuCand/hPhi"), keyName, color, hStackNegEMuPhi, doFillColor);
+
+    // Four-lepton cut variables
+    addPlot(dir->Get("fourLeptons/hZMuMuMass"), keyName, color, hStackZMuMuMass, doFillColor);
+    addPlot(dir->Get("fourLeptons/hZEEMass"), keyName, color, hStackZEEMass, doFillColor);
+    addPlot(dir->Get("fourLeptons/hFourLeptonSumPt"), keyName, color, hStackFourLeptonSumPt, doFillColor);
+    addPlot(dir->Get("fourLeptons/hDHDeltaPhi"), keyName, color, hStackDHDeltaPhi, doFillColor);
+
+    // DH z-veto and best matching
+    addPlot(dir->Get("posEMuCand/posEMuZVeto/hMass"), keyName, color, hStackPosEMuZVetoMass, doFillColor);
+    addPlot(dir->Get("negEMuCand/negEMuZVeto/hMass"), keyName, color, hStackNegEMuZVetoMass, doFillColor);
+    addPlot(dir->Get("posEMuCand/posEMuBest/hMass"), keyName, color, hStackPosEMuBestMass, doFillColor);
+    addPlot(dir->Get("negEMuCand/negEMuBest/hMass"), keyName, color, hStackNegEMuBestMass, doFillColor);
   }
 
   TList* plotList = new TList;
@@ -190,6 +213,17 @@ TList* makePlots(TDirectory* baseDir, int colorTable[], bool doFillColor)
   plotList->Add(hStackNegEMuPt);
   plotList->Add(hStackNegEMuEta);
   plotList->Add(hStackNegEMuPhi);
+
+  plotList->Add(hStackPosEMuZVetoMass);
+  plotList->Add(hStackNegEMuZVetoMass);
+                       
+  plotList->Add(hStackPosEMuBestMass);
+  plotList->Add(hStackNegEMuBestMass);
+                       
+  plotList->Add(hStackZMuMuMass);
+  plotList->Add(hStackZEEMass);
+  plotList->Add(hStackFourLeptonSumPt);
+  plotList->Add(hStackDHDeltaPhi);
 
   return plotList;
 }
