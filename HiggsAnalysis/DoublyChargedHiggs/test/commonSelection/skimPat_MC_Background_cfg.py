@@ -38,10 +38,10 @@ run33xOnReRecoMC( process, "ak5GenJets" )
 
 # Good lepton selection
 process.load("HiggsAnalysis.DoublyChargedHiggs.leptonSelectors_cff")
+process.load("HiggsAnalysis.DoublyChargedHiggs.hltFilters_cfi")
 
 process.p = cms.Path(
-    process.dhHLTFilters*
-    process.higgsToZZ4Leptons_skimFilterSeq*
+    process.dhTriggerFilter * process.higgsToZZ4Leptons_skimFilterSeq*
     process.patDefaultSequence*
     process.leptonSelectionSeq
 )
