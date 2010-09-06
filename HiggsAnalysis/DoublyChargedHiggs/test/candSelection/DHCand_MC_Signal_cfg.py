@@ -32,7 +32,7 @@ process.out = cms.OutputModule("PoolOutputModule",
 )
 process.outpath = cms.EndPath(process.out)
 
-## Set run path
+## Set decay mode
 #analysisMode = 'MMMM'
 #analysisMode = 'EEEE'
 analysisMode = 'EMEM'
@@ -42,9 +42,13 @@ process.dhEventFilter_step = cms.Sequence(getattr(process, 'dhGenEventFilterTo'+
 candProducerModules = None
 for i in set( (analysisMode[0:2], analysisMode[2:4]) ):
     if candProducerModules == None:
-        candProducerModules = getattr(process, 'dhCandProducerTo'+i)
+        candProducerModules = getattr(process, 'dhCandTo'+i)
     else:
-        candProducerModules += getattr(process, 'dhCandProducerTo'+i)
-process.dhCandProducer_step = cms.Sequence(candProducerModules)
+        candProducerModules += getattr(process, 'dhCandTo'+i)
+process.dhCand_step = cms.Sequence(candProducerModules)
 
-process.p = cms.Path(process.dhEventFilter_step*process.dhCandProducer_step)
+process.p = cms.Path(
+    process.dhEventFilter_step * 
+    process.dhCand_step * 
+    process.atLeastOneDHCandFilter
+)
