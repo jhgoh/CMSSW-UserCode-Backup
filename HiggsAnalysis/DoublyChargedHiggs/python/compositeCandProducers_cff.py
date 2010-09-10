@@ -39,7 +39,7 @@ dhCandToMM = cms.EDProducer("DileptonProducer",
     ),
     chargeConjugation = cms.bool(True),
     minMass = cms.double(10),
-    minPt = cms.double(5),
+    minPt = cms.double(10),
     maxEta = cms.double(3)
 )
 
@@ -61,7 +61,7 @@ dhCandToEM = cms.EDProducer("DileptonProducer",
     ),
     chargeConjugation = cms.bool(True),
     minMass = cms.double(10),
-    minPt = cms.double(5),
+    minPt = cms.double(10),
     maxEta = cms.double(3)
 )
 
