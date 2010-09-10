@@ -1,6 +1,6 @@
 import FWCore.ParameterSet.Config as cms
 
-dhCandProducerToEE = cms.EDProducer("DileptonProducer",
+dhCandToEE = cms.EDProducer("DileptonProducer",
     lepton1 = cms.PSet(
         src = cms.InputTag("goodPatElectrons"),
         type = cms.string("electron"),
@@ -22,7 +22,7 @@ dhCandProducerToEE = cms.EDProducer("DileptonProducer",
 )
 
 
-dhCandProducerToMM = cms.EDProducer("DileptonProducer",
+dhCandToMM = cms.EDProducer("DileptonProducer",
     lepton1 = cms.PSet(
         src = cms.InputTag("goodPatMuons"),
         type = cms.string("muon"),
@@ -44,7 +44,7 @@ dhCandProducerToMM = cms.EDProducer("DileptonProducer",
 )
 
 
-dhCandProducerToEM = cms.EDProducer("DileptonProducer",
+dhCandToEM = cms.EDProducer("DileptonProducer",
     lepton1 = cms.PSet(
         src = cms.InputTag("goodPatElectrons"),
         type = cms.string("electron"),
@@ -65,4 +65,11 @@ dhCandProducerToEM = cms.EDProducer("DileptonProducer",
     maxEta = cms.double(3)
 )
 
-
+atLeastOneDHCandFilter = cms.EDFilter("MultipleCandCounterFilter",
+    cands = cms.VInputTag(
+        cms.InputTag("dhCandToEE"),
+        cms.InputTag("dhCandToMM"),
+        cms.InputTag("dhCandToEM")
+    ),
+    ptThresholds = cms.vdouble(10)
+)
