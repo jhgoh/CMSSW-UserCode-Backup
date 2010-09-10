@@ -1,5 +1,12 @@
 import FWCore.ParameterSet.Config as cms
 
+noscraping = cms.EDFilter("FilterOutScraping",
+    applyfilter = cms.untracked.bool(True),
+    debugOn = cms.untracked.bool(False),
+    numtrack = cms.untracked.uint32(10),
+    thresh = cms.untracked.double(0.25)
+)
+
 dhTriggerFilter = cms.EDFilter("HLTHighLevel",
     #TriggerResultsTag = cms.InputTag("hltTriggerSummaryAOD","","HLT"),
     TriggerResultsTag = cms.InputTag("TriggerResults","","HLT"),
@@ -7,5 +14,16 @@ dhTriggerFilter = cms.EDFilter("HLTHighLevel",
     eventSetupPathsKey = cms.string(''), # not empty => use read paths from AlCaRecoTriggerBitsRcd via this key
     andOr = cms.bool(True),  # how to deal with multiple triggers: True (OR) accept if ANY is true, False (AND) accept if ALL are true
     throw = cms.bool(False)    # throw exception on unknown path names
+)
+
+# Vertex selection
+oneGoodVertexFilter = cms.EDFilter("VertexSelector",
+    src = cms.InputTag("offlinePrimaryVertices"),
+    cut = cms.string("!isFake && ndof > 4 && abs(z) <= 20 && position.Rho <= 2"),
+    filter = cms.bool(True),   # otherwise it won't filter the events, just produce an empty vertex collection.
+)
+
+eventFilters = cms.Sequence(
+    noscraping * dhTriggerFilter * oneGoodVertexFilter
 )
 
