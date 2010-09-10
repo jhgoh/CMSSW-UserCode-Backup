@@ -36,7 +36,7 @@ process.load("HiggsAnalysis.DoublyChargedHiggs.leptonSelectors_cff")
 process.load("HiggsAnalysis.DoublyChargedHiggs.hltFilters_cfi")
 
 process.p = cms.Path(
-    process.dhTriggerFilter * process.higgsToZZ4Leptons_skimFilterSeq*
+    process.eventFilters * process.higgsToZZ4Leptons_skimFilterSeq*
     process.patDefaultSequence*
     process.leptonSelectionSeq
 )
