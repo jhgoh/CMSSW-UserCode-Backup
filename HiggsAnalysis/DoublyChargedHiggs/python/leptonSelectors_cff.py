@@ -1,9 +1,9 @@
 import FWCore.ParameterSet.Config as cms
 
-# Lepton selection
+# Lepton producer 
 goodPatMuons = cms.EDProducer("PATMuonSelector",
     src = cms.InputTag("cleanPatMuons"),
-    cut = cms.string('pt > 5 & abs(eta) < 2.5 & isGlobalMuon()')
+    cut = cms.string('pt > 5 & abs(eta) < 2.5 & isGood("GlobalMuonPromptTight") & isGood("TrackerMuonArbitrated")')
 )
 
 goodPatElectrons = cms.EDProducer("PATElectronSelector",
