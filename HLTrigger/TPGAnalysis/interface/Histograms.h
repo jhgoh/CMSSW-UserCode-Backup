@@ -50,7 +50,7 @@ protected:
   std::vector<double> binsEt_;
   std::vector<double> binsEta_;
 
-  double minEt_, maxL1DeltaR_, maxHLTDeltaR_;
+  double workingPointEt_, maxL1DeltaR_, maxHLTDeltaR_;
 };
 
 struct MuonHistograms : public Histograms
@@ -75,7 +75,8 @@ struct JetHistograms : public Histograms
 {
   JetHistograms(TFileDirectory& dir, TString prefix, edm::ParameterSet& cutSet);
 
-  typedef TH1F* TH1FP;
+protected:
+  void SetHistogramBins();
 };
 
 #endif
