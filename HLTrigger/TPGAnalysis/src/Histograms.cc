@@ -16,7 +16,7 @@
 
 Histograms::Histograms(TFileDirectory& dir, TString prefix, edm::ParameterSet& cutSet)
 {
-  minEt_ = cutSet.getParameter<double>("minEt");
+  workingPointEt_ = cutSet.getParameter<double>("workingPointEt");
   maxL1DeltaR_ = cutSet.getParameter<double>("maxL1DeltaR");
   maxHLTDeltaR_ = cutSet.getParameter<double>("maxHLTDeltaR");
 
@@ -97,7 +97,7 @@ void Histograms::FillReco(const reco::Candidate& recoCand)
 
   hEtReco->Fill(recoEt);
 
-  if ( recoEt < minEt_ ) return;
+  if ( recoEt < workingPointEt_ ) return;
 
   hEtaReco->Fill(recoEta);
   hPhiReco->Fill(recoPhi);
@@ -114,7 +114,7 @@ void MuonHistograms::FillReco(const reco::Candidate& recoCand)
 
   if ( !recoMuon.isGlobalMuon() or !recoMuon.isTrackerMuon() ) return;
   const double recoPt = recoMuon.pt();
-  if ( recoPt < minEt_ ) return;
+  if ( recoPt < workingPointEt_ ) return;
 
   const reco::TrackRef trkTrack = recoMuon.innerTrack();
   //const reco::TrackRef staTrack = recoMuon->outerTrack();
@@ -166,7 +166,7 @@ void Histograms::FillL1T(const reco::Candidate& recoCand, const reco::LeafCandid
   hEtL1T->Fill(recoEt);
   hL1EtL1T->Fill(l1Et);
 
-  if ( recoEt < minEt_ ) return;
+  if ( recoEt < workingPointEt_ ) return;
   
   hDeltaRL1T->Fill(dR);
   hDeltaEtaL1T->Fill(dEta);
@@ -205,7 +205,7 @@ void MuonHistograms::FillL1T(const reco::Muon& recoMuon, const reco::LeafCandida
   hEtL1T->Fill(recoEt);
   hL1EtL1T->Fill(l1Et);
 
-  if ( recoEt < minEt_ ) return;
+  if ( recoEt < workingPointEt_ ) return;
   
   hDeltaRL1T->Fill(dR);
   hDeltaEtaL1T->Fill(dEta);
@@ -239,7 +239,7 @@ void Histograms::FillHLT(const reco::Candidate& recoCand, const trigger::Trigger
   hEtHLT->Fill(recoEt);
   hHLTEtHLT->Fill(hltEt);
 
-  if ( recoEt < minEt_ ) return;
+  if ( recoEt < workingPointEt_ ) return;
   
   hDeltaRHLT->Fill(dR);
   hDeltaEtaHLT->Fill(dEta);
@@ -301,5 +301,29 @@ void MuonHistograms::SetHistogramBins()
   for ( unsigned int i=0; i<nEta; ++i )
   {
     binsEta_.push_back(binsEta[i]);
+  }
+}
+
+void JetHistograms::SetHistogramBins()
+{
+  const unsigned int nEt = 50;
+  const double minEt = 0, maxEt = 300;
+
+  const unsigned int nEta = 50;
+  const double minEta = -4, maxEta = 4;
+
+  binsEt_.reserve(nEt);
+  binsEta_.reserve(nEta);
+
+  const double dEt = (maxEt-minEt)/nEt;
+  for ( unsigned int i=0; i<=nEt; ++i )
+  {
+    binsEt_.push_back(minEt+dEt*i);
+  }
+
+  const double dEta = (maxEta-minEta)/nEta;
+  for ( unsigned int i=0; i<=nEta; ++i )
+  {
+    binsEta_.push_back(minEta+dEta*i);
   }
 }
