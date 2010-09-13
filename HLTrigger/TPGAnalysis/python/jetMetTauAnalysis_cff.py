@@ -24,12 +24,20 @@ noscraping = cms.EDFilter("FilterOutScraping",
     thresh = cms.untracked.double(0.25)
 )
 
+oneGoodVertexFilter = cms.EDFilter("VertexSelector",
+    src = cms.InputTag("offlinePrimaryVertices"),
+    cut = cms.string("!isFake && ndof > 4 && abs(z) <= 20 && position.Rho <= 2"),
+    filter = cms.bool(True),   # otherwise it won't filter the events, just produce an empty vertex collection.
+)
+
 jetMetTauCommonFilters = cms.Sequence(
-    hltLevel1GTSeed * jetMetTauOrthogonalTriggers * noscraping 
+    hltLevel1GTSeed * jetMetTauOrthogonalTriggers * noscraping *
+    oneGoodVertexFilter
 )
 
 jetMetTauMinBiasCommonFilters = cms.Sequence(
-    hltLevel1GTSeed * noscraping
+    hltLevel1GTSeed * noscraping *
+    oneGoodVertexFilter
 )
 
 from HLTrigger.TPGAnalysis.jetHLTAnalyzer_cfi import *
