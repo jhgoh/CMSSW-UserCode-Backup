@@ -56,6 +56,8 @@ JetHLTAnalyzer::JetHLTAnalyzer(const edm::ParameterSet& pset)
 
   jetCutSet_ = pset.getParameter<edm::ParameterSet>("cut");
 
+  l1MinEt_ = jetCutSet_.getParameter<double>("l1MinEt");
+
   jetIDHelper_ = new reco::helper::JetIDHelper(pset.getParameter<edm::ParameterSet>("JetIDParams"));
 }
 
@@ -159,8 +161,29 @@ void JetHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& eve
   int nCentralL1T = 0, nForwardL1T = 0;
   int nCentralHLT = 0, nForwardHLT = 0;
 
+  // Collect L1 objects
+  l1extra::L1JetParticleCollection centralL1Jets;
+  l1extra::L1JetParticleCollection forwardL1Jets;
+
+  centralL1Jets.reserve(centralL1JetHandle->size());
+  forwardL1Jets.reserve(forwardL1JetHandle->size());
+
+  for ( l1extra::L1JetParticleCollection::const_iterator l1Jet = centralL1JetHandle->begin();
+        l1Jet != centralL1JetHandle->end(); ++l1Jet )
+  {
+    if ( l1Jet->et() < l1MinEt_ ) continue;
+    centralL1Jets.push_back(*l1Jet);
+  }
+
+  for ( l1extra::L1JetParticleCollection::const_iterator l1Jet = forwardL1JetHandle->begin();
+        l1Jet != forwardL1JetHandle->end(); ++l1Jet )
+  {
+    if ( l1Jet->et() < l1MinEt_ ) continue;
+    forwardL1Jets.push_back(*l1Jet);
+  }
+
   // Collect HLT objects
-  std::vector<trigger::TriggerObject> selectedTriggerObjects;
+  trigger::TriggerObjectCollection selectedTriggerObjects;
   for ( unsigned int filterIdx = 0; filterIdx < triggerEventHandle->sizeFilters(); ++filterIdx )
   {
     const std::string filterFullName = triggerEventHandle->filterTag(filterIdx).encode();
@@ -187,8 +210,8 @@ void JetHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& eve
     const double recoJetAbsEta = fabs(recoJet->eta());
 
     hJet_->FillReco(*recoJet);
-    hCentralJet_->FillReco(*recoJet);
-    hForwardJet_->FillReco(*recoJet);
+    if ( recoJetAbsEta < 2.5 ) hCentralJet_->FillReco(*recoJet);
+    if ( recoJetAbsEta >= 2.5 ) hForwardJet_->FillReco(*recoJet);
 
     // Try matching
     const l1extra::L1JetParticle* matchedCentralL1Jet = getBestMatch(*recoJet, centralL1JetHandle->begin(), centralL1JetHandle->end());
@@ -196,7 +219,7 @@ void JetHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& eve
     const trigger::TriggerObject* matchedHLTJet = getBestMatch(*recoJet, selectedTriggerObjects.begin(), selectedTriggerObjects.end());
 
     if ( matchedCentralL1Jet and matchedForwardL1Jet ) ++nDuplicatedL1T;
-    if ( matchedCentralL1Jet ) 
+    if ( recoJetAbsEta < 2.5 and matchedCentralL1Jet ) 
     {
       ++nCentralL1T;
       hJet_->FillL1T(*recoJet, *matchedCentralL1Jet);
@@ -208,7 +231,7 @@ void JetHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& eve
         hCentralJet_->FillHLT(*recoJet, *matchedHLTJet);
       }
     }
-    if ( matchedForwardL1Jet )
+    if ( recoJetAbsEta >= 2.5 and matchedForwardL1Jet )
     {
       ++nForwardL1T;
       hJet_->FillL1T(*recoJet, *matchedForwardL1Jet);
