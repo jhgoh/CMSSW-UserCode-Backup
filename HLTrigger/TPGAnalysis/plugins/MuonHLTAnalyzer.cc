@@ -104,10 +104,10 @@ void MuonHLTAnalyzer::beginRun(const edm::Run& run, const edm::EventSetup& event
     TFileDirectory overlapMuonDir = runDir.mkdir("Overlap");
     TFileDirectory endcapMuonDir = runDir.mkdir("Endcap");
 
-    hMuon_ByRun_[runNumber] = new MuonHistograms(muonDir, "All", muonCutSet_);
-    hBarrelMuon_ByRun_[runNumber] = new MuonHistograms(barrelMuonDir, "Barrel", muonCutSet_);
-    hOverlapMuon_ByRun_[runNumber] = new MuonHistograms(overlapMuonDir, "Overlap", muonCutSet_);
-    hEndcapMuon_ByRun_[runNumber] = new MuonHistograms(endcapMuonDir, "Endcap", muonCutSet_);
+    hMuon_ByRun_[runNumber] = new Histograms(muonDir, "All", muonCutSet_, Histograms::ObjectType::Muon);
+    hBarrelMuon_ByRun_[runNumber] = new Histograms(barrelMuonDir, "Barrel", muonCutSet_, Histograms::ObjectType::Muon);
+    hOverlapMuon_ByRun_[runNumber] = new Histograms(overlapMuonDir, "Overlap", muonCutSet_, Histograms::ObjectType::Muon);
+    hEndcapMuon_ByRun_[runNumber] = new Histograms(endcapMuonDir, "Endcap", muonCutSet_, Histograms::ObjectType::Muon);
   }
 
   hMuon_ = hMuon_ByRun_[runNumber];

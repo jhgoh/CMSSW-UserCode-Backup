@@ -59,6 +59,10 @@ JetHLTAnalyzer::JetHLTAnalyzer(const edm::ParameterSet& pset)
   l1MinEt_ = jetCutSet_.getParameter<double>("l1MinEt");
 
   jetIDHelper_ = new reco::helper::JetIDHelper(pset.getParameter<edm::ParameterSet>("JetIDParams"));
+
+  edm::Service<TFileService> fs;
+  hCentralL1EtVsRecoEt_ = fs->make<TH2F>("hCentralL1EtVsRecoEt", "L1 Et vs Reco Et;RecoEt;L1 Et", 100, 0, 300, 100, 0, 300);
+  hCentralHLTEtVsRecoEt_ = fs->make<TH2F>("hCentralHLTEtVsRecoEt", "HLT Et vs Reco Et;RecoEt;HLT Et", 100, 0, 300, 100, 0, 300);
 }
 
 JetHLTAnalyzer::~JetHLTAnalyzer()
@@ -94,9 +98,10 @@ void JetHLTAnalyzer::beginRun(const edm::Run& run, const edm::EventSetup& eventS
     TFileDirectory centralJetDir = runDir.mkdir("Central");
     TFileDirectory forwardJetDir = runDir.mkdir("Forward");
 
-    hJet_ByRun_[runNumber] = new JetHistograms(jetDir, "All", jetCutSet_);
-    hCentralJet_ByRun_[runNumber] = new JetHistograms(centralJetDir, "Central", jetCutSet_);
-    hForwardJet_ByRun_[runNumber] = new JetHistograms(forwardJetDir, "Forward", jetCutSet_);
+    hJet_ByRun_[runNumber] = new Histograms(jetDir, "All", jetCutSet_, Histograms::ObjectType::Jet);
+    hCentralJet_ByRun_[runNumber] = new Histograms(centralJetDir, "Central", jetCutSet_, Histograms::ObjectType::Jet);
+    hForwardJet_ByRun_[runNumber] = new Histograms(forwardJetDir, "Forward", jetCutSet_, Histograms::ObjectType::Jet);
+
   }
 
   hNReco_ = hNReco_ByRun_[runNumber];
@@ -137,7 +142,7 @@ void JetHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& eve
     edm::LogError("JetHLTAnalyzer") << "Cannot find TriggerEvent\n";
     return;
   }
-  const trigger::TriggerObjectCollection& triggerObjects = triggerEventHandle->getObjects();
+  const trigger::TriggerObjectCollection& allTriggerObjects = triggerEventHandle->getObjects();
 
   edm::Handle<edm::View<reco::CaloJet> > recoJetHandle;
   if ( !event.getByLabel(recoJetTag_, recoJetHandle) )
@@ -183,7 +188,7 @@ void JetHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& eve
   }
 
   // Collect HLT objects
-  trigger::TriggerObjectCollection selectedTriggerObjects;
+  trigger::TriggerObjectCollection triggerObjects;
   for ( unsigned int filterIdx = 0; filterIdx < triggerEventHandle->sizeFilters(); ++filterIdx )
   {
     const std::string filterFullName = triggerEventHandle->filterTag(filterIdx).encode();
@@ -196,7 +201,7 @@ void JetHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& eve
     for ( trigger::Keys::const_iterator trgKey = trgKeys.begin();
           trgKey != trgKeys.end(); ++trgKey )
     {
-      selectedTriggerObjects.push_back(triggerObjects[*trgKey]);
+      triggerObjects.push_back(allTriggerObjects[*trgKey]);
     }
   }
 
@@ -214,9 +219,9 @@ void JetHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& eve
     if ( recoJetAbsEta >= 2.5 ) hForwardJet_->FillReco(*recoJet);
 
     // Try matching
-    const l1extra::L1JetParticle* matchedCentralL1Jet = getBestMatch(*recoJet, centralL1JetHandle->begin(), centralL1JetHandle->end());
-    const l1extra::L1JetParticle* matchedForwardL1Jet = getBestMatch(*recoJet, forwardL1JetHandle->begin(), forwardL1JetHandle->end());
-    const trigger::TriggerObject* matchedHLTJet = getBestMatch(*recoJet, selectedTriggerObjects.begin(), selectedTriggerObjects.end());
+    const l1extra::L1JetParticle* matchedCentralL1Jet = getBestMatch(*recoJet, centralL1Jets.begin(), centralL1Jets.end());
+    const l1extra::L1JetParticle* matchedForwardL1Jet = getBestMatch(*recoJet, forwardL1Jets.begin(), forwardL1Jets.end());
+    const trigger::TriggerObject* matchedHLTJet = getBestMatch(*recoJet, triggerObjects.begin(), triggerObjects.end());
 
     if ( matchedCentralL1Jet and matchedForwardL1Jet ) ++nDuplicatedL1T;
     if ( recoJetAbsEta < 2.5 and matchedCentralL1Jet ) 
@@ -225,10 +230,14 @@ void JetHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& eve
       hJet_->FillL1T(*recoJet, *matchedCentralL1Jet);
       hCentralJet_->FillL1T(*recoJet, *matchedCentralL1Jet);
 
+      hCentralL1EtVsRecoEt_->Fill(recoJet->et(), matchedCentralL1Jet->et());
+
       if ( matchedHLTJet )
       {
         ++nCentralHLT;
         hCentralJet_->FillHLT(*recoJet, *matchedHLTJet);
+
+        hCentralHLTEtVsRecoEt_->Fill(recoJet->et(), matchedHLTJet->et());
       }
     }
     if ( recoJetAbsEta >= 2.5 and matchedForwardL1Jet )
