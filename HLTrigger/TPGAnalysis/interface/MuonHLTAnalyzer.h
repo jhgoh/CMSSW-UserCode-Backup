@@ -23,7 +23,7 @@
 
 #include <map>
 
-class MuonHistograms;
+class Histograms;
 
 class MuonHLTAnalyzer : public edm::EDAnalyzer
 {
@@ -55,8 +55,8 @@ private:
   edm::InputTag recoMuonTag_;
   
   // List of histograms
-  std::map<int, MuonHistograms*> hMuon_ByRun_, hBarrelMuon_ByRun_, hOverlapMuon_ByRun_, hEndcapMuon_ByRun_;
-  MuonHistograms* hMuon_, * hBarrelMuon_, * hOverlapMuon_, * hEndcapMuon_;
+  std::map<int, Histograms*> hMuon_ByRun_, hBarrelMuon_ByRun_, hOverlapMuon_ByRun_, hEndcapMuon_ByRun_;
+  Histograms* hMuon_, * hBarrelMuon_, * hOverlapMuon_, * hEndcapMuon_;
 
   L1MuonMatcherAlgo* l1Matcher_;
 //  edm::ESHandle<MagneticField> bField_;

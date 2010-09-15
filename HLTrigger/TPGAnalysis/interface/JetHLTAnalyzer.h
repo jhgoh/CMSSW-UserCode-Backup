@@ -22,7 +22,7 @@
 
 #include <map>
 
-class JetHistograms;
+class Histograms;
 
 class JetHLTAnalyzer : public edm::EDAnalyzer
 {
@@ -62,10 +62,12 @@ private:
   TH1FP hNCentralL1T_, hNForwardL1T_, hNDuplicatedL1T_; 
   TH1FP hNCentralHLT_, hNForwardHLT_;
 
-  std::map<int, JetHistograms*> hJet_ByRun_, hCentralJet_ByRun_, hForwardJet_ByRun_;
-  JetHistograms* hJet_, * hCentralJet_, * hForwardJet_;
+  std::map<int, Histograms*> hJet_ByRun_, hCentralJet_ByRun_, hForwardJet_ByRun_;
+  Histograms* hJet_, * hCentralJet_, * hForwardJet_;
 
   reco::helper::JetIDHelper* jetIDHelper_;
+
+  TH2F * hCentralL1EtVsRecoEt_, * hCentralHLTEtVsRecoEt_;
 };
 
 #endif
