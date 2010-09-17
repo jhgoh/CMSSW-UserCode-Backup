@@ -30,14 +30,20 @@ oneGoodVertexFilter = cms.EDFilter("VertexSelector",
     filter = cms.bool(True),   # otherwise it won't filter the events, just produce an empty vertex collection.
 )
 
+jetCounterFilter = cms.EDFilter("CandViewCountFilter",
+    src = cms.InputTag("ak5CaloJets"),
+    minNumber = cms.uint32(1),
+    maxNumber = cms.uint32(99999)
+)
+
 jetMetTauCommonFilters = cms.Sequence(
     hltLevel1GTSeed * jetMetTauOrthogonalTriggers * noscraping *
-    oneGoodVertexFilter
+    oneGoodVertexFilter * jetCounterFilter
 )
 
 jetMetTauMinBiasCommonFilters = cms.Sequence(
     hltLevel1GTSeed * noscraping *
-    oneGoodVertexFilter
+    oneGoodVertexFilter * jetCounterFilter
 )
 
 from HLTrigger.TPGAnalysis.jetHLTAnalyzer_cfi import *
