@@ -22,20 +22,10 @@
 #include <TString.h>
 #include <memory>
 
-const l1extra::L1MuonParticle* MuonHLTAnalyzer::getBestMatch(const reco::Candidate& recoCand, L1Iter l1Begin, L1Iter l1End)
+const l1extra::L1MuonParticle* MuonHLTAnalyzer::getBestMatch(const double recoPosEta, const double recoPosPhi, L1Iter l1Begin, L1Iter l1End)
 {
   const l1extra::L1MuonParticle* matchedL1Cand = 0;
   double matchedDeltaR = 1e14;
-
-  //const double recoEta = recoCand.eta();
-  //const double recoPhi = recoCand.phi();
-
-  // Make track extrapolation to muon station
-  TrajectoryStateOnSurface tsos = l1Matcher_->extrapolate(recoCand);
-  if ( !tsos.isValid() ) return 0;
-
-  const double recoPosEta = tsos.globalPosition().eta();
-  const double recoPosPhi = tsos.globalPosition().phi();
 
   for ( L1Iter l1Cand = l1Begin; l1Cand != l1End; ++l1Cand )
   {
@@ -61,7 +51,8 @@ const trigger::TriggerObject* MuonHLTAnalyzer::getBestMatch(const reco::Candidat
 
   for ( HLTIter hltCand = hltBegin; hltCand != hltEnd; ++hltCand )
   {
-    const double hltDeltaR = deltaR(recoCand, *hltCand);
+    //const double hltDeltaR = deltaR(recoCand, *hltCand);
+    const double hltDeltaR = deltaR(recoCand.eta(), recoCand.phi(), hltCand->eta(), hltCand->phi());
 
     if ( hltDeltaR < matchedDeltaR )
     {
@@ -79,6 +70,9 @@ MuonHLTAnalyzer::MuonHLTAnalyzer(const edm::ParameterSet& pset):
   interestedFilterName_ = pset.getParameter<std::string>("interestedFilterName");
 
   muonCutSet_ = pset.getParameter<edm::ParameterSet>("cut");
+  recoMinPt_ = muonCutSet_.getParameter<double>("recoMinPt");
+  l1MinPt_ = muonCutSet_.getParameter<double>("l1MinPt");
+  l1MinQuality_ = muonCutSet_.getParameter<unsigned int>("l1MinQuality");
 
   l1Matcher_ = new L1MuonMatcherAlgo(pset.getParameter<edm::ParameterSet>("l1MatcherConfig"));
 }
@@ -89,6 +83,12 @@ MuonHLTAnalyzer::~MuonHLTAnalyzer()
 
 void MuonHLTAnalyzer::beginRun(const edm::Run& run, const edm::EventSetup& eventSetup)
 {
+  if ( !l1Matcher_ )
+  {
+    edm::LogError("MuonHLTAnalyzer") << "L1 matcher not initialized!!!\n";
+    return;
+  }
+
   l1Matcher_->init(eventSetup);
 
   const int runNumber = run.run();
@@ -135,7 +135,7 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
     edm::LogError("MuonHLTAnalyzer") << "Cannot find TriggerEvent\n";
     return;
   }
-  const trigger::TriggerObjectCollection& triggerObjects = triggerEventHandle->getObjects();
+  const trigger::TriggerObjectCollection& allTriggerObjects = triggerEventHandle->getObjects();
 
   edm::Handle<edm::View<reco::Muon> > recoMuonHandle;
   if ( !event.getByLabel(edm::InputTag("muons"), recoMuonHandle) )
@@ -147,8 +147,21 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
   // Loop over all reco muons
   int nReco = 0, nRecoBarrel = 0, nRecoOverlap = 0, nRecoEndcap = 0;
 
+  // Collect L1 objects
+  l1extra::L1MuonParticleCollection l1Muons;
+  l1Muons.reserve(l1MuonHandle->size());
+
+  for ( l1extra::L1MuonParticleCollection::const_iterator l1Muon = l1MuonHandle->begin();
+        l1Muon != l1MuonHandle->end(); ++l1Muon )
+  {
+    if ( l1Muon->pt() < l1MinPt_ or 
+         l1Muon->gmtMuonCand().quality() < l1MinQuality_ ) continue;
+
+    l1Muons.push_back(*l1Muon);
+  }
+
   // Collect HLT objects
-  std::vector<trigger::TriggerObject> selectedTriggerObjects;
+  std::vector<trigger::TriggerObject> triggerObjects;
   for ( unsigned int filterIdx = 0; filterIdx < triggerEventHandle->sizeFilters(); ++filterIdx )
   {
     const std::string filterFullName = triggerEventHandle->filterTag(filterIdx).encode();
@@ -161,7 +174,7 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
     for ( trigger::Keys::const_iterator trgKey = trgKeys.begin();
           trgKey != trgKeys.end(); ++trgKey )
     {
-      selectedTriggerObjects.push_back(triggerObjects[*trgKey]);
+      triggerObjects.push_back(allTriggerObjects[*trgKey]);
     }
   }
 
@@ -179,15 +192,22 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
     else if ( recoMuonAbsEta < maxEtaOverlap_ ) hOverlapMuon_->FillReco(*recoMuon);
     else hEndcapMuon_->FillReco(*recoMuon);
 
-    const l1extra::L1MuonParticle* matchedL1Muon = getBestMatch(*recoMuon, l1MuonHandle->begin(), l1MuonHandle->end());
-    const trigger::TriggerObject* matchedHLTMuon = getBestMatch(*recoMuon, selectedTriggerObjects.begin(), selectedTriggerObjects.end());
+    // Get the recoMuon's eta and phi at Muon station 2 to do the extrapolation
+    TrajectoryStateOnSurface tsos = l1Matcher_->extrapolate(*recoMuon);
+    if ( !tsos.isValid() ) continue;
+
+    const double recoPosEta = tsos.globalPosition().eta();
+    const double recoPosPhi = tsos.globalPosition().phi();
+
+    const l1extra::L1MuonParticle* matchedL1Muon = getBestMatch(recoPosEta, recoPosPhi, l1Muons.begin(), l1Muons.end());
+    const trigger::TriggerObject* matchedHLTMuon = getBestMatch(*recoMuon, triggerObjects.begin(), triggerObjects.end());
 
     if ( matchedL1Muon )
     {
-      hMuon_->FillL1T(*recoMuon, *matchedL1Muon);
-      if ( recoMuonAbsEta < maxEtaBarrel_ ) hBarrelMuon_->FillL1T(*recoMuon, *matchedL1Muon);
-      else if ( recoMuonAbsEta < maxEtaOverlap_ ) hOverlapMuon_->FillL1T(*recoMuon, *matchedL1Muon);
-      else hEndcapMuon_->FillL1T(*recoMuon, *matchedL1Muon);
+      hMuon_->FillL1T(*recoMuon, *matchedL1Muon, recoPosEta, recoPosPhi);
+      if ( recoMuonAbsEta < maxEtaBarrel_ ) hBarrelMuon_->FillL1T(*recoMuon, *matchedL1Muon, recoPosEta, recoPosPhi);
+      else if ( recoMuonAbsEta < maxEtaOverlap_ ) hOverlapMuon_->FillL1T(*recoMuon, *matchedL1Muon, recoPosEta, recoPosPhi);
+      else hEndcapMuon_->FillL1T(*recoMuon, *matchedL1Muon, recoPosEta, recoPosPhi);
 
       if ( matchedHLTMuon )
       {
@@ -208,7 +228,9 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
 bool MuonHLTAnalyzer::isGoodMuon(const reco::Muon& recoMuon)
 {
   if ( !recoMuon.isGlobalMuon() or !recoMuon.isTrackerMuon() ) return false;
-  if ( fabs(recoMuon.eta()) < 2.5 ) return false;
+
+  if ( recoMuon.pt() < recoMinPt_ ) return false;
+  if ( fabs(recoMuon.eta()) > 2.5 ) return false;
 
   if ( !muon::isGoodMuon(recoMuon, muon::GlobalMuonPromptTight) or
        !muon::isGoodMuon(recoMuon, muon::TrackerMuonArbitrated) ) return false;
