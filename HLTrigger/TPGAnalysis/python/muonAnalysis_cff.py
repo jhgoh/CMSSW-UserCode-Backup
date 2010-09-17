@@ -36,6 +36,11 @@ muonCounterFilter = cms.EDFilter("CandViewCountFilter",
     maxNumber = cms.uint32(99999)
 )
 
+muonMinBiasCommonFilters = cms.Sequence(
+    hltLevel1GTSeed * noscraping * 
+    oneGoodVertexFilter * muonCounterFilter
+)
+
 muonCommonFilters = cms.Sequence(
     hltLevel1GTSeed * muonOrthogonalTriggers * noscraping * 
     oneGoodVertexFilter * muonCounterFilter
