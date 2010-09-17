@@ -33,8 +33,8 @@ Histograms::Histograms(TFileDirectory& dir, TString prefix, edm::ParameterSet& c
       -2.40, -1.95, -1.20, -0.90, 0.00, 0.90, 1.20, 1.95, 2.40
     };
 
-    std::copy(binsEtInput, binsEtInput+nEt, binsEt.begin());
-    std::copy(binsEtaInput, binsEtaInput+nEta, binsEta.begin());
+    std::copy(binsEtInput, binsEtInput+nEt, std::back_inserter(binsEt));
+    std::copy(binsEtaInput, binsEtaInput+nEta, std::back_inserter(binsEta));
   }
   else if ( objectType_ == ObjectType::Jet )
   {
