@@ -1,10 +1,11 @@
 import FWCore.ParameterSet.Config as cms
 
 muonHLTAnalyzer = cms.EDAnalyzer("MuonHLTAnalyzer",
-  interestedFilterName = cms.string("HLT_Mu9"),
+  interestedFilterName = cms.string("hltSingleMu9L3Filtered9"),
   cut = cms.PSet(
-    l1MinEt = cms.double(7),
-    l1Quality = cms.vuint32(4,5,6),
+    recoMinPt = cms.double(1),
+    l1MinPt = cms.double(7),
+    l1MinQuality = cms.uint32(4),
     workingPointEt = cms.double(15),
     maxL1DeltaR = cms.double(0.4),
     maxHLTDeltaR = cms.double(0.3)
