@@ -39,7 +39,7 @@ private:
   typedef l1extra::L1MuonParticleCollection::const_iterator L1Iter;
   typedef std::vector<trigger::TriggerObject>::const_iterator HLTIter;
 
-  const l1extra::L1MuonParticle* getBestMatch(const reco::Candidate& recoCand, L1Iter l1Begin, L1Iter l1End);
+  const l1extra::L1MuonParticle* getBestMatch(const double recoPosEta, const double recoPosPhi, L1Iter l1Begin, L1Iter l1End);
   const trigger::TriggerObject* getBestMatch(const reco::Candidate& recoCand, HLTIter hltBegin, HLTIter hltEnd);
   bool isGoodMuon(const reco::Muon& recoMuon);
 
@@ -47,6 +47,8 @@ private:
   typedef TH1F* TH1FP;
 
   edm::ParameterSet muonCutSet_;
+  double recoMinPt_, l1MinPt_;
+  unsigned int l1MinQuality_;
 
   std::string interestedFilterName_;
 
