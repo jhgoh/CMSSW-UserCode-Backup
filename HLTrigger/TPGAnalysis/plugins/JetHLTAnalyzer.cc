@@ -56,6 +56,7 @@ JetHLTAnalyzer::JetHLTAnalyzer(const edm::ParameterSet& pset)
 
   jetCutSet_ = pset.getParameter<edm::ParameterSet>("cut");
 
+  recoMinEt_ = jetCutSet_.getParameter<double>("recoMinEt");
   l1MinEt_ = jetCutSet_.getParameter<double>("l1MinEt");
 
   jetIDHelper_ = new reco::helper::JetIDHelper(pset.getParameter<edm::ParameterSet>("JetIDParams"));
@@ -274,6 +275,7 @@ void JetHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& eve
 bool JetHLTAnalyzer::isGoodJet(const reco::CaloJet& recoJet, const edm::Event& event)
 {
   if ( recoJet.emEnergyFraction() < 0.01 || recoJet.n90() < 2 ) return false;
+  if ( recoJet.et() < recoMinEt_ ) return false;
 
   jetIDHelper_->calculate(event, recoJet);
   if ( jetIDHelper_->fHPD() > 0.98 ) return false;
