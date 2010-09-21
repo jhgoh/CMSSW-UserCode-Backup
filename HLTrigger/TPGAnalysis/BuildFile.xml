@@ -1,0 +1,16 @@
+<use name="FWCore/Framework" />
+<use name="CommonTools/UtilAlgos" />
+<use name="CommonTools/Utils" />
+<use name="DataFormats/TrackReco" />
+<use name="DataFormats/MuonReco" />
+<use name="DataFormats/JetReco" />
+<use name="root" />
+
+<export>
+  <lib name="HLTriggerTPGAnalysis" />
+  <use name="FWCore/Framework" />
+  <use name="DataFormats/TrackReco" />
+  <use name="DataFormats/MuonReco" />
+  <use name="DataFormats/JetReco" />
+</export>
+
