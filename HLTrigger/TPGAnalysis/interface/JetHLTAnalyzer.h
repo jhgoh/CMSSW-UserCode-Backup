@@ -62,8 +62,10 @@ private:
   TH1FP hNCentralL1T_, hNForwardL1T_, hNDuplicatedL1T_; 
   TH1FP hNCentralHLT_, hNForwardHLT_;
 
-  std::map<int, Histograms*> hJet_ByRun_, hCentralJet_ByRun_, hForwardJet_ByRun_;
-  Histograms* hJet_, * hCentralJet_, * hForwardJet_;
+  std::map<int, Histograms*> hAllJet_ByRun_, hCentralJet_ByRun_, hForwardJet_ByRun_;
+  std::map<int, Histograms*> hAllLeadingJet_ByRun_, hCentralLeadingJet_ByRun_, hForwardLeadingJet_ByRun_;
+  Histograms* hAllJet_, * hCentralJet_, * hForwardJet_;
+  Histograms* hAllLeadingJet_, * hCentralLeadingJet_, * hForwardLeadingJet_;
 
   reco::helper::JetIDHelper* jetIDHelper_;
 
