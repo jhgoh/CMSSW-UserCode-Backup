@@ -17,6 +17,7 @@
 #include "DataFormats/L1Trigger/interface/L1MuonParticle.h"
 #include "DataFormats/L1Trigger/interface/L1MuonParticleFwd.h"
 #include "MuonAnalysis/MuonAssociators/interface/L1MuonMatcherAlgo.h"
+#include "DataFormats/Math/interface/Point3D.h"
 
 #include <TH1F.h>
 #include <TH2F.h>
@@ -57,8 +58,8 @@ private:
   edm::InputTag recoMuonTag_;
   
   // List of histograms
-  std::map<int, Histograms*> hMuon_ByRun_, hBarrelMuon_ByRun_, hOverlapMuon_ByRun_, hEndcapMuon_ByRun_;
-  Histograms* hMuon_, * hBarrelMuon_, * hOverlapMuon_, * hEndcapMuon_;
+  std::map<int, Histograms*> hAllMuon_ByRun_, hBarrelMuon_ByRun_, hOverlapMuon_ByRun_, hEndcapMuon_ByRun_;
+  Histograms* hAllMuon_, * hBarrelMuon_, * hOverlapMuon_, * hEndcapMuon_;
 
   L1MuonMatcherAlgo* l1Matcher_;
 //  edm::ESHandle<MagneticField> bField_;
@@ -66,6 +67,8 @@ private:
 //  edm::ESHandle<Propagator> propagator_;
 
   const double maxEtaBarrel_, maxEtaOverlap_;
+
+  math::XYZPoint beamSpotPosition_;
 };
 
 #endif
