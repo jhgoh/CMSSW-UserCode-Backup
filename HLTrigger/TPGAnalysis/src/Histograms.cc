@@ -38,7 +38,7 @@ Histograms::Histograms(TFileDirectory& dir, TString prefix, edm::ParameterSet& c
   }
   else if ( objectType_ == ObjectType::Jet )
   {
-    const unsigned int nEt = 50;
+    const unsigned int nEt = 300;
     const double minEt = 0, maxEt = 300;
 
     const unsigned int nEta = 50;
@@ -61,7 +61,7 @@ Histograms::Histograms(TFileDirectory& dir, TString prefix, edm::ParameterSet& c
   }
   else
   {
-    const unsigned int nEt = 50;
+    const unsigned int nEt = 100;
     const double minEt = 0, maxEt = 100;
 
     const unsigned int nEta = 50;
