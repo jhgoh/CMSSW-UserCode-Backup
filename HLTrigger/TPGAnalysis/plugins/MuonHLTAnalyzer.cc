@@ -8,9 +8,9 @@
     
 // Muon track extrapolation
 #include "DataFormats/MuonReco/interface/MuonSelectors.h"
-//#include "DataFormats/BeamSpot/interface/BeamSpot.h"
-//#include "DataFormats/TrackReco/interface/Track.h"
-//#include "DataFormats/TrackReco/interface/TrackFwd.h"
+#include "DataFormats/BeamSpot/interface/BeamSpot.h"
+#include "DataFormats/TrackReco/interface/Track.h"
+#include "DataFormats/TrackReco/interface/TrackFwd.h"
 #include "TrackingTools/TrajectoryState/interface/TrajectoryStateOnSurface.h"
 #include "MagneticField/Engine/interface/MagneticField.h"
 #include "MagneticField/Records/interface/IdealMagneticFieldRecord.h"
@@ -93,24 +93,24 @@ void MuonHLTAnalyzer::beginRun(const edm::Run& run, const edm::EventSetup& event
 
   const int runNumber = run.run();
 
-  if ( hMuon_ByRun_.find(runNumber) == hMuon_ByRun_.end() )
+  if ( hAllMuon_ByRun_.find(runNumber) == hAllMuon_ByRun_.end() )
   {
     edm::Service<TFileService> fs;
 
     TFileDirectory runDir = fs->mkdir(Form("Run %d", runNumber));
 
-    TFileDirectory muonDir = runDir.mkdir("All");
+    TFileDirectory allMuonDir = runDir.mkdir("All");
     TFileDirectory barrelMuonDir = runDir.mkdir("Barrel");
     TFileDirectory overlapMuonDir = runDir.mkdir("Overlap");
     TFileDirectory endcapMuonDir = runDir.mkdir("Endcap");
 
-    hMuon_ByRun_[runNumber] = new Histograms(muonDir, "All", muonCutSet_, Histograms::ObjectType::Muon);
+    hAllMuon_ByRun_[runNumber] = new Histograms(allMuonDir, "All", muonCutSet_, Histograms::ObjectType::Muon);
     hBarrelMuon_ByRun_[runNumber] = new Histograms(barrelMuonDir, "Barrel", muonCutSet_, Histograms::ObjectType::Muon);
     hOverlapMuon_ByRun_[runNumber] = new Histograms(overlapMuonDir, "Overlap", muonCutSet_, Histograms::ObjectType::Muon);
     hEndcapMuon_ByRun_[runNumber] = new Histograms(endcapMuonDir, "Endcap", muonCutSet_, Histograms::ObjectType::Muon);
   }
 
-  hMuon_ = hMuon_ByRun_[runNumber];
+  hAllMuon_ = hAllMuon_ByRun_[runNumber];
   hBarrelMuon_ = hBarrelMuon_ByRun_[runNumber];
   hOverlapMuon_ = hOverlapMuon_ByRun_[runNumber];
   hEndcapMuon_ = hEndcapMuon_ByRun_[runNumber];
@@ -143,6 +143,14 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
     edm::LogError("MuonHLTAnalyzer") << "Cannot find reco muons\n";
     return;
   }
+
+  edm::Handle<reco::BeamSpot> beamSpotHandle;
+  if ( !event.getByLabel("offlineBeamSpot", beamSpotHandle) )
+  {
+    edm::LogError("MuonHLTAnalyzer") << "Cannot find offlineBeamSpot\n";
+    return;
+  }
+  beamSpotPosition_ = beamSpotHandle->position();
 
   // Loop over all reco muons
   int nReco = 0, nRecoBarrel = 0, nRecoOverlap = 0, nRecoEndcap = 0;
@@ -187,7 +195,7 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
     ++nReco;
     const double recoMuonAbsEta = fabs(recoMuon->eta());
 
-    hMuon_->FillReco(*recoMuon);
+    hAllMuon_->FillReco(*recoMuon);
     if ( recoMuonAbsEta < maxEtaBarrel_ ) hBarrelMuon_->FillReco(*recoMuon);
     else if ( recoMuonAbsEta < maxEtaOverlap_ ) hOverlapMuon_->FillReco(*recoMuon);
     else hEndcapMuon_->FillReco(*recoMuon);
@@ -204,14 +212,14 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
 
     if ( matchedL1Muon )
     {
-      hMuon_->FillL1T(*recoMuon, *matchedL1Muon, recoPosEta, recoPosPhi);
+      hAllMuon_->FillL1T(*recoMuon, *matchedL1Muon, recoPosEta, recoPosPhi);
       if ( recoMuonAbsEta < maxEtaBarrel_ ) hBarrelMuon_->FillL1T(*recoMuon, *matchedL1Muon, recoPosEta, recoPosPhi);
       else if ( recoMuonAbsEta < maxEtaOverlap_ ) hOverlapMuon_->FillL1T(*recoMuon, *matchedL1Muon, recoPosEta, recoPosPhi);
       else hEndcapMuon_->FillL1T(*recoMuon, *matchedL1Muon, recoPosEta, recoPosPhi);
 
       if ( matchedHLTMuon )
       {
-        hMuon_->FillHLT(*recoMuon, *matchedHLTMuon);
+        hAllMuon_->FillHLT(*recoMuon, *matchedHLTMuon);
         if ( recoMuonAbsEta < maxEtaBarrel_ ) hBarrelMuon_->FillHLT(*recoMuon, *matchedHLTMuon);
         else if ( recoMuonAbsEta < maxEtaOverlap_ ) hOverlapMuon_->FillHLT(*recoMuon, *matchedHLTMuon);
         else hEndcapMuon_->FillHLT(*recoMuon, *matchedHLTMuon);
@@ -219,7 +227,7 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
     }
   }
 
-  hMuon_->hNReco->Fill(nReco);
+  hAllMuon_->hNReco->Fill(nReco);
   hBarrelMuon_->hNReco->Fill(nRecoBarrel);
   hOverlapMuon_->hNReco->Fill(nRecoOverlap);
   hEndcapMuon_->hNReco->Fill(nRecoEndcap);
@@ -230,10 +238,32 @@ bool MuonHLTAnalyzer::isGoodMuon(const reco::Muon& recoMuon)
   if ( !recoMuon.isGlobalMuon() or !recoMuon.isTrackerMuon() ) return false;
 
   if ( recoMuon.pt() < recoMinPt_ ) return false;
-  if ( fabs(recoMuon.eta()) > 2.5 ) return false;
 
-  if ( !muon::isGoodMuon(recoMuon, muon::GlobalMuonPromptTight) or
-       !muon::isGoodMuon(recoMuon, muon::TrackerMuonArbitrated) ) return false;
+  const double absEta = fabs(recoMuon.eta());
+  if ( absEta > 2.5 ) return false;
+
+//  if ( !muon::isGoodMuon(recoMuon, muon::GlobalMuonPromptTight) or
+//       !muon::isGoodMuon(recoMuon, muon::TrackerMuonArbitrated) ) return false;
+
+  // Apply the VBTF selection
+  const int nMatches = recoMuon.numberOfMatches();
+
+  const reco::TrackRef trkTrack = recoMuon.innerTrack();
+  const reco::TrackRef glbTrack = recoMuon.globalTrack();
+
+  const reco::HitPattern& trkHit = trkTrack->hitPattern();
+  const reco::HitPattern& glbHit = glbTrack->hitPattern();
+
+  const double glbX2 = glbTrack->normalizedChi2();
+
+  const int nMuonHit = glbHit.numberOfValidMuonHits();
+  const int nTrkHit = trkHit.numberOfValidTrackerHits();
+  const int nPixelHit = trkHit.numberOfValidPixelHits();
+
+  const double dxy = glbTrack->dxy(beamSpotPosition_);
+
+  if ( !(nMatches > 1 and absEta < 2.1 and fabs(dxy) < 0.2 and 
+         glbX2 < 10 and nPixelHit > 0 and nTrkHit > 10 and nMuonHit > 0 ) ) return false;
 
   return true;
 }
