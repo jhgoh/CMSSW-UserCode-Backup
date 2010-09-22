@@ -57,6 +57,10 @@ private:
   TH1F* hNEvent_;
 
   std::vector<Histograms*> histograms_;
+
+  // Run by run histograms
+  std::map<int, TH1F*> hNEvent_ByRun_;
+  std::map<int, std::vector<Histograms*> > histograms_ByRun_;
 };
 
 #endif

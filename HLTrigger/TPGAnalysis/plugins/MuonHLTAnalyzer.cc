@@ -241,23 +241,31 @@ void MuonHLTAnalyzer::beginRun(const edm::Run& run, const edm::EventSetup& event
   l1Matcher_.init(eventSetup);
 
   // Book histograms
-  edm::Service<TFileService> fs;
-  TFileDirectory runDir = fs->mkdir(Form("Run %d", run.run()));
+  const int runNumber = run.run();
 
-  const int nMuonL1TNames = muonL1TNames_.size();
-  hNEvent_ = runDir.make<TH1F>("hNEvent", "Number of events passing trigger paths;Trigger path", nMuonL1TNames+1, 0, nMuonL1TNames+1);
-  hNEvent_->GetXaxis()->SetBinLabel(1, "All");
-  for ( int muonL1TIdx=0; muonL1TIdx<nMuonL1TNames; ++muonL1TIdx )
+  if ( hNEvent_ByRun_.find(runNumber) == hNEvent_ByRun_.end() )
   {
-    hNEvent_->GetXaxis()->SetBinLabel(muonL1TIdx+2, muonL1TNames_[muonL1TIdx].c_str());
+    edm::Service<TFileService> fs;
+    TFileDirectory runDir = fs->mkdir(Form("Run %d", run.run()));
+
+    const int nMuonL1TNames = muonL1TNames_.size();
+    hNEvent_ByRun_[runNumber] = runDir.make<TH1F>("hNEvent", "Number of events passing trigger paths;Trigger path", nMuonL1TNames+1, 0, nMuonL1TNames+1);
+    hNEvent_ByRun_[runNumber]->GetXaxis()->SetBinLabel(1, "All");
+    for ( int muonL1TIdx=0; muonL1TIdx<nMuonL1TNames; ++muonL1TIdx )
+    {
+      hNEvent_ByRun_[runNumber]->GetXaxis()->SetBinLabel(muonL1TIdx+2, muonL1TNames_[muonL1TIdx].c_str());
+    }
+
+    // Book histograms for each cut steps
+    histograms_ByRun_[runNumber] = std::vector<Histograms*>(nRecoMuonCutStep);
+    for ( int recoCutStep=0; recoCutStep<nRecoMuonCutStep; ++recoCutStep )
+    {
+      histograms_ByRun_[runNumber][recoCutStep] = new Histograms(&runDir, Form("CutStep%d_%s", recoCutStep, recoMuonCutStepNames[recoCutStep]));
+    }
   }
 
-  // Book histograms for each cut steps
-  for ( int recoCutStep=0; recoCutStep<nRecoMuonCutStep; ++recoCutStep )
-  {
-    histograms_[recoCutStep] = new Histograms(&runDir, Form("CutStep%d_%s", recoCutStep, recoMuonCutStepNames[recoCutStep]));
-  }
-
+  hNEvent_ = hNEvent_ByRun_[runNumber];
+  histograms_ = histograms_ByRun_[runNumber];
 }
 
 void MuonHLTAnalyzer::endRun()
