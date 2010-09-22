@@ -1,7 +1,7 @@
 import FWCore.ParameterSet.Config as cms
 
 muonHLTAnalyzer = cms.EDAnalyzer("MuonHLTAnalyzer",
-  trigNames = cms.vstring(
+  muonL1TNames = cms.vstring(
     "HLT_L1MuOpen",
     "HLT_L1Mu",
     "HLT_L1Mu20",
@@ -18,11 +18,13 @@ muonHLTAnalyzer = cms.EDAnalyzer("MuonHLTAnalyzer",
     "HLT_DoubleMu0",
     "HLT_DoubleMu3"
   ),
-  l1Muon = cms.InputTag("hltL1extraParticles"),
+  l1Muon = cms.InputTag("l1extraParticles"),
+  triggerEvent = cms.InputTag("hltTriggerSummaryAOD", "", "HLT"),
   recoMuon = cms.InputTag("muons"),
   minPt = cms.double(15.0),
   maxRelIso = cms.double(0.15),
   l1MatcherConfig = cms.PSet(
+    maxDeltaR = cms.double(0.3),
     useTrack = cms.string('tracker'),
     useState = cms.string('atVertex'),
     useSimpleGeometry = cms.bool(True),
