@@ -68,8 +68,6 @@ private:
   Histograms* hAllLeadingJet_, * hCentralLeadingJet_, * hForwardLeadingJet_;
 
   reco::helper::JetIDHelper* jetIDHelper_;
-
-  TH2F * hCentralL1EtVsRecoEt_, * hCentralHLTEtVsRecoEt_;
 };
 
 #endif
