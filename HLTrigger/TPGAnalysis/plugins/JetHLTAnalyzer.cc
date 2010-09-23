@@ -258,14 +258,10 @@ void JetHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& eve
       hAllJet_->FillL1T(*recoJet, *matchedCentralL1Jet);
       hCentralJet_->FillL1T(*recoJet, *matchedCentralL1Jet);
 
-      hCentralL1EtVsRecoEt_->Fill(recoJetEt, matchedCentralL1Jet->et());
-
       if ( matchedHLTJet and deltaR(*recoJet, *matchedCentralL1Jet) < maxL1DeltaR_ )
       {
         ++nCentralHLT;
         hCentralJet_->FillHLT(*recoJet, *matchedHLTJet);
-
-        hCentralHLTEtVsRecoEt_->Fill(recoJetEt, matchedHLTJet->et());
       }
     }
     else if ( recoJetAbsEta >= 2.5 and matchedForwardL1Jet )
@@ -289,14 +285,11 @@ void JetHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& eve
   }
 
   // We found leading jets. do the trigger object matching
-/*
   if ( leadingJet )
   {
-    const double leadingJetAbsEta = fabs(leadingJet->eta());
-
     hAllLeadingJet_->FillReco(*leadingJet);
 
-    // Try matching
+    // Retry matching
     const l1extra::L1JetParticle* matchedCentralL1Jet = getBestMatch(*leadingJet, centralL1Jets.begin(), centralL1Jets.end());
     const l1extra::L1JetParticle* matchedForwardL1Jet = getBestMatch(*leadingJet, forwardL1Jets.begin(), forwardL1Jets.end());
     const trigger::TriggerObject* matchedHLTJet = getBestMatch(*leadingJet, triggerObjects.begin(), triggerObjects.end());
@@ -322,7 +315,46 @@ void JetHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& eve
       }
     }
   }
-*/
+
+  if ( centralLeadingJet )
+  {
+    hCentralLeadingJet_->FillReco(*centralLeadingJet);
+
+    // Retry matching
+    const l1extra::L1JetParticle* matchedCentralL1Jet = getBestMatch(*centralLeadingJet, centralL1Jets.begin(), centralL1Jets.end());
+    const trigger::TriggerObject* matchedHLTJet = getBestMatch(*centralLeadingJet, triggerObjects.begin(), triggerObjects.end());
+
+    if ( matchedCentralL1Jet )
+    {
+      hCentralLeadingJet_->FillL1T(*centralLeadingJet, *matchedCentralL1Jet);
+
+      const double l1DeltaR = deltaR(*centralLeadingJet, *matchedCentralL1Jet);
+      if ( matchedHLTJet and l1DeltaR < maxL1DeltaR_ )
+      {
+        hCentralLeadingJet_->FillHLT(*centralLeadingJet, *matchedHLTJet);
+      }
+    }
+  }
+
+  if ( forwardLeadingJet )
+  {
+    hForwardLeadingJet_->FillReco(*forwardLeadingJet);
+
+    // Retry matching
+    const l1extra::L1JetParticle* matchedForwardL1Jet = getBestMatch(*forwardLeadingJet, forwardL1Jets.begin(), forwardL1Jets.end());
+    const trigger::TriggerObject* matchedHLTJet = getBestMatch(*forwardLeadingJet, triggerObjects.begin(), triggerObjects.end());
+
+    if ( matchedForwardL1Jet )
+    {
+      hForwardLeadingJet_->FillL1T(*forwardLeadingJet, *matchedForwardL1Jet);
+
+      const double l1DeltaR = deltaR(*forwardLeadingJet, *matchedForwardL1Jet);
+      if ( matchedHLTJet and l1DeltaR < maxL1DeltaR_ )
+      {
+        hForwardLeadingJet_->FillHLT(*forwardLeadingJet, *matchedHLTJet);
+      }
+    }
+  }
 
   hNReco_->Fill(nReco);
 
