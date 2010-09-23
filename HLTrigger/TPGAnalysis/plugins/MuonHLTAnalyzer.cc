@@ -73,6 +73,7 @@ MuonHLTAnalyzer::MuonHLTAnalyzer(const edm::ParameterSet& pset):
   recoMinPt_ = muonCutSet_.getParameter<double>("recoMinPt");
   l1MinPt_ = muonCutSet_.getParameter<double>("l1MinPt");
   l1MinQuality_ = muonCutSet_.getParameter<unsigned int>("l1MinQuality");
+  maxL1DeltaR_ = muonCutSet_.getParameter<double>("maxL1DeltaR");
 
   l1Matcher_ = new L1MuonMatcherAlgo(pset.getParameter<edm::ParameterSet>("l1MatcherConfig"));
 }
@@ -104,10 +105,12 @@ void MuonHLTAnalyzer::beginRun(const edm::Run& run, const edm::EventSetup& event
     TFileDirectory overlapMuonDir = runDir.mkdir("Overlap");
     TFileDirectory endcapMuonDir = runDir.mkdir("Endcap");
 
-    hAllMuon_ByRun_[runNumber] = new Histograms(allMuonDir, "All", muonCutSet_, Histograms::ObjectType::Muon);
-    hBarrelMuon_ByRun_[runNumber] = new Histograms(barrelMuonDir, "Barrel", muonCutSet_, Histograms::ObjectType::Muon);
-    hOverlapMuon_ByRun_[runNumber] = new Histograms(overlapMuonDir, "Overlap", muonCutSet_, Histograms::ObjectType::Muon);
-    hEndcapMuon_ByRun_[runNumber] = new Histograms(endcapMuonDir, "Endcap", muonCutSet_, Histograms::ObjectType::Muon);
+    const int objectType = Histograms::ObjectType::Muon;
+
+    hAllMuon_ByRun_[runNumber] = new Histograms(allMuonDir, "All", muonCutSet_, objectType);
+    hBarrelMuon_ByRun_[runNumber] = new Histograms(barrelMuonDir, "Barrel", muonCutSet_, objectType);
+    hOverlapMuon_ByRun_[runNumber] = new Histograms(overlapMuonDir, "Overlap", muonCutSet_, objectType);
+    hEndcapMuon_ByRun_[runNumber] = new Histograms(endcapMuonDir, "Endcap", muonCutSet_, objectType);
   }
 
   hAllMuon_ = hAllMuon_ByRun_[runNumber];
@@ -186,6 +189,10 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
     }
   }
 
+  const reco::Muon* leadingMuon = 0;
+  const reco::Muon* barrelLeadingMuon = 0;
+  const reco::Muon* overlapLeadingMuon = 0;
+  const reco::Muon* endcapLeadingMuon = 0;
   for ( edm::View<reco::Muon>::const_iterator recoMuon = recoMuonHandle->begin();
         recoMuon != recoMuonHandle->end(); ++recoMuon )
   {
@@ -194,11 +201,27 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
 
     ++nReco;
     const double recoMuonAbsEta = fabs(recoMuon->eta());
+    const double recoMuonPt = recoMuon->pt();
 
+    // Fill basic information of recoMuon
+    // and find the leading muon
     hAllMuon_->FillReco(*recoMuon);
-    if ( recoMuonAbsEta < maxEtaBarrel_ ) hBarrelMuon_->FillReco(*recoMuon);
-    else if ( recoMuonAbsEta < maxEtaOverlap_ ) hOverlapMuon_->FillReco(*recoMuon);
-    else hEndcapMuon_->FillReco(*recoMuon);
+    if ( !leadingMuon or leadingMuon->pt() < recoMuonPt ) leadingMuon = &(*recoMuon);
+    if ( recoMuonAbsEta < maxEtaBarrel_ )
+    {
+      hBarrelMuon_->FillReco(*recoMuon);
+      if ( !barrelLeadingMuon or barrelLeadingMuon->pt() < recoMuonPt ) barrelLeadingMuon = &(*recoMuon);
+    }
+    else if ( recoMuonAbsEta < maxEtaOverlap_ )
+    {
+      hOverlapMuon_->FillReco(*recoMuon);
+      if ( !overlapLeadingMuon or overlapLeadingMuon->pt() < recoMuonPt ) overlapLeadingMuon = &(*recoMuon);
+    }
+    else
+    {
+      hEndcapMuon_->FillReco(*recoMuon);
+      if ( !endcapLeadingMuon or endcapLeadingMuon->pt() < recoMuonPt ) endcapLeadingMuon = &(*recoMuon);
+    }
 
     // Get the recoMuon's eta and phi at Muon station 2 to do the extrapolation
     TrajectoryStateOnSurface tsos = l1Matcher_->extrapolate(*recoMuon);
@@ -207,6 +230,7 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
     const double recoPosEta = tsos.globalPosition().eta();
     const double recoPosPhi = tsos.globalPosition().phi();
 
+    // Then try matching
     const l1extra::L1MuonParticle* matchedL1Muon = getBestMatch(recoPosEta, recoPosPhi, l1Muons.begin(), l1Muons.end());
     const trigger::TriggerObject* matchedHLTMuon = getBestMatch(*recoMuon, triggerObjects.begin(), triggerObjects.end());
 
@@ -217,7 +241,8 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
       else if ( recoMuonAbsEta < maxEtaOverlap_ ) hOverlapMuon_->FillL1T(*recoMuon, *matchedL1Muon, recoPosEta, recoPosPhi);
       else hEndcapMuon_->FillL1T(*recoMuon, *matchedL1Muon, recoPosEta, recoPosPhi);
 
-      if ( matchedHLTMuon )
+      const double l1DeltaR = deltaR(recoPosEta, recoPosPhi, matchedL1Muon->eta(), matchedL1Muon->phi());
+      if ( matchedHLTMuon and l1DeltaR < maxL1DeltaR_ )
       {
         hAllMuon_->FillHLT(*recoMuon, *matchedHLTMuon);
         if ( recoMuonAbsEta < maxEtaBarrel_ ) hBarrelMuon_->FillHLT(*recoMuon, *matchedHLTMuon);
@@ -226,6 +251,13 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
       }
     }
   }
+
+//FIXME//
+/*
+  if ( leadingMuon )
+  {
+  }
+*/
 
   hAllMuon_->hNReco->Fill(nReco);
   hBarrelMuon_->hNReco->Fill(nRecoBarrel);

@@ -48,7 +48,7 @@ private:
   typedef TH1F* TH1FP;
 
   edm::ParameterSet muonCutSet_;
-  double recoMinPt_, l1MinPt_;
+  double recoMinPt_, l1MinPt_, maxL1DeltaR_;
   unsigned int l1MinQuality_;
 
   std::string interestedFilterName_;

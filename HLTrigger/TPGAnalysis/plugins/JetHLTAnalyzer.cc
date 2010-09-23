@@ -58,12 +58,11 @@ JetHLTAnalyzer::JetHLTAnalyzer(const edm::ParameterSet& pset)
 
   recoMinEt_ = jetCutSet_.getParameter<double>("recoMinEt");
   l1MinEt_ = jetCutSet_.getParameter<double>("l1MinEt");
+  maxL1DeltaR_ = jetCutSet_.getParameter<double>("maxL1DeltaR");
 
   jetIDHelper_ = new reco::helper::JetIDHelper(pset.getParameter<edm::ParameterSet>("JetIDParams"));
 
-  edm::Service<TFileService> fs;
-  hCentralL1EtVsRecoEt_ = fs->make<TH2F>("hCentralL1EtVsRecoEt", "L1 Et vs Reco Et;RecoEt;L1 Et", 100, 0, 300, 100, 0, 300);
-  hCentralHLTEtVsRecoEt_ = fs->make<TH2F>("hCentralHLTEtVsRecoEt", "HLT Et vs Reco Et;RecoEt;HLT Et", 100, 0, 300, 100, 0, 300);
+//  edm::Service<TFileService> fs;
 }
 
 JetHLTAnalyzer::~JetHLTAnalyzer()
@@ -220,6 +219,8 @@ void JetHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& eve
   }
 
   const reco::CaloJet* leadingJet = 0;
+  const reco::CaloJet* centralLeadingJet = 0;
+  const reco::CaloJet* forwardLeadingJet = 0;
   for ( edm::View<reco::CaloJet>::const_iterator recoJet = recoJetHandle->begin();
         recoJet != recoJetHandle->end(); ++recoJet )
   {
@@ -228,12 +229,22 @@ void JetHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& eve
 
     ++nReco;
     const double recoJetAbsEta = fabs(recoJet->eta());
+    const double recoJetEt = recoJet->et();
 
+    // Fill basic information of recoJet
+    // and find the leading Jet
     hAllJet_->FillReco(*recoJet);
-    if ( !leadingJet or leadingJet->et() < recoJet->et() ) leadingJet = &(*recoJet);
-
-    if ( recoJetAbsEta < 2.5 ) hCentralJet_->FillReco(*recoJet);
-    else hForwardJet_->FillReco(*recoJet);
+    if ( !leadingJet or leadingJet->et() < recoJetEt ) leadingJet = &(*recoJet);
+    if ( recoJetAbsEta < 2.5 )
+    {
+      hCentralJet_->FillReco(*recoJet);
+      if ( !centralLeadingJet or centralLeadingJet->et() < recoJetEt ) centralLeadingJet = &(*recoJet);
+    }
+    else
+    {
+      hForwardJet_->FillReco(*recoJet);
+      if ( !forwardLeadingJet or forwardLeadingJet->et() < recoJetEt ) forwardLeadingJet = &(*recoJet);
+    }
 
     // Try matching
     const l1extra::L1JetParticle* matchedCentralL1Jet = getBestMatch(*recoJet, centralL1Jets.begin(), centralL1Jets.end());
@@ -247,14 +258,14 @@ void JetHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& eve
       hAllJet_->FillL1T(*recoJet, *matchedCentralL1Jet);
       hCentralJet_->FillL1T(*recoJet, *matchedCentralL1Jet);
 
-      hCentralL1EtVsRecoEt_->Fill(recoJet->et(), matchedCentralL1Jet->et());
+      hCentralL1EtVsRecoEt_->Fill(recoJetEt, matchedCentralL1Jet->et());
 
-      if ( matchedHLTJet )
+      if ( matchedHLTJet and deltaR(*recoJet, *matchedCentralL1Jet) < maxL1DeltaR_ )
       {
         ++nCentralHLT;
         hCentralJet_->FillHLT(*recoJet, *matchedHLTJet);
 
-        hCentralHLTEtVsRecoEt_->Fill(recoJet->et(), matchedHLTJet->et());
+        hCentralHLTEtVsRecoEt_->Fill(recoJetEt, matchedHLTJet->et());
       }
     }
     else if ( recoJetAbsEta >= 2.5 and matchedForwardL1Jet )
@@ -263,7 +274,7 @@ void JetHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& eve
       hAllJet_->FillL1T(*recoJet, *matchedForwardL1Jet);
       hForwardJet_->FillL1T(*recoJet, *matchedForwardL1Jet);
 
-      if ( matchedHLTJet )
+      if ( matchedHLTJet and deltaR(*recoJet, *matchedForwardL1Jet) < maxL1DeltaR_ )
       {
         ++nForwardHLT;
         hForwardJet_->FillHLT(*recoJet, *matchedHLTJet);
@@ -278,45 +289,40 @@ void JetHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& eve
   }
 
   // We found leading jets. do the trigger object matching
+/*
   if ( leadingJet )
   {
     const double leadingJetAbsEta = fabs(leadingJet->eta());
 
     hAllLeadingJet_->FillReco(*leadingJet);
-    if ( leadingJetAbsEta < 2.5 ) hCentralLeadingJet_->FillReco(*leadingJet);
-    else hCentralLeadingJet_->FillReco(*leadingJet);
 
     // Try matching
     const l1extra::L1JetParticle* matchedCentralL1Jet = getBestMatch(*leadingJet, centralL1Jets.begin(), centralL1Jets.end());
     const l1extra::L1JetParticle* matchedForwardL1Jet = getBestMatch(*leadingJet, forwardL1Jets.begin(), forwardL1Jets.end());
     const trigger::TriggerObject* matchedHLTJet = getBestMatch(*leadingJet, triggerObjects.begin(), triggerObjects.end());
 
-    if ( leadingJetAbsEta < 2.5 and matchedCentralL1Jet )
+    if ( matchedCentralL1Jet )
     {
       hAllLeadingJet_->FillL1T(*leadingJet, *matchedCentralL1Jet);
-      hCentralLeadingJet_->FillL1T(*leadingJet, *matchedCentralL1Jet);
 
-      if ( matchedHLTJet )
+      const double l1DeltaR = deltaR(*leadingJet, *matchedCentralL1Jet);
+      if ( matchedHLTJet and l1DeltaR < maxL1DeltaR_ )
       {
-        hCentralLeadingJet_->FillHLT(*leadingJet, *matchedHLTJet);
+        hAllLeadingJet_->FillHLT(*leadingJet, *matchedHLTJet);
       }
     }
-    else if ( leadingJetAbsEta >= 2.5 and matchedForwardL1Jet )
+    if ( matchedForwardL1Jet )
     {
       hAllLeadingJet_->FillL1T(*leadingJet, *matchedForwardL1Jet);
-      hForwardLeadingJet_->FillL1T(*leadingJet, *matchedForwardL1Jet);
 
-      if ( matchedHLTJet )
+      const double l1DeltaR = deltaR(*leadingJet, *matchedCentralL1Jet);
+      if ( matchedHLTJet and l1DeltaR < maxL1DeltaR_ )
       {
-        hForwardLeadingJet_->FillHLT(*leadingJet, *matchedHLTJet);
+        hAllLeadingJet_->FillHLT(*leadingJet, *matchedHLTJet);
       }
     }
-
-    if ( matchedHLTJet )
-    {
-      hAllLeadingJet_->FillHLT(*leadingJet, *matchedHLTJet);
-    }
   }
+*/
 
   hNReco_->Fill(nReco);
 
@@ -339,5 +345,4 @@ bool JetHLTAnalyzer::isGoodJet(const reco::CaloJet& recoJet, const edm::Event& e
 
   return true;
 }
-
 

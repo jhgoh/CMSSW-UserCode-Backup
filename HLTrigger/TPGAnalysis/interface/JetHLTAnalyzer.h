@@ -46,7 +46,7 @@ private:
   typedef TH1F* TH1FP;
 
   edm::ParameterSet jetCutSet_;
-  double recoMinEt_, l1MinEt_;
+  double recoMinEt_, l1MinEt_, maxL1DeltaR_;
 
   std::string interestedFilterName_;
 
