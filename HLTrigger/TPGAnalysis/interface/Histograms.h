@@ -10,6 +10,7 @@
 
 #include <TString.h>
 #include <TH1F.h>
+#include <TH2F.h>
 
 struct Histograms
 {
@@ -28,6 +29,7 @@ struct Histograms
   };
 
   typedef TH1F* TH1FP;
+  typedef TH2F* TH2FP;
 
   TH1FP hNReco, hNL1T, hNHLT;
 
@@ -36,6 +38,8 @@ struct Histograms
   TH1FP hL1EtL1T, hL1EtaL1T, hL1PhiL1T;
   TH1FP hEtHLT, hEtaHLT, hPhiHLT;
   TH1FP hHLTEtHLT, hHLTEtaHLT, hHLTPhiHLT;
+
+  TH2FP hEtVsL1Et, hEtVsHLTEt;
 
   TH1FP hDeltaRL1T, hDeltaPhiL1T, hDeltaEtaL1T;
   TH1FP hDeltaRHLT, hDeltaPhiHLT, hDeltaEtaHLT;
