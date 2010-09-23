@@ -108,9 +108,9 @@ void JetHLTAnalyzer::beginRun(const edm::Run& run, const edm::EventSetup& eventS
     hCentralJet_ByRun_[runNumber] = new Histograms(centralJetDir, "Central", jetCutSet_, objectType);
     hForwardJet_ByRun_[runNumber] = new Histograms(forwardJetDir, "Forward", jetCutSet_, objectType);
 
-    hAllLeadingJet_ByRun_[runNumber] = new Histograms(allLeadingJetDir, "AllLeading", jetCutSet_, objectType);
-    hCentralLeadingJet_ByRun_[runNumber] = new Histograms(centralLeadingJetDir, "CentralLeading", jetCutSet_, objectType);
-    hForwardLeadingJet_ByRun_[runNumber] = new Histograms(forwardLeadingJetDir, "ForwardLeading", jetCutSet_, objectType);   
+    hAllLeadingJet_ByRun_[runNumber] = new Histograms(allLeadingJetDir, "All Leading", jetCutSet_, objectType);
+    hCentralLeadingJet_ByRun_[runNumber] = new Histograms(centralLeadingJetDir, "Central Leading", jetCutSet_, objectType);
+    hForwardLeadingJet_ByRun_[runNumber] = new Histograms(forwardLeadingJetDir, "Forward Leading", jetCutSet_, objectType);   
   }
 
   hNReco_ = hNReco_ByRun_[runNumber];
