@@ -1,23 +1,38 @@
 #include <TCanvas.h>
+#include <TFile.h>
+#include <TH1F.h>
+#include <TPad.h>
+#include <TPaveStats.h>
+#include <TLegend.h>
 #include <TGraphAsymmErrors.h>
 
 #include <vector>
 
 using namespace std;
 
+void view();
+void viewJet(TString triggerName, TString selectionName);
+void viewMuon(TString triggerName, TString selectionName);
 void drawOverlayPlots(TVirtualPad* pad, TH1F* hOff, TH1F* hL1T, TH1F* hHLT);
 void drawEfficiencyPlots(TVirtualPad* pad, TH1F* hOff, TH1F* hL1T, TH1F* hHLT);
 
 void view()
 {
+  viewJet("HLT_Jet50U_MinimumBias", "All");
   viewJet("HLT_Jet50U_MinimumBias", "Central");
+  viewJet("HLT_Jet50U_MinimumBias", "Forward");
+
+  viewJet("HLT_Jet50U_MinimumBias", "AllLeading");
+  viewJet("HLT_Jet50U_MinimumBias", "CentralLeading");
+//  viewJet("HLT_Jet50U_MinimumBias", "ForwardLeading");
 //  viewJet("HLT_Jet50U_TPGSkim", "Central");
+
 //  viewMuon("HLT_Mu9_VBTFSkim", "All");
 //  viewMuon("HLT_Mu9_VBTFSkim", "Barrel");
-//    viewMuon("HLT_Mu9_MinimumBias", "All");
-//    viewMuon("HLT_Mu9_MinimumBias", "Barrel");
-//    viewMuon("HLT_Mu9_MinimumBias", "Overlap");
-//    viewMuon("HLT_Mu9_MinimumBias", "Endcap");
+//  viewMuon("HLT_Mu9_MinimumBias", "All");
+//  viewMuon("HLT_Mu9_MinimumBias", "Barrel");
+//  viewMuon("HLT_Mu9_MinimumBias", "Overlap");
+//  viewMuon("HLT_Mu9_MinimumBias", "Endcap");
 }
 
 void viewJet(TString triggerName, TString selectionName)
@@ -27,24 +42,24 @@ void viewJet(TString triggerName, TString selectionName)
   TFile* f = TFile::Open("result/"+triggerName+".root");
 
   // Plots for Transverse energy
-  TH1F* hL1Et = (TH1F*)f->Get(selectionName+"/hEtL1T");
-  TH1F* hHLTEt = (TH1F*)f->Get(selectionName+"/hEtHLT");
+  TH1F* hEtL1 = (TH1F*)f->Get(selectionName+"/hEtL1T");
+  TH1F* hEtHLT = (TH1F*)f->Get(selectionName+"/hEtHLT");
   TH1F* hRecoEt = (TH1F*)f->Get(selectionName+"/hEtReco");
 
   c = new TCanvas(triggerName+selectionName+"Et", triggerName+" "+selectionName+" Et", 600, 700); c->Divide(1,2);
-  drawEfficiencyPlots(c->cd(1), hRecoEt, hL1Et, hHLTEt);
-  drawOverlayPlots(c->cd(2), hRecoEt, hL1Et, hHLTEt);
+  drawEfficiencyPlots(c->cd(1), hRecoEt, hEtL1, hEtHLT);
+  drawOverlayPlots(c->cd(2), hRecoEt, hEtL1, hEtHLT);
 
   c->Print("result/"+triggerName+"/"+selectionName+"_Et.png");
 
   // Plots for Pseudorapidity
   TH1F* hEtaL1 = (TH1F*)f->Get(selectionName+"/hEtaL1T");
   TH1F* hEtaHLT = (TH1F*)f->Get(selectionName+"/hEtaHLT");
-  TH1F* hRecoEta = (TH1F*)f->Get(selectionName+"/hEtaReco");
+  TH1F* hEtaReco = (TH1F*)f->Get(selectionName+"/hEtaReco");
 
-  c = new TCanvas(triggerName+"_Eta", triggerName+" "+selectionName+" Eta", 600, 700); c->Divide(1,2);
-  drawEfficiencyPlots(c->cd(1), hRecoEta, hEtaL1, hEtaHLT);
-  drawOverlayPlots(c->cd(2), hRecoEta, hEtaL1, hEtaHLT);
+  c = new TCanvas(triggerName+selectionName+"_Eta", triggerName+" "+selectionName+" Eta", 600, 700); c->Divide(1,2);
+  drawEfficiencyPlots(c->cd(1), hEtaReco, hEtaL1, hEtaHLT);
+  drawOverlayPlots(c->cd(2), hEtaReco, hEtaL1, hEtaHLT);
 
   c->Print("result/"+triggerName+"/"+selectionName+"_Eta.png");
 }
@@ -61,112 +76,168 @@ void viewMuon(TString triggerName, TString selectionName)
 
   TH1F* hEtaL1 = (TH1F*)f->Get(selectionName+"/hEtaL1T");
   TH1F* hEtaHLT = (TH1F*)f->Get(selectionName+"/hEtaHLT");
-  TH1F* hRecoEta = (TH1F*)f->Get(selectionName+"/hEtaReco");
+  TH1F* hEtaReco = (TH1F*)f->Get(selectionName+"/hEtaReco");
 
-  c = new TCanvas("c"+triggerName+selectionName+"Pt", triggerName+" "+selectionName+" Pt", 600, 700); c->Divide(1,2);
+  c = new TCanvas("c"+triggerName+selectionName+"Et", triggerName+" "+selectionName+" Et", 600, 700); c->Divide(1,2);
   drawEfficiencyPlots(c->cd(1), hEtReco, hEtL1, hEtHLT);
   drawOverlayPlots(c->cd(2), hEtReco, hEtL1, hEtHLT);
-  c->Print("result/"+triggerName+"/"+selectionName+"_Pt.png");
+  c->Print("result/"+triggerName+"/"+selectionName+"_Et.png");
 
   c = new TCanvas("c"+triggerName+selectionName+"Eta", triggerName+" "+selectionName+" Eta", 600, 700);  c->Divide(1,2);
-  drawEfficiencyPlots(c->cd(1), hRecoEta, hEtaL1, hEtaHLT);
-  drawOverlayPlots(c->cd(2), hRecoEta, hEtaL1, hEtaHLT);
+  drawEfficiencyPlots(c->cd(1), hEtaReco, hEtaL1, hEtaHLT);
+  drawOverlayPlots(c->cd(2), hEtaReco, hEtaL1, hEtaHLT);
   c->Print("result/"+triggerName+"/"+selectionName+"_Eta.png");
 }
 
 void drawOverlayPlots(TVirtualPad* pad, TH1F* hOff, TH1F* hL1T, TH1F* hHLT)
 {
-  if ( !hOff || !hL1T || !hHLT ) return;
   if ( !pad ) pad = new TCanvas;
 
   pad->SetBorderMode(0);
   pad->SetGridx();
   pad->SetGridy();
 
-  hOff->SetLineColor(kBlack);
-  hL1T->SetLineColor(kRed);
-  hHLT->SetLineColor(kBlue);
-
-  hOff->Draw();
-  hL1T->Draw("sames");
-  hHLT->Draw("sames");
+  TString drawOpt = "";
+  if ( hOff ) 
+  {
+    hOff->SetLineColor(kBlack);
+    hOff->Draw(drawOpt);
+    if ( drawOpt == "" ) drawOpt = "sames";
+  }
+  if ( hL1T )
+  {
+    hL1T->SetLineColor(kRed);
+    hL1T->Draw(drawOpt);
+    if ( drawOpt == "" ) drawOpt = "sames";
+  }
+  if ( hHLT )
+  {
+    hHLT->SetLineColor(kBlue);
+    hHLT->Draw(drawOpt);
+    if ( drawOpt == "" ) drawOpt = "sames";
+  }
 
   gPad->Update();
   TPaveStats* stats;
 
-  stats = (TPaveStats*)hOff->FindObject("stats");
-  stats->SetLineColor(hOff->GetLineColor());
-  stats->SetY1NDC(0.75); stats->SetY2NDC(0.95);
-
-  stats = (TPaveStats*)hL1T->FindObject("stats");
-  stats->SetLineColor(hL1T->GetLineColor());
-  stats->SetY1NDC(0.50); stats->SetY2NDC(0.70);
-
-  stats = (TPaveStats*)hHLT->FindObject("stats");
-  stats->SetLineColor(hHLT->GetLineColor());
-  stats->SetY1NDC(0.25); stats->SetY2NDC(0.45);
-
   TLegend* legend = new TLegend(0.50, 0.75, 0.75, 0.95);
-  legend->AddEntry(hOff, "Offline object", "lp");
-  legend->AddEntry(hL1T, "L1 object", "lp");
-  legend->AddEntry(hHLT, "HLT object", "lp");
+
+  double yNDC = 0.95;
+
+  if ( hOff )
+  {
+    stats = (TPaveStats*)hOff->FindObject("stats");
+    stats->SetLineColor(hOff->GetLineColor());
+    stats->SetY1NDC(yNDC-0.2); stats->SetY2NDC(yNDC);
+
+    yNDC -= 0.25;
+
+    legend->AddEntry(hOff, "Offline object", "lp");
+  }
+
+  if ( hL1T )
+  {
+    stats = (TPaveStats*)hL1T->FindObject("stats");
+    stats->SetLineColor(hL1T->GetLineColor());
+    stats->SetY1NDC(yNDC-0.2); stats->SetY2NDC(yNDC);
+
+    yNDC -= 0.25;
+
+    legend->AddEntry(hL1T, "L1 object", "lp");
+  }
+
+  if ( hHLT )
+  {
+    stats = (TPaveStats*)hHLT->FindObject("stats");
+    stats->SetLineColor(hHLT->GetLineColor());
+    stats->SetY1NDC(yNDC-0.2); stats->SetY2NDC(yNDC);
+
+    yNDC -= 0.25;
+
+    legend->AddEntry(hHLT, "HLT object", "lp");
+  }
+
   legend->Draw();
 }
 
 void drawEfficiencyPlots(TVirtualPad* pad, TH1F* hOff, TH1F* hL1T, TH1F* hHLT)
 {
-  if ( !hOff || !hL1T || !hHLT ) return;
   if ( !pad ) pad = new TCanvas;
+  TLegend* effLegend = new TLegend(0.75, 0.15, 0.95, 0.4);
 
   pad->SetBorderMode(0);
   pad->SetGridx();
   pad->SetGridy();
 
-  TGraphAsymmErrors* grpL1TEff =  new TGraphAsymmErrors;
-  TGraphAsymmErrors* grpHLTEff =  new TGraphAsymmErrors;
-  TGraphAsymmErrors* grpGlbEff =  new TGraphAsymmErrors;
+  TGraphAsymmErrors* grpL1TEff = 0;
+  TGraphAsymmErrors* grpHLTEff = 0;
+  TGraphAsymmErrors* grpGlbEff = 0;
 
-  grpL1TEff->BayesDivide(hL1T, hOff);
-  grpHLTEff->BayesDivide(hHLT, hL1T);
-  grpGlbEff->BayesDivide(hHLT, hOff);
+  if (hL1T && hOff) grpL1TEff = new TGraphAsymmErrors;
+  if (hHLT && hL1T) grpHLTEff = new TGraphAsymmErrors;
+  if (hHLT && hOff) grpGlbEff = new TGraphAsymmErrors;
 
-  grpL1TEff->SetName("grpL1TEff");
-  grpHLTEff->SetName("grpHLTEff");
-  grpGlbEff->SetName("grpGlbEff");
+  TString drawOpt = "AL";
 
-  grpL1TEff->SetTitle("Efficiency");
-  grpHLTEff->SetTitle("Efficiency");
-  grpGlbEff->SetTitle("Efficiency");
+  if ( grpL1TEff )
+  {
+    grpL1TEff->BayesDivide(hL1T, hOff);
+    grpL1TEff->SetName("grpL1TEff");
+    grpL1TEff->SetTitle("Efficiency");
+    grpL1TEff->GetYaxis()->SetTitle("Efficiency");
+    grpL1TEff->GetXaxis()->SetTitle(hOff->GetXaxis()->GetTitle());
 
-  grpL1TEff->GetYaxis()->SetTitle("Efficiency");
-  grpHLTEff->GetYaxis()->SetTitle("Efficiency");
-  grpGlbEff->GetYaxis()->SetTitle("Efficiency");
+    const double xmin = hOff->GetXaxis()->GetXmin();
+    const double xmax = hOff->GetXaxis()->GetXmax();
+    grpL1TEff->GetXaxis()->SetLimits(xmin, xmax);
 
-  grpL1TEff->GetXaxis()->SetTitle(hOff->GetXaxis()->GetTitle());
-  grpHLTEff->GetXaxis()->SetTitle(hOff->GetXaxis()->GetTitle());
-  grpGlbEff->GetXaxis()->SetTitle(hOff->GetXaxis()->GetTitle());
+    grpL1TEff->SetLineColor(kRed);
+    grpL1TEff->SetMinimum(0); grpL1TEff->SetMaximum(1.1);
+    grpL1TEff->Draw(drawOpt);
 
-  const double xmin = hOff->GetXaxis()->GetXmin();
-  const double xmax = hOff->GetXaxis()->GetXmax();
-  grpL1TEff->GetXaxis()->SetLimits(xmin, xmax);
-  grpHLTEff->GetXaxis()->SetLimits(xmin, xmax);
-  grpGlbEff->GetXaxis()->SetLimits(xmin, xmax);
+    if ( drawOpt == "AL" ) drawOpt = "L";
+    effLegend->AddEntry(grpL1TEff, "L1 efficiency", "lp");
+  }
 
-  grpL1TEff->SetLineColor(kRed);
-  grpHLTEff->SetLineColor(kBlue);
-  grpGlbEff->SetLineColor(kGreen);
+  if ( grpHLTEff )
+  {
+    grpHLTEff->BayesDivide(hHLT, hL1T);
+    grpHLTEff->SetName("grpHLTEff");
+    grpHLTEff->SetTitle("Efficiency");
+    grpHLTEff->GetYaxis()->SetTitle("Efficiency");
+    grpHLTEff->GetXaxis()->SetTitle(hOff->GetXaxis()->GetTitle());
 
-  grpL1TEff->SetMinimum(0); grpL1TEff->SetMaximum(1.1);
-  grpHLTEff->SetMinimum(0); grpHLTEff->SetMaximum(1.1);
-  grpGlbEff->SetMinimum(0); grpGlbEff->SetMaximum(1.1);
+    const double xmin = hHLT->GetXaxis()->GetXmin();
+    const double xmax = hHLT->GetXaxis()->GetXmax();
+    grpHLTEff->GetXaxis()->SetLimits(xmin, xmax);
 
-  grpL1TEff->Draw("AL");
-  grpHLTEff->Draw("L");
-  grpGlbEff->Draw("L");
+    grpHLTEff->SetLineColor(kBlue);
+    grpHLTEff->SetMinimum(0); grpHLTEff->SetMaximum(1.1);
+    grpHLTEff->Draw(drawOpt);
 
-  TLegend* effLegend = new TLegend(0.75, 0.15, 0.95, 0.4);
-  effLegend->AddEntry(grpL1TEff, "L1 efficiency", "lp");
-  effLegend->AddEntry(grpHLTEff, "HLT efficiency", "lp");
-  effLegend->AddEntry(grpGlbEff, "Global efficiency", "lp");
+    if ( drawOpt == "AL" ) drawOpt = "L";
+    effLegend->AddEntry(grpHLTEff, "HLT efficiency", "lp");
+  }
+
+  if ( grpGlbEff )
+  {
+    grpGlbEff->BayesDivide(hHLT, hOff);
+    grpGlbEff->SetName("grpGlbEff");
+    grpGlbEff->SetTitle("Efficiency");
+    grpGlbEff->GetYaxis()->SetTitle("Efficiency");
+    grpGlbEff->GetXaxis()->SetTitle(hOff->GetXaxis()->GetTitle());
+
+    const double xmin = hHLT->GetXaxis()->GetXmin();
+    const double xmax = hHLT->GetXaxis()->GetXmax();
+    grpGlbEff->GetXaxis()->SetLimits(xmin, xmax);
+
+    grpGlbEff->SetLineColor(kGreen);
+    grpGlbEff->SetMinimum(0); grpGlbEff->SetMaximum(1.1);
+    grpGlbEff->Draw(drawOpt);
+
+    if ( drawOpt == "AL" ) drawOpt = "L";
+    effLegend->AddEntry(grpGlbEff, "Global efficiency", "lp");
+  }
+
   effLegend->Draw();
 }
