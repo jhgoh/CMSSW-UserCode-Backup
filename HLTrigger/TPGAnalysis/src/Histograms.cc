@@ -7,6 +7,7 @@
 
 #include <TString.h>
 #include <TH1F.h>
+#include <TH2F.h>
 
 Histograms::Histograms(TFileDirectory& dir, TString prefix, edm::ParameterSet& cutSet, int objectType):
   objectType_(objectType)
@@ -94,27 +95,31 @@ Histograms::Histograms(TFileDirectory& dir, TString prefix, edm::ParameterSet& c
   hNHLT = dir.make<TH1F>("hNHLT", prefix+"Number of HLT matched reco objects per event;Number of reco object", 4, 1, 5);
 
   // Kinematic variables of Reco objects
-  hEtReco = dir.make<TH1F>("hEtReco", prefix+"Transverse momentum of reco object;Reco p_{T} [GeV/c]", nBinEt, binsEtPtr);
+  hEtReco = dir.make<TH1F>("hEtReco", prefix+"Transverse energy of reco object;Reco p_{T} [GeV/c]", nBinEt, binsEtPtr);
   hEtaReco = dir.make<TH1F>("hEtaReco", prefix+"Pseudorapidity of reco object;Reco #eta", nBinEta, binsEtaPtr);
   hPhiReco = dir.make<TH1F>("hPhiReco", prefix+"Azimuthal angle of reco object;Reco #phi [Radian]", 50, -3.15, 3.15);
 
   // Kinematic variables of L1T objects
-  hEtL1T = dir.make<TH1F>("hEtL1T", prefix+"Transverse momentum of reco object matched to L1T object;Reco p_{T} [GeV/c]", nBinEt, binsEtPtr);
+  hEtL1T = dir.make<TH1F>("hEtL1T", prefix+"Transverse energy of reco object matched to L1T object;Reco p_{T} [GeV/c]", nBinEt, binsEtPtr);
   hEtaL1T = dir.make<TH1F>("hEtaL1T", prefix+"Pseudorapidity of reco object matched to L1T object;Reco #eta", nBinEta, binsEtaPtr);
   hPhiL1T = dir.make<TH1F>("hPhiL1T", prefix+"Azimuthal angle of reco object matched to L1T object;Reco #phi [Radian]", 50, -3.15, 3.15);
 
-  hL1EtL1T = dir.make<TH1F>("hL1EtL1T", prefix+"Transverse momentum of L1 object matched to reco object;L1 p_{T} [GeV/c]", nBinEt, binsEtPtr);
+  hL1EtL1T = dir.make<TH1F>("hL1EtL1T", prefix+"Transverse energy of L1 object matched to reco object;L1 p_{T} [GeV/c]", nBinEt, binsEtPtr);
   hL1EtaL1T = dir.make<TH1F>("hL1EtaL1T", prefix+"Pseudorapidity of L1 object matched to reco object;L1 #eta", nBinEta, binsEtaPtr);
   hL1PhiL1T = dir.make<TH1F>("hL1PhiL1T", prefix+"Azimuthal angle of L1 object matched to reco object;L1 #phi [Radian]", 50, -3.15, 3.15);
 
+  hEtVsL1Et = dir.make<TH2F>("hEtVsL1Et", prefix+"Transverse energy of reco object vs L1 object;Reco p_{T} [GeV/c];L1 p_{T} [GeV/c]", nBinEt, binsEtPtr, nBinEt, binsEtPtr);
+
   // Kinematic variables of HLT objects
-  hEtHLT = dir.make<TH1F>("hEtHLT", prefix+"Transverse momentum of reco object matched to HLT object;Reco p_{T} [GeV/c]", nBinEt, binsEtPtr);
+  hEtHLT = dir.make<TH1F>("hEtHLT", prefix+"Transverse energy of reco object matched to HLT object;Reco p_{T} [GeV/c]", nBinEt, binsEtPtr);
   hEtaHLT = dir.make<TH1F>("hEtaHLT", prefix+"Pseudorapidity of reco object matched to HLT object;Reco #eta", nBinEta, binsEtaPtr);
   hPhiHLT = dir.make<TH1F>("hPhiHLT", prefix+"Azimuthal angle of reco object matched to HLT object;Reco #phi [Radian]", 50, -3.15, 3.15);
 
-  hHLTEtHLT = dir.make<TH1F>("hHLTEtHLT", prefix+"Transverse momentum of HLT object matched to reco object;HLT p_{T} [GeV/c]", nBinEt, binsEtPtr);
+  hHLTEtHLT = dir.make<TH1F>("hHLTEtHLT", prefix+"Transverse energy of HLT object matched to reco object;HLT p_{T} [GeV/c]", nBinEt, binsEtPtr);
   hHLTEtaHLT = dir.make<TH1F>("hHLTEtaHLT", prefix+"Pseudorapidity of HLT object matched to reco object;HLT #eta", nBinEta, binsEtaPtr);
   hHLTPhiHLT = dir.make<TH1F>("hHLTPhiHLT", prefix+"Azimuthal angle of HLT object matched to reco object;HLT #phi [Radian]", 50, -3.15, 3.15);
+
+  hEtVsHLTEt = dir.make<TH2F>("hEtVsHLTEt", prefix+"Transverse energy of reco object vs HLT object;Reco p_{T} [GeV/c];HLT p_{T} [GeV/c]", nBinEt, binsEtPtr, nBinEt, binsEtPtr);
 
   // Matching variables
   hDeltaRL1T = dir.make<TH1F>("hDeltaRL1T", prefix+"#DeltaR between reco object - L1T object;#DeltaR = #sqrt{#Delta#eta^{2} + #Delta#phi^{2}}", 100, 0, 1);
@@ -216,17 +221,19 @@ void Histograms::FillL1T(const reco::Candidate& recoCand, const reco::LeafCandid
   const double dEta = l1Eta - recoEta;
   const double dPhi = deltaPhi(recoPhi, l1Phi);
 
-  hEtL1T->Fill(recoEt);
-  hL1EtL1T->Fill(l1Et);
-
-  if ( recoEt < workingPointEt_ ) return;
-  
   hDeltaRL1T->Fill(dR);
   hDeltaEtaL1T->Fill(dEta);
   hDeltaPhiL1T->Fill(dPhi);
 
   if ( maxL1DeltaR_ < dR ) return;
 
+  hEtL1T->Fill(recoEt);
+  hL1EtL1T->Fill(l1Et);
+
+  hEtVsL1Et->Fill(recoEt, l1Et);
+
+  if ( recoEt < workingPointEt_ ) return;
+  
   hEtaL1T->Fill(recoEta);
   hPhiL1T->Fill(recoPhi);
 
@@ -250,17 +257,19 @@ void Histograms::FillL1T(const reco::Muon& recoMuon, const reco::LeafCandidate& 
   const double dEta = l1Eta - recoPosEta;
   const double dPhi = deltaPhi(recoPosPhi, l1Phi);
 
-  hEtL1T->Fill(recoEt);
-  hL1EtL1T->Fill(l1Et);
-
-  if ( recoEt < workingPointEt_ ) return;
-  
   hDeltaRL1T->Fill(dR);
   hDeltaEtaL1T->Fill(dEta);
   hDeltaPhiL1T->Fill(dPhi);
 
   if ( maxL1DeltaR_ < dR ) return;
 
+  hEtL1T->Fill(recoEt);
+  hL1EtL1T->Fill(l1Et);
+
+  hEtVsL1Et->Fill(recoEt, l1Et);
+
+  if ( recoEt < workingPointEt_ ) return;
+  
   hEtaL1T->Fill(recoEta);
   hPhiL1T->Fill(recoPhi);
 
@@ -284,17 +293,19 @@ void Histograms::FillHLT(const reco::Candidate& recoCand, const trigger::Trigger
   const double dEta = hltEta - recoEta;
   const double dPhi = deltaPhi(recoPhi, hltPhi);
 
-  hEtHLT->Fill(recoEt);
-  hHLTEtHLT->Fill(hltEt);
-
-  if ( recoEt < workingPointEt_ ) return;
-  
   hDeltaRHLT->Fill(dR);
   hDeltaEtaHLT->Fill(dEta);
   hDeltaPhiHLT->Fill(dPhi);
 
   if ( maxHLTDeltaR_ < dR ) return;
 
+  hEtHLT->Fill(recoEt);
+  hHLTEtHLT->Fill(hltEt);
+
+  hEtVsHLTEt->Fill(recoEt, hltEt);
+
+  if ( recoEt < workingPointEt_ ) return;
+  
   hEtaHLT->Fill(recoEta);
   hPhiHLT->Fill(recoPhi);
 
