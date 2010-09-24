@@ -304,7 +304,7 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
 
     if ( matchedL1Muon )
     {
-      hAllLeadingMuon_->FillL1T(*leadingMuon, *matchedL1Muon);
+      hAllLeadingMuon_->FillL1T(*leadingMuon, *matchedL1Muon, leadingMuonPosEta, leadingMuonPosPhi);
 
       const double l1DeltaR = deltaR(leadingMuonPosEta, leadingMuonPosPhi, matchedL1Muon->eta(), matchedL1Muon->phi());
       if ( matchedHLTMuon and l1DeltaR < maxL1DeltaR_ )
@@ -324,7 +324,7 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
 
     if ( matchedL1Muon )
     {
-      hBarrelLeadingMuon_->FillL1T(*barrelLeadingMuon, *matchedL1Muon);
+      hBarrelLeadingMuon_->FillL1T(*barrelLeadingMuon, *matchedL1Muon, barrelLeadingMuonPosEta, barrelLeadingMuonPosPhi);
 
       const double l1DeltaR = deltaR(barrelLeadingMuonPosEta, barrelLeadingMuonPosPhi, matchedL1Muon->eta(), matchedL1Muon->phi());
       if ( matchedHLTMuon and l1DeltaR < maxL1DeltaR_ )
@@ -344,7 +344,7 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
 
     if ( matchedL1Muon )
     {
-      hOverlapLeadingMuon_->FillL1T(*overlapLeadingMuon, *matchedL1Muon);
+      hOverlapLeadingMuon_->FillL1T(*overlapLeadingMuon, *matchedL1Muon, overlapLeadingMuonPosEta, overlapLeadingMuonPosPhi);
 
       const double l1DeltaR = deltaR(overlapLeadingMuonPosEta, overlapLeadingMuonPosPhi, matchedL1Muon->eta(), matchedL1Muon->phi());
       if ( matchedHLTMuon and l1DeltaR < maxL1DeltaR_ )
@@ -364,7 +364,7 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
 
     if ( matchedL1Muon )
     {
-      hEndcapLeadingMuon_->FillL1T(*endcapLeadingMuon, *matchedL1Muon);
+      hEndcapLeadingMuon_->FillL1T(*endcapLeadingMuon, *matchedL1Muon, endcapLeadingMuonPosEta, endcapLeadingMuonPosPhi);
 
       const double l1DeltaR = deltaR(endcapLeadingMuonPosEta, endcapLeadingMuonPosPhi, matchedL1Muon->eta(), matchedL1Muon->phi());
       if ( matchedHLTMuon and l1DeltaR < maxL1DeltaR_ )
