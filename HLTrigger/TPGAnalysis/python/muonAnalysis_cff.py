@@ -24,10 +24,11 @@ noscraping = cms.EDFilter("FilterOutScraping",
     thresh = cms.untracked.double(0.25)
 )
 
-oneGoodVertexFilter = cms.EDFilter("VertexSelector",
-    src = cms.InputTag("offlinePrimaryVertices"),
-    cut = cms.string("!isFake && ndof > 4 && abs(z) <= 20 && position.Rho <= 2"),
-    filter = cms.bool(True),   # otherwise it won't filter the events, just produce an empty vertex collection.
+primaryVertexFilter = cms.EDFilter("GoodVertexFilter",
+    vertexCollection = cms.InputTag("offlinePrimaryVertices"),
+    minimumNDOF = cms.uint32(4),
+    maxAbsZ = cms.double(15),
+    maxd0 = cms.double(2)
 )
 
 muonCounterFilter = cms.EDFilter("CandViewCountFilter",
@@ -38,12 +39,12 @@ muonCounterFilter = cms.EDFilter("CandViewCountFilter",
 
 muonMinBiasCommonFilters = cms.Sequence(
     hltLevel1GTSeed * noscraping * 
-    oneGoodVertexFilter * muonCounterFilter
+    primaryVertexFilter * muonCounterFilter
 )
 
 muonCommonFilters = cms.Sequence(
     hltLevel1GTSeed * muonOrthogonalTriggers * noscraping * 
-    oneGoodVertexFilter * muonCounterFilter
+    primaryVertexFilter * muonCounterFilter
 )
 
 from RecoMuon.TrackingTools.MuonServiceProxy_cff import *
