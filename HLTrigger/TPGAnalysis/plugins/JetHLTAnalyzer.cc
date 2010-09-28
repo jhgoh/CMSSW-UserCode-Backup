@@ -308,7 +308,7 @@ void JetHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& eve
     {
       hAllLeadingJet_->FillL1T(*leadingJet, *matchedForwardL1Jet);
 
-      const double l1DeltaR = deltaR(*leadingJet, *matchedCentralL1Jet);
+      const double l1DeltaR = deltaR(*leadingJet, *matchedForwardL1Jet);
       if ( matchedHLTJet and l1DeltaR < maxL1DeltaR_ )
       {
         hAllLeadingJet_->FillHLT(*leadingJet, *matchedHLTJet);
