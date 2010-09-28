@@ -24,15 +24,17 @@ void view()
 
   viewJet("HLT_Jet50U_MinimumBias", "AllLeading");
   viewJet("HLT_Jet50U_MinimumBias", "CentralLeading");
-//  viewJet("HLT_Jet50U_MinimumBias", "ForwardLeading");
-//  viewJet("HLT_Jet50U_TPGSkim", "Central");
+  viewJet("HLT_Jet50U_MinimumBias", "ForwardLeading");
 
-//  viewMuon("HLT_Mu9_VBTFSkim", "All");
-//  viewMuon("HLT_Mu9_VBTFSkim", "Barrel");
-//  viewMuon("HLT_Mu9_MinimumBias", "All");
-//  viewMuon("HLT_Mu9_MinimumBias", "Barrel");
-//  viewMuon("HLT_Mu9_MinimumBias", "Overlap");
-//  viewMuon("HLT_Mu9_MinimumBias", "Endcap");
+  viewMuon("HLT_Mu9_MinimumBias", "All");
+  viewMuon("HLT_Mu9_MinimumBias", "Barrel");
+  viewMuon("HLT_Mu9_MinimumBias", "Overlap");
+  viewMuon("HLT_Mu9_MinimumBias", "Endcap");
+
+  viewMuon("HLT_Mu9_MinimumBias", "AllLeading");
+  viewMuon("HLT_Mu9_MinimumBias", "BarrelLeading");
+  viewMuon("HLT_Mu9_MinimumBias", "OverlapLeading");
+  viewMuon("HLT_Mu9_MinimumBias", "EndcapLeading");
 }
 
 void viewJet(TString triggerName, TString selectionName)
@@ -177,7 +179,7 @@ void drawEfficiencyPlots(TVirtualPad* pad, TH1F* hOff, TH1F* hL1T, TH1F* hHLT)
   if (hHLT && hL1T) grpHLTEff = new TGraphAsymmErrors;
   if (hHLT && hOff) grpGlbEff = new TGraphAsymmErrors;
 
-  TString drawOpt = "AL";
+  TString drawOpt = "AP";
 
   if ( grpL1TEff )
   {
@@ -195,7 +197,7 @@ void drawEfficiencyPlots(TVirtualPad* pad, TH1F* hOff, TH1F* hL1T, TH1F* hHLT)
     grpL1TEff->SetMinimum(0); grpL1TEff->SetMaximum(1.1);
     grpL1TEff->Draw(drawOpt);
 
-    if ( drawOpt == "AL" ) drawOpt = "L";
+    if ( drawOpt == "AP" ) drawOpt = "P";
     effLegend->AddEntry(grpL1TEff, "L1 efficiency", "lp");
   }
 
@@ -215,7 +217,7 @@ void drawEfficiencyPlots(TVirtualPad* pad, TH1F* hOff, TH1F* hL1T, TH1F* hHLT)
     grpHLTEff->SetMinimum(0); grpHLTEff->SetMaximum(1.1);
     grpHLTEff->Draw(drawOpt);
 
-    if ( drawOpt == "AL" ) drawOpt = "L";
+    if ( drawOpt == "AP" ) drawOpt = "P";
     effLegend->AddEntry(grpHLTEff, "HLT efficiency", "lp");
   }
 
@@ -235,7 +237,7 @@ void drawEfficiencyPlots(TVirtualPad* pad, TH1F* hOff, TH1F* hL1T, TH1F* hHLT)
     grpGlbEff->SetMinimum(0); grpGlbEff->SetMaximum(1.1);
     grpGlbEff->Draw(drawOpt);
 
-    if ( drawOpt == "AL" ) drawOpt = "L";
+    if ( drawOpt == "AP" ) drawOpt = "P";
     effLegend->AddEntry(grpGlbEff, "Global efficiency", "lp");
   }
 
