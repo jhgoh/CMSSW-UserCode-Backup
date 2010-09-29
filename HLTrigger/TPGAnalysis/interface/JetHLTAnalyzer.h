@@ -54,18 +54,26 @@ private:
   //edm::InputTag triggerEventTag_;
   edm::InputTag recoJetTag_;
 
-  std::map<int, TH1FP> hNReco_ByRun_;
-  std::map<int, TH1FP> hNCentralL1T_ByRun_, hNForwardL1T_ByRun_, hNDuplicatedL1T_ByRun_;
-  std::map<int, TH1FP> hNCentralHLT_ByRun_, hNForwardHLT_ByRun_;
-
   TH1FP hNReco_;
-  TH1FP hNCentralL1T_, hNForwardL1T_, hNDuplicatedL1T_; 
-  TH1FP hNCentralHLT_, hNForwardHLT_;
+  TH1FP hNCentralL1T_, hNOverlapL1T_, hNForwardL1T_, hNDuplicatedL1T_; 
+  TH1FP hNCentralHLT_, hNOverlapHLT_, hNForwardHLT_;
 
-  std::map<int, Histograms*> hAllJet_ByRun_, hCentralJet_ByRun_, hForwardJet_ByRun_;
-  std::map<int, Histograms*> hAllLeadingJet_ByRun_, hCentralLeadingJet_ByRun_, hForwardLeadingJet_ByRun_;
-  Histograms* hAllJet_, * hCentralJet_, * hForwardJet_;
-  Histograms* hAllLeadingJet_, * hCentralLeadingJet_, * hForwardLeadingJet_;
+  std::map<int, Histograms*> hAllJet_ByRun_, hAllLeadingJet_ByRun_;
+  std::map<int, Histograms*> hCentralJet_ByRun_, hCentralLeadingJet_ByRun_;
+  std::map<int, Histograms*> hOverlapJet_ByRun_, hOverlapLeadingJet_ByRun_;
+  std::map<int, Histograms*> hForwardJet_ByRun_, hForwardLeadingJet_ByRun_;
+
+  Histograms* hAllJet_, * hAllLeadingJet_;
+  Histograms* hCentralJet_, * hCentralLeadingJet_;
+  Histograms* hOverlapJet_, * hOverlapLeadingJet_;
+  Histograms* hForwardJet_, * hForwardLeadingJet_;
+
+  Histograms* hAllJet_AllRun_, * hAllLeadingJet_AllRun_;
+  Histograms* hCentralJet_AllRun_, * hCentralLeadingJet_AllRun_;
+  Histograms* hOverlapJet_AllRun_, * hOverlapLeadingJet_AllRun_;
+  Histograms* hForwardJet_AllRun_, * hForwardLeadingJet_AllRun_;
+
+  Histograms* hAllJetNoL1_;
 
   reco::helper::JetIDHelper* jetIDHelper_;
 };
