@@ -42,8 +42,8 @@ Histograms::Histograms(TFileDirectory& dir, TString prefix, edm::ParameterSet& c
     const unsigned int nEt = 300;
     const double minEt = 0, maxEt = 300;
 
-    const unsigned int nEta = 50;
-    const double minEta = -4, maxEta = 4;
+    const unsigned int nEta = 22;
+    const double minEta = -5, maxEta = 5;
 
     binsEt.reserve(nEt);
     binsEta.reserve(nEta);
