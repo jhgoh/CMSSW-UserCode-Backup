@@ -18,35 +18,47 @@ void drawEfficiencyPlots(TVirtualPad* pad, TH1F* hOff, TH1F* hL1T, TH1F* hHLT);
 
 void view()
 {
-  viewJet("HLT_Jet50U_MinimumBias", "All");
-  viewJet("HLT_Jet50U_MinimumBias", "Central");
-  viewJet("HLT_Jet50U_MinimumBias", "Forward");
+  viewJet("HLT_Jet50U_MinimumBias", "jetHLTAnalyzer/All");
+  viewJet("HLT_Jet50U_MinimumBias", "jetHLTAnalyzer/Central");
+  viewJet("HLT_Jet50U_MinimumBias", "jetHLTAnalyzer/Overlap");
+  viewJet("HLT_Jet50U_MinimumBias", "jetHLTAnalyzer/Forward");
 
-  viewJet("HLT_Jet50U_MinimumBias", "AllLeading");
-  viewJet("HLT_Jet50U_MinimumBias", "CentralLeading");
-  viewJet("HLT_Jet50U_MinimumBias", "ForwardLeading");
+  viewJet("HLT_Jet50U_MinimumBias", "jetHLTAnalyzer/AllLeading");
+  viewJet("HLT_Jet50U_MinimumBias", "jetHLTAnalyzer/CentralLeading");
+  viewJet("HLT_Jet50U_MinimumBias", "jetHLTAnalyzer/OverlapLeading");
+  viewJet("HLT_Jet50U_MinimumBias", "jetHLTAnalyzer/ForwardLeading");
 
-  viewMuon("HLT_Mu9_MinimumBias", "All");
-  viewMuon("HLT_Mu9_MinimumBias", "Barrel");
-  viewMuon("HLT_Mu9_MinimumBias", "Overlap");
-  viewMuon("HLT_Mu9_MinimumBias", "Endcap");
+  viewJet("HLT_Jet50U_MinimumBias", "jetHLTAnalyzer/AllJetNoL1");
+  viewJet("HLT_Jet50U_MinimumBias", "jetHLTAnalyzer/CentralJetNoL1");
+  viewJet("HLT_Jet50U_MinimumBias", "jetHLTAnalyzer/OverlapJetNoL1");
+  viewJet("HLT_Jet50U_MinimumBias", "jetHLTAnalyzer/ForwardJetNoL1");
 
-  viewMuon("HLT_Mu9_MinimumBias", "AllLeading");
-  viewMuon("HLT_Mu9_MinimumBias", "BarrelLeading");
-  viewMuon("HLT_Mu9_MinimumBias", "OverlapLeading");
-  viewMuon("HLT_Mu9_MinimumBias", "EndcapLeading");
+/*
+  viewMuon("HLT_Mu9_MinimumBias", "muonHLTAnalyzer/All");
+  viewMuon("HLT_Mu9_MinimumBias", "muonHLTAnalyzer/Barrel");
+  viewMuon("HLT_Mu9_MinimumBias", "muonHLTAnalyzer/Overlap");
+  viewMuon("HLT_Mu9_MinimumBias", "muonHLTAnalyzer/Endcap");
+
+  viewMuon("HLT_Mu9_MinimumBias", "muonHLTAnalyzer/AllLeading");
+  viewMuon("HLT_Mu9_MinimumBias", "muonHLTAnalyzer/BarrelLeading");
+  viewMuon("HLT_Mu9_MinimumBias", "muonHLTAnalyzer/OverlapLeading");
+  viewMuon("HLT_Mu9_MinimumBias", "muonHLTAnalyzer/EndcapLeading");
+*/
 }
 
-void viewJet(TString triggerName, TString selectionName)
+void viewJet(TString triggerName, TString baseDir)
 {
+  TString selectionName = baseDir;
+  selectionName.ReplaceAll("/", "_");
+
   TCanvas* c;
 
   TFile* f = TFile::Open("result/"+triggerName+".root");
 
   // Plots for Transverse energy
-  TH1F* hEtL1 = (TH1F*)f->Get(selectionName+"/hEtL1T");
-  TH1F* hEtHLT = (TH1F*)f->Get(selectionName+"/hEtHLT");
-  TH1F* hRecoEt = (TH1F*)f->Get(selectionName+"/hEtReco");
+  TH1F* hEtL1 = 0;//(TH1F*)f->Get(baseDir+"/hEtL1T");
+  TH1F* hEtHLT = (TH1F*)f->Get(baseDir+"/hEtHLT");
+  TH1F* hRecoEt = (TH1F*)f->Get(baseDir+"/hEtReco");
 
   c = new TCanvas(triggerName+selectionName+"Et", triggerName+" "+selectionName+" Et", 600, 700); c->Divide(1,2);
   drawEfficiencyPlots(c->cd(1), hRecoEt, hEtL1, hEtHLT);
@@ -55,9 +67,9 @@ void viewJet(TString triggerName, TString selectionName)
   c->Print("result/"+triggerName+"/"+selectionName+"_Et.png");
 
   // Plots for Pseudorapidity
-  TH1F* hEtaL1 = (TH1F*)f->Get(selectionName+"/hEtaL1T");
-  TH1F* hEtaHLT = (TH1F*)f->Get(selectionName+"/hEtaHLT");
-  TH1F* hEtaReco = (TH1F*)f->Get(selectionName+"/hEtaReco");
+  TH1F* hEtaL1 = 0;//(TH1F*)f->Get(baseDir+"/hEtaL1T");
+  TH1F* hEtaHLT = (TH1F*)f->Get(baseDir+"/hEtaHLT");
+  TH1F* hEtaReco = (TH1F*)f->Get(baseDir+"/hEtaReco");
 
   c = new TCanvas(triggerName+selectionName+"_Eta", triggerName+" "+selectionName+" Eta", 600, 700); c->Divide(1,2);
   drawEfficiencyPlots(c->cd(1), hEtaReco, hEtaL1, hEtaHLT);
@@ -66,19 +78,22 @@ void viewJet(TString triggerName, TString selectionName)
   c->Print("result/"+triggerName+"/"+selectionName+"_Eta.png");
 }
 
-void viewMuon(TString triggerName, TString selectionName)
+void viewMuon(TString triggerName, TString baseDir)
 {
+  TString selectionName = baseDir;
+  selectionName.ReplaceAll("/", "_");
+
   TCanvas* c;
 
   TFile* f = TFile::Open("result/"+triggerName+".root");
 
-  TH1F* hEtL1 = (TH1F*)f->Get(selectionName+"/hEtL1T");
-  TH1F* hEtHLT = (TH1F*)f->Get(selectionName+"/hEtHLT");
-  TH1F* hEtReco = (TH1F*)f->Get(selectionName+"/hEtReco");
+  TH1F* hEtL1 = (TH1F*)f->Get(baseDir+"/hEtL1T");
+  TH1F* hEtHLT = (TH1F*)f->Get(baseDir+"/hEtHLT");
+  TH1F* hEtReco = (TH1F*)f->Get(baseDir+"/hEtReco");
 
-  TH1F* hEtaL1 = (TH1F*)f->Get(selectionName+"/hEtaL1T");
-  TH1F* hEtaHLT = (TH1F*)f->Get(selectionName+"/hEtaHLT");
-  TH1F* hEtaReco = (TH1F*)f->Get(selectionName+"/hEtaReco");
+  TH1F* hEtaL1 = (TH1F*)f->Get(baseDir+"/hEtaL1T");
+  TH1F* hEtaHLT = (TH1F*)f->Get(baseDir+"/hEtaHLT");
+  TH1F* hEtaReco = (TH1F*)f->Get(baseDir+"/hEtaReco");
 
   c = new TCanvas("c"+triggerName+selectionName+"Et", triggerName+" "+selectionName+" Et", 600, 700); c->Divide(1,2);
   drawEfficiencyPlots(c->cd(1), hEtReco, hEtL1, hEtHLT);
@@ -93,6 +108,12 @@ void viewMuon(TString triggerName, TString selectionName)
 
 void drawOverlayPlots(TVirtualPad* pad, TH1F* hOff, TH1F* hL1T, TH1F* hHLT)
 {
+  if ( !hOff && !hL1T && !hHLT )
+  {
+    cout << "Null" << endl;
+    return;
+  }
+
   if ( !pad ) pad = new TCanvas;
 
   pad->SetBorderMode(0);
@@ -164,6 +185,12 @@ void drawOverlayPlots(TVirtualPad* pad, TH1F* hOff, TH1F* hL1T, TH1F* hHLT)
 
 void drawEfficiencyPlots(TVirtualPad* pad, TH1F* hOff, TH1F* hL1T, TH1F* hHLT)
 {
+  if ( !hOff && !hL1T && !hHLT )
+  {
+    cout << "Null" << endl;
+    return;
+  }
+
   if ( !pad ) pad = new TCanvas;
   TLegend* effLegend = new TLegend(0.75, 0.15, 0.95, 0.4);
 
