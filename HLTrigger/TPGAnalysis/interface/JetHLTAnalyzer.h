@@ -1,6 +1,8 @@
 #ifndef HLTrigger_TPGAnalysis_JetHLTAnalyzer_H
 #define HLTrigger_TPGAnalysis_JetHLTAnalyzer_H
 
+#include "PhysicsTools/SelectorUtils/interface/JetIDSelectionFunctor.h"
+
 #include "FWCore/Framework/interface/Frameworkfwd.h"
 #include "FWCore/Framework/interface/EDAnalyzer.h"
 
@@ -35,11 +37,8 @@ public:
   void analyze(const edm::Event& event, const edm::EventSetup& eventSetup);
 
 private:
-  typedef l1extra::L1JetParticleCollection::const_iterator L1Iter;
-  typedef std::vector<trigger::TriggerObject>::const_iterator HLTIter;
-
-  const l1extra::L1JetParticle* getBestMatch(const reco::Candidate& recoCand, L1Iter l1Begin, L1Iter l1End);
-  const trigger::TriggerObject* getBestMatch(const reco::Candidate& recoCand, HLTIter hltBegin, HLTIter hltEnd);
+  template<typename T>
+  const T* getBestMatch(const reco::Candidate& recoCand, std::vector<T>& targetCands);
   bool isGoodJet(const reco::CaloJet& recoJet, const edm::Event& event);
 
   typedef std::vector<std::string> VString;
@@ -74,6 +73,9 @@ private:
   Histograms* hForwardJet_AllRun_, * hForwardLeadingJet_AllRun_;
 
   Histograms* hAllJetNoL1_;
+  Histograms* hCentralJetNoL1_;
+  Histograms* hOverlapJetNoL1_;
+  Histograms* hForwardJetNoL1_;
 
   reco::helper::JetIDHelper* jetIDHelper_;
 };

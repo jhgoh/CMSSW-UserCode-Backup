@@ -22,12 +22,12 @@
 #include <TString.h>
 #include <memory>
 
-const l1extra::L1MuonParticle* MuonHLTAnalyzer::getBestMatch(const double recoPosEta, const double recoPosPhi, L1Iter l1Begin, L1Iter l1End)
+const l1extra::L1MuonParticle* MuonHLTAnalyzer::getBestMatch(const double recoPosEta, const double recoPosPhi, l1extra::L1MuonParticleCollection& l1Particles)
 {
   const l1extra::L1MuonParticle* matchedL1Cand = 0;
   double matchedDeltaR = 1e14;
 
-  for ( L1Iter l1Cand = l1Begin; l1Cand != l1End; ++l1Cand )
+  for ( L1Iter l1Cand = l1Particles.begin(); l1Cand != l1Particles.end(); ++l1Cand )
   {
     const double l1Eta = l1Cand->eta();
     const double l1Phi = l1Cand->phi();
@@ -44,12 +44,12 @@ const l1extra::L1MuonParticle* MuonHLTAnalyzer::getBestMatch(const double recoPo
   return matchedL1Cand;
 }
 
-const trigger::TriggerObject* MuonHLTAnalyzer::getBestMatch(const reco::Candidate& recoCand, HLTIter hltBegin, HLTIter hltEnd)
+const trigger::TriggerObject* MuonHLTAnalyzer::getBestMatch(const reco::Candidate& recoCand, std::vector<trigger::TriggerObject>& triggerObjects)
 {
   const trigger::TriggerObject* matchedHLTCand = 0;
   double matchedDeltaR = 1e14;
 
-  for ( HLTIter hltCand = hltBegin; hltCand != hltEnd; ++hltCand )
+  for ( HLTIter hltCand = triggerObjects.begin(); hltCand != triggerObjects.end(); ++hltCand )
   {
     //const double hltDeltaR = deltaR(recoCand, *hltCand);
     const double hltDeltaR = deltaR(recoCand.eta(), recoCand.phi(), hltCand->eta(), hltCand->phi());
@@ -272,8 +272,8 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
     }
 
     // Then try matching
-    const l1extra::L1MuonParticle* matchedL1Muon = getBestMatch(recoPosEta, recoPosPhi, l1Muons.begin(), l1Muons.end());
-    const trigger::TriggerObject* matchedHLTMuon = getBestMatch(*recoMuon, triggerObjects.begin(), triggerObjects.end());
+    const l1extra::L1MuonParticle* matchedL1Muon = getBestMatch(recoPosEta, recoPosPhi, l1Muons);
+    const trigger::TriggerObject* matchedHLTMuon = getBestMatch(*recoMuon, triggerObjects);
 
     if ( matchedL1Muon )
     {
@@ -299,8 +299,8 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
     hAllLeadingMuon_->FillReco(*leadingMuon);
 
     // Retry matching
-    const l1extra::L1MuonParticle* matchedL1Muon = getBestMatch(leadingMuonPosEta, leadingMuonPosPhi, l1Muons.begin(), l1Muons.end());
-    const trigger::TriggerObject* matchedHLTMuon = getBestMatch(*leadingMuon, triggerObjects.begin(), triggerObjects.end());
+    const l1extra::L1MuonParticle* matchedL1Muon = getBestMatch(leadingMuonPosEta, leadingMuonPosPhi, l1Muons);
+    const trigger::TriggerObject* matchedHLTMuon = getBestMatch(*leadingMuon, triggerObjects);
 
     if ( matchedL1Muon )
     {
@@ -319,8 +319,8 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
     hBarrelLeadingMuon_->FillReco(*barrelLeadingMuon);
 
     // Retry matching
-    const l1extra::L1MuonParticle* matchedL1Muon = getBestMatch(barrelLeadingMuonPosEta, barrelLeadingMuonPosPhi, l1Muons.begin(), l1Muons.end());
-    const trigger::TriggerObject* matchedHLTMuon = getBestMatch(*barrelLeadingMuon, triggerObjects.begin(), triggerObjects.end());
+    const l1extra::L1MuonParticle* matchedL1Muon = getBestMatch(barrelLeadingMuonPosEta, barrelLeadingMuonPosPhi, l1Muons);
+    const trigger::TriggerObject* matchedHLTMuon = getBestMatch(*barrelLeadingMuon, triggerObjects);
 
     if ( matchedL1Muon )
     {
@@ -339,8 +339,8 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
     hOverlapLeadingMuon_->FillReco(*overlapLeadingMuon);
 
     // Retry matching
-    const l1extra::L1MuonParticle* matchedL1Muon = getBestMatch(overlapLeadingMuonPosEta, overlapLeadingMuonPosPhi, l1Muons.begin(), l1Muons.end());
-    const trigger::TriggerObject* matchedHLTMuon = getBestMatch(*overlapLeadingMuon, triggerObjects.begin(), triggerObjects.end());
+    const l1extra::L1MuonParticle* matchedL1Muon = getBestMatch(overlapLeadingMuonPosEta, overlapLeadingMuonPosPhi, l1Muons);
+    const trigger::TriggerObject* matchedHLTMuon = getBestMatch(*overlapLeadingMuon, triggerObjects);
 
     if ( matchedL1Muon )
     {
@@ -359,8 +359,8 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
     hEndcapLeadingMuon_->FillReco(*endcapLeadingMuon);
 
     // Retry matching
-    const l1extra::L1MuonParticle* matchedL1Muon = getBestMatch(endcapLeadingMuonPosEta, endcapLeadingMuonPosPhi, l1Muons.begin(), l1Muons.end());
-    const trigger::TriggerObject* matchedHLTMuon = getBestMatch(*endcapLeadingMuon, triggerObjects.begin(), triggerObjects.end());
+    const l1extra::L1MuonParticle* matchedL1Muon = getBestMatch(endcapLeadingMuonPosEta, endcapLeadingMuonPosPhi, l1Muons);
+    const trigger::TriggerObject* matchedHLTMuon = getBestMatch(*endcapLeadingMuon, triggerObjects);
 
     if ( matchedL1Muon )
     {
