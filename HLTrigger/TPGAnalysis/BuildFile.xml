@@ -4,6 +4,7 @@
 <use name="DataFormats/TrackReco" />
 <use name="DataFormats/MuonReco" />
 <use name="DataFormats/JetReco" />
+<use name="PhysicsTools/SelectorUtils" />
 <use name="root" />
 
 <export>
