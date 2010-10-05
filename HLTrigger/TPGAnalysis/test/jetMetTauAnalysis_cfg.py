@@ -9,7 +9,7 @@ process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
 process.load("FWCore.MessageService.MessageLogger_cfi")
 
 process.options   = cms.untracked.PSet( wantSummary = cms.untracked.bool(True) )
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(5000) )
 process.GlobalTag.globaltag = cms.string('GR10_P_V7::All')
 process.MessageLogger.cerr.FwkReport.reportEvery = 100
 

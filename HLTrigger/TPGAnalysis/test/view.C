@@ -18,6 +18,7 @@ void drawEfficiencyPlots(TVirtualPad* pad, TH1F* hOff, TH1F* hL1T, TH1F* hHLT);
 
 void view()
 {
+/*
   viewJet("HLT_Jet50U_MinimumBias", "jetHLTAnalyzer/All");
   viewJet("HLT_Jet50U_MinimumBias", "jetHLTAnalyzer/Central");
   viewJet("HLT_Jet50U_MinimumBias", "jetHLTAnalyzer/Overlap");
@@ -27,6 +28,7 @@ void view()
   viewJet("HLT_Jet50U_MinimumBias", "jetHLTAnalyzer/CentralLeading");
   viewJet("HLT_Jet50U_MinimumBias", "jetHLTAnalyzer/OverlapLeading");
   viewJet("HLT_Jet50U_MinimumBias", "jetHLTAnalyzer/ForwardLeading");
+*/
 
   viewJet("HLT_Jet50U_MinimumBias", "jetHLTAnalyzer/AllJetNoL1");
   viewJet("HLT_Jet50U_MinimumBias", "jetHLTAnalyzer/CentralJetNoL1");
