@@ -46,8 +46,6 @@ JetHLTAnalyzer::JetHLTAnalyzer(const edm::ParameterSet& pset)
   l1MinEt_ = jetCutSet_.getParameter<double>("l1MinEt");
   maxL1DeltaR_ = jetCutSet_.getParameter<double>("maxL1DeltaR");
 
-  jetIDHelper_ = new reco::helper::JetIDHelper(pset.getParameter<edm::ParameterSet>("JetIDParams"));
-
   // Book run independent histograms
   edm::Service<TFileService> fs;
   const int objectType = Histograms::ObjectType::Jet;
@@ -183,15 +181,6 @@ void JetHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& eve
     return; 
   }
   JetIDSelectionFunctor jetIDSelector(JetIDSelectionFunctor::PURE09, JetIDSelectionFunctor::LOOSE);
-
-/*
-  edm::Handle<edm::View<reco::CaloMET> > offMETHandle;
-  if ( !event.getByLabel(offMETTag_, offMETHandle) )
-  {
-    edm::LogError("JetHLTAnalyzer") << "Cannot find reco METs\n";
-    return;
-  }
-*/
 
   // Loop over all reco jets
   int nReco = 0;
@@ -494,14 +483,6 @@ void JetHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& eve
 
 bool JetHLTAnalyzer::isGoodJet(const reco::CaloJet& recoJet, const edm::Event& event)
 {
-/*
-  if ( recoJet.emEnergyFraction() < 0.01 || recoJet.n90() < 2 ) return false;
-  if ( recoJet.et() < recoMinEt_ ) return false;
-
-  jetIDHelper_->calculate(event, recoJet);
-  if ( jetIDHelper_->fHPD() > 0.98 ) return false;
-
-*/
   return true;
 }
 

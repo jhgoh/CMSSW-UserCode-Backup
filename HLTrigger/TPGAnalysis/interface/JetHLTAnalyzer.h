@@ -17,7 +17,6 @@
 #include "DataFormats/JetReco/interface/CaloJet.h"
 #include "DataFormats/L1Trigger/interface/L1JetParticle.h"
 #include "DataFormats/L1Trigger/interface/L1JetParticleFwd.h"
-#include "RecoJets/JetAlgorithms/interface/JetIDHelper.h"
 
 #include <TH1F.h>
 #include <TH2F.h>
@@ -76,8 +75,6 @@ private:
   Histograms* hCentralJetNoL1_;
   Histograms* hOverlapJetNoL1_;
   Histograms* hForwardJetNoL1_;
-
-  reco::helper::JetIDHelper* jetIDHelper_;
 };
 
 #endif
