@@ -8,14 +8,6 @@ jetHLTAnalyzer = cms.EDAnalyzer("JetHLTAnalyzer",
         l1MinEt = cms.double(30),
         workingPointEt = cms.double(56),
         maxL1DeltaR = cms.double(0.5),
-        maxHLTDeltaR = cms.double(0.1)
-    ),
-    JetIDParams = cms.PSet(
-        useRecHits      = cms.bool(True),
-        hbheRecHitsColl = cms.InputTag("hbhereco"),
-        hoRecHitsColl   = cms.InputTag("horeco"),
-        hfRecHitsColl   = cms.InputTag("hfreco"),
-        ebRecHitsColl   = cms.InputTag("ecalRecHit", "EcalRecHitsEB"),
-        eeRecHitsColl   = cms.InputTag("ecalRecHit", "EcalRecHitsEE")
+        maxHLTDeltaR = cms.double(0.3)
     )
 )
