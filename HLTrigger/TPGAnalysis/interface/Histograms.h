@@ -40,9 +40,14 @@ struct Histograms
   TH1FP hHLTEtHLT, hHLTEtaHLT, hHLTPhiHLT;
 
   TH2FP hEtVsL1Et, hEtVsHLTEt;
+  TH2FP hEtaVsL1Eta, hEtaVsHLTEta;
+  TH2FP hPhiVsL1Phi, hPhiVsHLTPhi;
 
   TH1FP hDeltaRL1T, hDeltaPhiL1T, hDeltaEtaL1T;
   TH1FP hDeltaRHLT, hDeltaPhiHLT, hDeltaEtaHLT;
+
+  TH2FP hDeltaEtaVsDeltaPhiL1T;
+  TH2FP hDeltaEtaVsDeltaPhiHLT;
 
   // For the Muons
   TH1FP hQ;
