@@ -6,7 +6,10 @@
 #include <TLegend.h>
 #include <TGraphAsymmErrors.h>
 
+#include "PhysicsTools/RooStatsCms/interface/ClopperPearsonBinomialInterval.h"
+
 #include <vector>
+#include <iostream>
 
 using namespace std;
 
@@ -46,6 +49,40 @@ void view()
   viewMuon("HLT_Mu9_MinimumBias", "muonHLTAnalyzer/OverlapLeading");
   viewMuon("HLT_Mu9_MinimumBias", "muonHLTAnalyzer/EndcapLeading");
 */
+}
+
+void calculateEfficiency(TH1F* hAccept, TH1F* hTrials, TGraphAsymmErrors* grp)
+{
+  if ( hAccept == 0 || hTrials == 0 || grp == 0 ) return;
+
+  const int nBinsAccept = hAccept->GetNbinsX();
+  const int nBinsTrials = hTrials->GetNbinsX();
+  if ( nBinsAccept != nBinsTrials )
+  {
+    cout << "Bins are not consistent" << endl;
+    return;
+  }
+
+  ClopperPearsonBinomialInterval effCalculator;
+  effCalculator.init(1.-0.682);
+  for ( int i=1; i<nBinsTrials; ++i )
+  {
+    const double nTrials = hTrials->GetBinContent(i);
+    const double nAccept = hAccept->GetBinContent(i);
+
+    effCalculator.calculate(nAccept, nTrials);
+
+    const double x = hTrials->GetBinCenter(i);
+    const double dxLo = x-hTrials->GetXaxis()->GetBinLowEdge(i);
+    const double dxUp = hTrials->GetXaxis()->GetBinUpEdge(i)-x;
+
+    const double y = nAccept/nTrials;
+    const double dyLo = y - effCalculator.lower();
+    const double dyUp = effCalculator.upper() - y;
+
+    grp->SetPoint(i, x, y);
+    grp->SetPointError(i, dxLo, dxUp, dyLo, dyUp);
+  }
 }
 
 void viewJet(TString triggerName, TString baseDir)
@@ -212,7 +249,7 @@ void drawEfficiencyPlots(TVirtualPad* pad, TH1F* hOff, TH1F* hL1T, TH1F* hHLT)
 
   if ( grpL1TEff )
   {
-    grpL1TEff->BayesDivide(hL1T, hOff);
+    calculateEfficiency(hL1T, hOff, grpL1TEff);
     grpL1TEff->SetName("grpL1TEff");
     grpL1TEff->SetTitle("Efficiency");
     grpL1TEff->GetYaxis()->SetTitle("Efficiency");
@@ -232,7 +269,7 @@ void drawEfficiencyPlots(TVirtualPad* pad, TH1F* hOff, TH1F* hL1T, TH1F* hHLT)
 
   if ( grpHLTEff )
   {
-    grpHLTEff->BayesDivide(hHLT, hL1T);
+    calculateEfficiency(hHLT, hL1T, grpHLTEff);
     grpHLTEff->SetName("grpHLTEff");
     grpHLTEff->SetTitle("Efficiency");
     grpHLTEff->GetYaxis()->SetTitle("Efficiency");
@@ -252,7 +289,7 @@ void drawEfficiencyPlots(TVirtualPad* pad, TH1F* hOff, TH1F* hL1T, TH1F* hHLT)
 
   if ( grpGlbEff )
   {
-    grpGlbEff->BayesDivide(hHLT, hOff);
+    calculateEfficiency(hHLT, hOff, grpGlbEff);
     grpGlbEff->SetName("grpGlbEff");
     grpGlbEff->SetTitle("Efficiency");
     grpGlbEff->GetYaxis()->SetTitle("Efficiency");
