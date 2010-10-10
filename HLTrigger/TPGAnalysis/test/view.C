@@ -33,10 +33,11 @@ void view()
   viewJet("HLT_Jet50U_MinimumBias", "jetHLTAnalyzer/ForwardLeading");
 */
 
-  viewJet("HLT_Jet50U_MinimumBias", "jetHLTAnalyzer/AllJetNoL1");
-  viewJet("HLT_Jet50U_MinimumBias", "jetHLTAnalyzer/CentralJetNoL1");
-  viewJet("HLT_Jet50U_MinimumBias", "jetHLTAnalyzer/OverlapJetNoL1");
-  viewJet("HLT_Jet50U_MinimumBias", "jetHLTAnalyzer/ForwardJetNoL1");
+  TString sampleName = "JetAnalysis_Mu_Run2010B-PromptReco-v2";
+  viewJet(sampleName, "jetHLTAnalyzerHLTJet70U/AllJetNoL1");
+  viewJet(sampleName, "jetHLTAnalyzerHLTJet70U/CentralJetNoL1");
+  viewJet(sampleName, "jetHLTAnalyzerHLTJet70U/OverlapJetNoL1");
+  viewJet(sampleName, "jetHLTAnalyzerHLTJet70U/ForwardJetNoL1");
 
 /*
   viewMuon("HLT_Mu9_MinimumBias", "muonHLTAnalyzer/All");
@@ -65,10 +66,12 @@ void calculateEfficiency(TH1F* hAccept, TH1F* hTrials, TGraphAsymmErrors* grp)
 
   ClopperPearsonBinomialInterval effCalculator;
   effCalculator.init(1.-0.682);
-  for ( int i=1; i<nBinsTrials; ++i )
+  for ( int i=1, nPoint = 0; i<nBinsTrials; ++i )
   {
     const double nTrials = hTrials->GetBinContent(i);
     const double nAccept = hAccept->GetBinContent(i);
+
+    if ( nTrials == 0 || nAccept > nTrials ) continue;
 
     effCalculator.calculate(nAccept, nTrials);
 
@@ -80,8 +83,10 @@ void calculateEfficiency(TH1F* hAccept, TH1F* hTrials, TGraphAsymmErrors* grp)
     const double dyLo = y - effCalculator.lower();
     const double dyUp = effCalculator.upper() - y;
 
-    grp->SetPoint(i, x, y);
-    grp->SetPointError(i, dxLo, dxUp, dyLo, dyUp);
+    grp->SetPoint(nPoint, x, y);
+    grp->SetPointError(nPoint, dxLo, dxUp, dyLo, dyUp);
+
+    ++nPoint;
   }
 }
 
