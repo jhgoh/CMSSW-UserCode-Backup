@@ -1,6 +1,6 @@
 import FWCore.ParameterSet.Config as cms
 
-globalTag = 'MC_3XY_V26'
+globaltag = 'START36_V9A'
 
 process = cms.Process("PAT")
 
