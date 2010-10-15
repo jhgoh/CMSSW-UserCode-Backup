@@ -12,6 +12,7 @@
 
     // Added to use RooStatsCms
     gSystem->Load("libPhysicsToolsRooStatsCms.so");
+    gSystem->Load("libHLTriggerTPGAnalysis.so");
 
     AutoLibraryLoader::enable();
   }
