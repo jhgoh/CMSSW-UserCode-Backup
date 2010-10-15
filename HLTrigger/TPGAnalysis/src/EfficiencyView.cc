@@ -108,33 +108,39 @@ void drawOverlayPlots(TVirtualPad* pad, TH1F* hOff, TH1F* hL1T, TH1F* hHLT, bool
   
   if ( hOff )
   { 
-    stats = (TPaveStats*)hOff->FindObject("stats");
-    stats->SetLineColor(hOff->GetLineColor());
-    stats->SetY1NDC(yNDC-0.2); stats->SetY2NDC(yNDC);
+    if ( (stats = (TPaveStats*)hOff->FindObject("stats")) != 0)
+    {
+      stats->SetLineColor(hOff->GetLineColor());
+      stats->SetY1NDC(yNDC-0.2); stats->SetY2NDC(yNDC);
 
-    yNDC -= 0.25;
+      yNDC -= 0.25;
+    }
 
     legend->AddEntry(hOff, "Offline object", "lp");
   }
   
   if ( hL1T )
   {
-    stats = (TPaveStats*)hL1T->FindObject("stats");
-    stats->SetLineColor(hL1T->GetLineColor());
-    stats->SetY1NDC(yNDC-0.2); stats->SetY2NDC(yNDC);
+    if ( (stats = (TPaveStats*)hL1T->FindObject("stats")) != 0 )
+    {
+      stats->SetLineColor(hL1T->GetLineColor());
+      stats->SetY1NDC(yNDC-0.2); stats->SetY2NDC(yNDC);
 
-    yNDC -= 0.25;
+      yNDC -= 0.25;
+    }
 
     legend->AddEntry(hL1T, "L1 object", "lp");
   }
   
   if ( hHLT )
   { 
-    stats = (TPaveStats*)hHLT->FindObject("stats");
-    stats->SetLineColor(hHLT->GetLineColor());
-    stats->SetY1NDC(yNDC-0.2); stats->SetY2NDC(yNDC);
+    if ( (stats = (TPaveStats*)hHLT->FindObject("stats")) != 0 )
+    {
+      stats->SetLineColor(hHLT->GetLineColor());
+      stats->SetY1NDC(yNDC-0.2); stats->SetY2NDC(yNDC);
 
-    yNDC -= 0.25;
+      yNDC -= 0.25;
+    }
 
     legend->AddEntry(hHLT, "HLT object", "lp");
   }
