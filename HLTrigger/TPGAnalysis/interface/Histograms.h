@@ -2,6 +2,7 @@
 #define HLTrigger_TPGAnalysis_Histograms_H
 
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
+#include "DataFormats/Common/interface/Ref.h"
 #include "DataFormats/HLTReco/interface/TriggerObject.h"
 #include "DataFormats/Candidate/interface/LeafCandidate.h"
 #include "DataFormats/Candidate/interface/Candidate.h"
@@ -15,6 +16,16 @@
 struct Histograms
 {
   Histograms(TFileDirectory& dir, TString prefix, edm::ParameterSet& cutSet, int objectType);
+
+  void setRecoCand(const edm::Ref<std::vector<reco::Candidate> > recoCand,
+                   const double recoPosEta = 0, const double recoPosPhi = 0);
+  void setL1Cand(const edm::Ref<std::vector<reco::LeafCandidate> > l1Cand);
+  void setHLTCand(const edm::Ref<std::vector<trigger::TriggerObject> > hltCand);
+  void reset();
+  void fill();
+
+  // L1 Muon association is special, associated by by position deltaR
+  void setL1MuonCand(const edm::Ref<std::vector<reco::LeafCandidate> > l1Cand); 
 
   virtual void FillReco(const reco::Candidate& recoCand);
   virtual void FillL1T(const reco::Candidate& recoCand, const reco::LeafCandidate& l1Cand);
@@ -59,7 +70,12 @@ struct Histograms
   const int objectType_;
 
 protected:
+  edm::Ref<std::vector<reco::Candidate> > recoCand_;
+  edm::Ref<std::vector<reco::LeafCandidate> > l1Cand_;
+  edm::Ref<std::vector<trigger::TriggerObject> > hltCand_;
+
   double workingPointEt_, maxL1DeltaR_, maxHLTDeltaR_;
+  double recoPosEta_, recoPosPhi_;
 };
 
 #endif
