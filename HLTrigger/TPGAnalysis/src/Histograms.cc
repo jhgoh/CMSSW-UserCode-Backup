@@ -329,3 +329,173 @@ void Histograms::FillHLT(const reco::Candidate& recoCand, const trigger::Trigger
   hHLTPhiHLT->Fill(hltPhi);
 }
 
+void Histograms::reset()
+{
+}
+
+void Histograms::setRecoCand(const edm::Ref<std::vector<reco::Candidate> > recoCand, 
+                             const double recoPosEta, const double recoPosPhi)
+{
+  recoCand_ = recoCand;
+
+  // reco position eta,phi are needed for recoMuon-L1Muon association
+  recoPosEta_ = recoPosEta;
+  recoPosPhi_ = recoPosPhi;
+}
+
+void Histograms::setL1Cand(const edm::Ref<std::vector<reco::LeafCandidate> > l1Cand)
+{
+  if ( objectType_ == ObjectType::Muon )
+  {
+    edm::LogError("Histograms") << "Wrong function. Please replace to FillL1T(const reco::Candidate& recoCand, const reco::LeafCandidate& l1Cand, const double recoPosEta, const double recoPosPhi)\n";
+    return;
+  }
+
+  l1Cand_ = l1Cand;
+}
+
+void Histograms::setHLTCand(const edm::Ref<std::vector<trigger::TriggerObject> > hltCand)
+{
+  hltCand_ = hltCand;
+}
+
+void Histograms::fill()
+{
+  // Histograms are based on associations of reco->trigger objects
+  // So nothing can be done without reco object
+  if ( recoCand_.isNull() or !recoCand_.isAvailable() ) return;
+
+  const double recoEt = recoCand_->et();
+  const double recoEta = recoCand_->eta();
+  const double recoPhi = recoCand_->phi();
+
+  // Fill basic reco histograms
+  // This do-while statement is dummy, to make histogram filling code
+  // to be independent of other routine
+  do
+  {
+    hEtReco->Fill(recoEt);
+
+    if ( recoEt < workingPointEt_ ) continue;
+    hEtaReco->Fill(recoEta);
+    hPhiReco->Fill(recoPhi);
+
+    // Muon specific histograms
+    if ( objectType_ == ObjectType::Muon and recoCand_->isMuon() ) 
+    {
+      const reco::Muon* recoMuonP = dynamic_cast<const reco::Muon*>(&*recoCand_);
+      if ( !recoMuonP ) continue;
+      const reco::Muon& recoMuon = *recoMuonP;
+
+      if ( !recoMuon.isGlobalMuon() or !recoMuon.isTrackerMuon() ) continue;
+
+      const reco::TrackRef trkTrack = recoMuon.innerTrack();
+      //const reco::TrackRef staTrack = recoMuon->outerTrack();
+      const reco::TrackRef glbTrack = recoMuon.globalTrack();
+
+      const reco::HitPattern& trkHit = trkTrack->hitPattern();
+      //const reco::HitPattern& staHit = staTrack->hitPattern();
+      const reco::HitPattern& glbHit = glbTrack->hitPattern();
+
+      const double glbX2 = glbTrack->normalizedChi2();
+      const double trkX2 = trkTrack->normalizedChi2();
+      const int nMuonHit = glbHit.numberOfValidMuonHits();
+      const int nTrkHit = trkHit.numberOfValidTrackerHits();
+      //const int nPixelHit = trkHit.numberOfValidPixelHits();
+      //const int nMatches = recoMuon->numberOfMatches();
+
+      //const int misHitInner = trkTrack->trackerExpectedHitsInner().numberOfHits();
+      //const int misHitOuter = trkTrack->trackerExpectedHitsOuter().numberOfHits();
+
+      const double trackIso = recoMuon.isolationR03().sumPt;
+      const double caloIso = recoMuon.isolationR03().emEt + recoMuon.isolationR03().hadEt;
+      const double relIso = (trackIso+caloIso)/recoEt;
+
+      hGlbNHit->Fill(nMuonHit);
+      hGlbX2->Fill(glbX2);
+
+      hTrkNHit->Fill(nTrkHit);
+      hTrkX2->Fill(trkX2);
+
+      hRelIso->Fill(relIso);
+    }
+  } while ( false );
+
+  // Fill L1 histograms
+  do
+  {
+    if ( l1Cand_.isNull() or !l1Cand_.isAvailable() ) continue;
+
+    const bool isMuon = objectType_ == ObjectType::Muon and recoCand_->isMuon();
+
+    const double l1Et = l1Cand_->et();
+    const double l1Eta = l1Cand_->eta();
+    const double l1Phi = l1Cand_->phi();
+
+    const double l1DeltaR = isMuon ? deltaR(recoPosEta_, recoPosPhi_, l1Eta, l1Phi) : deltaR(*recoCand_, *l1Cand_);
+    const double l1DeltaEta = isMuon ? l1Eta - recoPosEta_ : l1Eta - recoEta;
+    const double l1DeltaPhi = isMuon ? deltaPhi(l1Phi, recoPosPhi_) : deltaPhi(l1Phi, recoPhi);
+
+    hDeltaRL1T->Fill(l1DeltaR);
+    hDeltaEtaL1T->Fill(l1DeltaEta);
+    hDeltaPhiL1T->Fill(l1DeltaPhi);
+    hDeltaEtaVsDeltaPhiL1T->Fill(l1DeltaEta, l1DeltaPhi);
+
+    if ( maxL1DeltaR_ < l1DeltaR ) continue;
+
+    hEtL1T->Fill(recoEt);
+    hL1EtL1T->Fill(l1Et);
+
+    hEtVsL1Et->Fill(recoEt, l1Et);
+    hEtaVsL1Eta->Fill(recoEta, l1Eta);
+    hPhiVsL1Phi->Fill(recoPhi, l1Phi);
+
+    if ( recoEt < workingPointEt_ ) continue;
+
+    hEtaL1T->Fill(recoEta);
+    hPhiL1T->Fill(recoPhi);
+
+    hL1EtaL1T->Fill(l1Eta);
+    hL1PhiL1T->Fill(l1Phi);
+
+  } while ( false );
+
+  // Fill HLT histograms
+  do
+  {
+    if ( hltCand_.isNull() or !hltCand_.isAvailable() ) continue;
+
+    const double hltEt = hltCand_->et();
+    const double hltEta = hltCand_->eta();
+    const double hltPhi = hltCand_->phi();
+    //const double hltCharge = hltCand_->charge();
+
+    const double hltDeltaR = deltaR(*recoCand_, *hltCand_);
+    const double hltDeltaEta = hltEta - recoEta;
+    const double hltDeltaPhi = deltaPhi(recoPhi, hltPhi);
+
+    hDeltaRHLT->Fill(hltDeltaR);
+    hDeltaEtaHLT->Fill(hltDeltaEta);
+    hDeltaPhiHLT->Fill(hltDeltaPhi);
+    hDeltaEtaVsDeltaPhiHLT->Fill(hltDeltaEta, hltDeltaPhi);
+
+    if ( maxHLTDeltaR_ < hltDeltaR ) return;
+
+    hEtHLT->Fill(recoEt);
+    hHLTEtHLT->Fill(hltEt);
+
+    hEtVsHLTEt->Fill(recoEt, hltEt);
+    hEtaVsHLTEta->Fill(recoEta, hltEta);
+    hPhiVsHLTPhi->Fill(recoPhi, hltPhi);
+
+    if ( recoEt < workingPointEt_ ) return;
+
+    hEtaHLT->Fill(recoEta);
+    hPhiHLT->Fill(recoPhi);
+
+    hHLTEtaHLT->Fill(hltEta);
+    hHLTPhiHLT->Fill(hltPhi);
+
+  } while ( false );
+}
+
