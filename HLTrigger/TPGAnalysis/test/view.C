@@ -3,6 +3,7 @@
 #include <TCanvas.h>
 #include <TStyle.h>
 #include <TString.h>
+#include <TRegexp.h>
 #include <TFile.h>
 #include <TH1F.h>
 #include <TF1.h>
@@ -15,19 +16,31 @@ using namespace std;
 void view();
 void viewJet(TString triggerName, TString selectionName);
 void viewMuon(TString triggerName, TString selectionName);
+void viewFV(TString fileName, const int runNumber, TString numHLTPath, TString denHLTPath);
+int runNumberFromFileName(TString fileName);
 
 void view()
 {
   gStyle->SetOptFit(11111);
 
-  TF1* jetTurnOnCurve = new TF1("jetTurnOnCurve", "[0]/2*(1+TMath::Erf((x-[1])/sqrt(2.)/[2]))", 0, 200);
-  jetTurnOnCurve->SetParameters(0.5, 100, 1);
-  jetTurnOnCurve->SetParLimits(0, 0, 1);
-  jetTurnOnCurve->SetParLimits(1, 0, 200);
-  jetTurnOnCurve->SetParLimits(2, 0, 2);
+  TF1* turnOnCurve = new TF1("turnOnCurve", "[0]/2*(1+TMath::Erf((x-[1])/sqrt(2.)/[2]))", 0, 200);
+  turnOnCurve->SetLineWidth(1);
+  turnOnCurve->SetParameters(0.5, 100, 1);
+  turnOnCurve->SetParLimits(0, 0, 1);
+  turnOnCurve->SetParLimits(1, 0, 200);
+  turnOnCurve->SetParLimits(2, 0, 200);
 
-  TString sampleName;
-  
+  TString dataDir = "/home/jhgoh/data/TPGAnalysis/FourVector/";
+  TString dqmFile = "";
+  int runNumber = -1;
+
+  dqmFile  = dataDir+"DQM_V0001_R000147749__Mu__Run2010B-000147749__FV.root";
+  runNumber = runNumberFromFileName(dqmFile);
+  viewFV(dqmFile, runNumber, "HLT_Jet15U", "HLT_Mu");
+  viewFV(dqmFile, runNumber, "HLT_Jet50U", "HLT_Mu");
+//  viewFV(dqmFile, runNumber, "HLT_Jet70U", "HLT_Mu");
+//  viewFV(dqmFile, runNumber, "HLT_Jet100U", "HLT_Mu");
+
 /*
   viewJet("HLT_Jet50U_MinimumBias", "jetHLTAnalyzer/All");
   viewJet("HLT_Jet50U_MinimumBias", "jetHLTAnalyzer/Central");
@@ -40,23 +53,27 @@ void view()
   viewJet("HLT_Jet50U_MinimumBias", "jetHLTAnalyzer/ForwardLeading");
 */
 
+/*
+  TString sampleName;
+
   sampleName = "JetAnalysis_Mu_Run2010B-PromptReco-v2";
-//  viewJet(sampleName, "jetHLTAnalyzerHLTJet70U/AllJetNoL1");
-  viewJet(sampleName, "jetHLTAnalyzerHLTJet70U/CentralJetNoL1");
+  viewJet(sampleName, "jetHLTAnalyzerHLTJet70U/AllJetNoL1");
+//  viewJet(sampleName, "jetHLTAnalyzerHLTJet70U/CentralJetNoL1");
 //  viewJet(sampleName, "jetHLTAnalyzerHLTJet70U/OverlapJetNoL1");
 //  viewJet(sampleName, "jetHLTAnalyzerHLTJet70U/ForwardJetNoL1");
 
-  sampleName = "JetAnalysis_MinimumBias_Run2010A-Sep17ReReco_v2";
+//  sampleName = "JetAnalysis_MinimumBias_Run2010A-Sep17ReReco_v2";
 //  viewJet(sampleName, "jetHLTAnalyzerHLTJet70U/AllJetNoL1");
-  viewJet(sampleName, "jetHLTAnalyzerHLTJet70U/CentralJetNoL1");
+//  viewJet(sampleName, "jetHLTAnalyzerHLTJet70U/CentralJetNoL1");
 //  viewJet(sampleName, "jetHLTAnalyzerHLTJet70U/OverlapJetNoL1");
 //  viewJet(sampleName, "jetHLTAnalyzerHLTJet70U/ForwardJetNoL1");
   
-  sampleName = "JetAnalysis_MinimumBias_Run2010B-PromptReco-v2";
+//  sampleName = "JetAnalysis_MinimumBias_Run2010B-PromptReco-v2";
 //  viewJet(sampleName, "jetHLTAnalyzerHLTJet70U/AllJetNoL1");
-  viewJet(sampleName, "jetHLTAnalyzerHLTJet70U/CentralJetNoL1");
+//  viewJet(sampleName, "jetHLTAnalyzerHLTJet70U/CentralJetNoL1");
 //  viewJet(sampleName, "jetHLTAnalyzerHLTJet70U/OverlapJetNoL1");
 //  viewJet(sampleName, "jetHLTAnalyzerHLTJet70U/ForwardJetNoL1");
+*/
   
 
 /*
@@ -87,7 +104,7 @@ void viewJet(TString triggerName, TString baseDir)
   TH1F* hRecoEt = (TH1F*)f->Get(baseDir+"/hEtReco");
 
   c = new TCanvas(triggerName+selectionName+"Et", triggerName+" "+selectionName+" Et", 600, 700); c->Divide(1,2);
-  drawEfficiencyPlots(c->cd(1), hRecoEt, hEtL1, hEtHLT, "jetTurnOnCurve");
+  drawEfficiencyPlots(c->cd(1), hRecoEt, hEtL1, hEtHLT, "turnOnCurve");
   drawOverlayPlots(c->cd(2), hRecoEt, hEtL1, hEtHLT, true);
 
   c->Print("result/"+triggerName+"/"+selectionName+"_Et.png");
@@ -132,3 +149,48 @@ void viewMuon(TString triggerName, TString baseDir)
   c->Print("result/"+triggerName+"/"+selectionName+"_Eta.png");
 }
 
+void viewFV(TString fileName, const int runNumber, TString numHLTPath, TString denHLTPath)
+{
+  TFile* f = TFile::Open(fileName);
+  if ( !f || f->IsZombie() )
+  {
+    cout << "Cannot open file " << fileName << endl;
+    return;
+  }
+
+  TString histDir = Form("DQMData/Run %d/HLT/Run summary/FourVector/paths/", runNumber);
+  histDir += numHLTPath;
+  TH1F* hL1TEt = (TH1F*)f->Get(Form(histDir+"/"+numHLTPath+"_wrt_"+denHLTPath+"_offEtL1Off"));
+  TH1F* hHLTEt = (TH1F*)f->Get(Form(histDir+"/"+numHLTPath+"_wrt_"+denHLTPath+"_offEtOnOff"));
+  TH1F* hOffEt = (TH1F*)f->Get(Form(histDir+"/"+numHLTPath+"_wrt_"+denHLTPath+"_offEtOff"));
+
+  if ( !hL1TEt || !hHLTEt || !hOffEt )
+  {
+    cout << "Cannot find histogram\n";
+    return;
+  }
+
+  TCanvas* c = new TCanvas("c"+numHLTPath+"_"+denHLTPath+"Et", 
+                           Form("Run %d", runNumber)+numHLTPath+" "+denHLTPath+" Et", 600, 700);
+  c->Divide(1,2);
+
+  drawEfficiencyPlots(c->cd(1), hOffEt, hL1TEt, hHLTEt);
+  drawOverlayPlots(c->cd(2), hOffEt, hL1TEt, hHLTEt, true);
+}
+
+int runNumberFromFileName(TString dqmFileName)
+{
+  TString dqmSubStr = dqmFileName(TRegexp("DQM_V[0-9]+_R[0-9]+__"));
+
+  if ( dqmSubStr == "" )
+  {
+    cout << "Filename is not compatible with DQM format\n";
+    return -1;
+  }
+
+  TString runStr = dqmSubStr(TRegexp("R[0-9]+"));
+  runStr.Remove(0,1);
+
+  int runNumber = atoi((const char*)runStr);
+  return runNumber;
+}
