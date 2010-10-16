@@ -66,8 +66,14 @@ void drawOverlayPlots(TVirtualPad* pad, TH1F* hOff, TH1F* hL1T, TH1F* hHLT, bool
     return;
   }
 
-  double minY = doLogY == 0 ? 1 : 0;
+  // Get dimensions
+  double minY = doLogY == true ? 0.5 : 0;
   double maxY = minY;
+
+  if ( hOff && maxY < hOff->GetMaximum() ) maxY = hOff->GetMaximum();
+  if ( hL1T && maxY < hL1T->GetMaximum() ) maxY = hL1T->GetMaximum();
+  if ( hHLT && maxY < hHLT->GetMaximum() ) maxY = hHLT->GetMaximum();
+  maxY *= 1.1;
 
   if ( !pad ) pad = new TCanvas;
 
@@ -78,21 +84,24 @@ void drawOverlayPlots(TVirtualPad* pad, TH1F* hOff, TH1F* hL1T, TH1F* hHLT, bool
   TString drawOpt = "";
   if ( hOff )
   {
-    if ( maxY < hOff->GetMaximum() ) maxY = hOff->GetMaximum();
+    hOff->SetMinimum(minY);
+    hOff->SetMaximum(maxY);
     hOff->SetLineColor(kBlack);
     hOff->Draw(drawOpt);
     if ( drawOpt == "" ) drawOpt = "sames";
   }
   if ( hL1T )
   {
-    if ( maxY < hL1T->GetMaximum() ) maxY = hL1T->GetMaximum();
+    hL1T->SetMinimum(minY);
+    hL1T->SetMaximum(maxY);
     hL1T->SetLineColor(kRed);
     hL1T->Draw(drawOpt);
     if ( drawOpt == "" ) drawOpt = "sames";
   }
   if ( hHLT )
   {
-    if ( maxY < hHLT->GetMaximum() ) maxY = hHLT->GetMaximum();
+    hHLT->SetMinimum(minY);
+    hHLT->SetMaximum(maxY);
     hHLT->SetLineColor(kBlue);
     hHLT->Draw(drawOpt);
     if ( drawOpt == "" ) drawOpt = "sames";
