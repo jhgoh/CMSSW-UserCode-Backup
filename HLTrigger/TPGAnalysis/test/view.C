@@ -13,13 +13,13 @@
 
 using namespace std;
 
-void view();
+void view(int runNumber);
 void viewJet(TString triggerName, TString selectionName);
 void viewMuon(TString triggerName, TString selectionName);
 void viewFV(TString fileName, const int runNumber, TString numHLTPath, TString denHLTPath);
 int runNumberFromFileName(TString fileName);
 
-void view()
+void view(int runNumber)
 {
   gStyle->SetOptFit(11111);
 
@@ -32,14 +32,20 @@ void view()
 
   TString dataDir = "/home/jhgoh/data/TPGAnalysis/FourVector/";
   TString dqmFile = "";
-  int runNumber = -1;
 
-  dqmFile  = dataDir+"DQM_V0001_R000147749__Mu__Run2010B-000147749__FV.root";
-  runNumber = runNumberFromFileName(dqmFile);
-  viewFV(dqmFile, runNumber, "HLT_Jet15U", "HLT_Mu");
-  viewFV(dqmFile, runNumber, "HLT_Jet50U", "HLT_Mu");
-//  viewFV(dqmFile, runNumber, "HLT_Jet70U", "HLT_Mu");
-//  viewFV(dqmFile, runNumber, "HLT_Jet100U", "HLT_Mu");
+  dqmFile = dataDir+Form("DQM_V0001_R%09d__Offline__MinimumBias-Run2010B__DQM.root", runNumber);
+  //viewFV(dqmFile, runNumber, "HLT_Jet15U", "MinBias");
+  viewFV(dqmFile, runNumber, "HLT_Jet30U", "MinBias");
+  viewFV(dqmFile, runNumber, "HLT_Jet70U_v2", "MinBias");
+  viewFV(dqmFile, runNumber, "HLT_Jet100U_v2", "MinBias");
+  viewFV(dqmFile, runNumber, "HLT_Jet140U_v1", "MinBias");
+
+  dqmFile = dataDir+Form("DQM_V0001_R%09d__Offline__Mu-Run2010B__DQM.root", runNumber);
+  //viewFV(dqmFile, runNumber, "HLT_Jet15U", "HLT_Mu");
+  viewFV(dqmFile, runNumber, "HLT_Jet30U", "HLT_Mu");
+  viewFV(dqmFile, runNumber, "HLT_Jet70U_v2", "HLT_Mu");
+  viewFV(dqmFile, runNumber, "HLT_Jet100U_v2", "HLT_Mu");
+  viewFV(dqmFile, runNumber, "HLT_Jet140U_v1", "HLT_Mu");
 
 /*
   viewJet("HLT_Jet50U_MinimumBias", "jetHLTAnalyzer/All");
@@ -170,12 +176,14 @@ void viewFV(TString fileName, const int runNumber, TString numHLTPath, TString d
     return;
   }
 
-  TCanvas* c = new TCanvas("c"+numHLTPath+"_"+denHLTPath+"Et", 
+  TCanvas* c = new TCanvas(TString("c")+Form("_Run_%d_", runNumber)+numHLTPath+"_"+denHLTPath+"Et", 
                            Form("Run %d", runNumber)+numHLTPath+" "+denHLTPath+" Et", 600, 700);
   c->Divide(1,2);
 
   drawEfficiencyPlots(c->cd(1), hOffEt, hL1TEt, hHLTEt);
   drawOverlayPlots(c->cd(2), hOffEt, hL1TEt, hHLTEt, true);
+
+  c->Print(TString(c->GetName())+".png");
 }
 
 int runNumberFromFileName(TString dqmFileName)
