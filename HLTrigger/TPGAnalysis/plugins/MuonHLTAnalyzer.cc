@@ -170,6 +170,17 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
   }
   beamSpotPosition_ = beamSpotHandle->position();
 
+  // Initialize histogram objects
+  hAllMuon_->init();
+  hBarrelMuon_->init(); 
+  hOverlapMuon_->init();
+  hEndcapMuon_->init();
+
+  hAllLeadingMuon_->init();
+  hBarrelLeadingMuon_->init();
+  hOverlapLeadingMuon_->init();
+  hEndcapLeadingMuon_->init();
+
   // Loop over all reco muons
   int nReco = 0, nRecoBarrel = 0, nRecoOverlap = 0, nRecoEndcap = 0;
 
@@ -233,7 +244,7 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
 
     // Fill basic information of recoMuon
     // and find the leading muon
-    hAllMuon_->FillReco(*recoMuon);
+    hAllMuon_->setRecoCand(&*recoMuon, recoPosEta, recoPosPhi);
     if ( !leadingMuon or leadingMuon->pt() < recoMuonPt ) 
     {
       leadingMuon = &(*recoMuon);
@@ -242,7 +253,7 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
     }
     if ( recoMuonAbsEta < maxEtaBarrel_ )
     {
-      hBarrelMuon_->FillReco(*recoMuon);
+      hBarrelMuon_->setRecoCand(&*recoMuon, recoPosEta, recoPosPhi);
       if ( !barrelLeadingMuon or barrelLeadingMuon->pt() < recoMuonPt ) 
       {
         barrelLeadingMuon = &(*recoMuon);
@@ -252,7 +263,7 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
     }
     else if ( recoMuonAbsEta < maxEtaOverlap_ )
     {
-      hOverlapMuon_->FillReco(*recoMuon);
+      hOverlapMuon_->setRecoCand(&*recoMuon, recoPosEta, recoPosPhi);
       if ( !overlapLeadingMuon or overlapLeadingMuon->pt() < recoMuonPt ) 
       {
         overlapLeadingMuon = &(*recoMuon);
@@ -262,7 +273,7 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
     }
     else
     {
-      hEndcapMuon_->FillReco(*recoMuon);
+      hEndcapMuon_->setRecoCand(&*recoMuon, recoPosEta, recoPosPhi);
       if ( !endcapLeadingMuon or endcapLeadingMuon->pt() < recoMuonPt ) 
       {
         endcapLeadingMuon = &(*recoMuon);
@@ -277,18 +288,18 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
 
     if ( matchedL1Muon )
     {
-      hAllMuon_->FillL1T(*recoMuon, *matchedL1Muon, recoPosEta, recoPosPhi);
-      if ( recoMuonAbsEta < maxEtaBarrel_ ) hBarrelMuon_->FillL1T(*recoMuon, *matchedL1Muon, recoPosEta, recoPosPhi);
-      else if ( recoMuonAbsEta < maxEtaOverlap_ ) hOverlapMuon_->FillL1T(*recoMuon, *matchedL1Muon, recoPosEta, recoPosPhi);
-      else hEndcapMuon_->FillL1T(*recoMuon, *matchedL1Muon, recoPosEta, recoPosPhi);
+      hAllMuon_->setL1Cand(matchedL1Muon);
+      if ( recoMuonAbsEta < maxEtaBarrel_ ) hBarrelMuon_->setL1Cand(matchedL1Muon);
+      else if ( recoMuonAbsEta < maxEtaOverlap_ ) hOverlapMuon_->setL1Cand(matchedL1Muon);
+      else hEndcapMuon_->setL1Cand(matchedL1Muon);
 
       const double l1DeltaR = deltaR(recoPosEta, recoPosPhi, matchedL1Muon->eta(), matchedL1Muon->phi());
       if ( matchedHLTMuon and l1DeltaR < maxL1DeltaR_ )
       {
-        hAllMuon_->FillHLT(*recoMuon, *matchedHLTMuon);
-        if ( recoMuonAbsEta < maxEtaBarrel_ ) hBarrelMuon_->FillHLT(*recoMuon, *matchedHLTMuon);
-        else if ( recoMuonAbsEta < maxEtaOverlap_ ) hOverlapMuon_->FillHLT(*recoMuon, *matchedHLTMuon);
-        else hEndcapMuon_->FillHLT(*recoMuon, *matchedHLTMuon);
+        hAllMuon_->setHLTCand(matchedHLTMuon);
+        if ( recoMuonAbsEta < maxEtaBarrel_ ) hBarrelMuon_->setHLTCand(matchedHLTMuon);
+        else if ( recoMuonAbsEta < maxEtaOverlap_ ) hOverlapMuon_->setHLTCand(matchedHLTMuon);
+        else hEndcapMuon_->setHLTCand(matchedHLTMuon);
       }
     }
   }
@@ -296,7 +307,7 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
   // We found leading muons. do the trigger object matching
   if ( leadingMuon )
   {
-    hAllLeadingMuon_->FillReco(*leadingMuon);
+    hAllLeadingMuon_->setRecoCand(leadingMuon);
 
     // Retry matching
     const l1extra::L1MuonParticle* matchedL1Muon = getBestMatch(leadingMuonPosEta, leadingMuonPosPhi, l1Muons);
@@ -304,19 +315,19 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
 
     if ( matchedL1Muon )
     {
-      hAllLeadingMuon_->FillL1T(*leadingMuon, *matchedL1Muon, leadingMuonPosEta, leadingMuonPosPhi);
+      hAllLeadingMuon_->setL1Cand(matchedL1Muon);
 
       const double l1DeltaR = deltaR(leadingMuonPosEta, leadingMuonPosPhi, matchedL1Muon->eta(), matchedL1Muon->phi());
       if ( matchedHLTMuon and l1DeltaR < maxL1DeltaR_ )
       {
-        hAllLeadingMuon_->FillHLT(*leadingMuon, *matchedHLTMuon);
+        hAllLeadingMuon_->setHLTCand(matchedHLTMuon);
       }
     }
   }
 
   if ( barrelLeadingMuon )
   {
-    hBarrelLeadingMuon_->FillReco(*barrelLeadingMuon);
+    hBarrelLeadingMuon_->setRecoCand(barrelLeadingMuon);
 
     // Retry matching
     const l1extra::L1MuonParticle* matchedL1Muon = getBestMatch(barrelLeadingMuonPosEta, barrelLeadingMuonPosPhi, l1Muons);
@@ -324,19 +335,19 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
 
     if ( matchedL1Muon )
     {
-      hBarrelLeadingMuon_->FillL1T(*barrelLeadingMuon, *matchedL1Muon, barrelLeadingMuonPosEta, barrelLeadingMuonPosPhi);
+      hBarrelLeadingMuon_->setL1Cand(matchedL1Muon);
 
       const double l1DeltaR = deltaR(barrelLeadingMuonPosEta, barrelLeadingMuonPosPhi, matchedL1Muon->eta(), matchedL1Muon->phi());
       if ( matchedHLTMuon and l1DeltaR < maxL1DeltaR_ )
       {
-        hBarrelLeadingMuon_->FillHLT(*barrelLeadingMuon, *matchedHLTMuon);
+        hBarrelLeadingMuon_->setHLTCand(matchedHLTMuon);
       }
     }
   }
 
   if ( overlapLeadingMuon )
   {
-    hOverlapLeadingMuon_->FillReco(*overlapLeadingMuon);
+    hOverlapLeadingMuon_->setRecoCand(overlapLeadingMuon);
 
     // Retry matching
     const l1extra::L1MuonParticle* matchedL1Muon = getBestMatch(overlapLeadingMuonPosEta, overlapLeadingMuonPosPhi, l1Muons);
@@ -344,19 +355,19 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
 
     if ( matchedL1Muon )
     {
-      hOverlapLeadingMuon_->FillL1T(*overlapLeadingMuon, *matchedL1Muon, overlapLeadingMuonPosEta, overlapLeadingMuonPosPhi);
+      hOverlapLeadingMuon_->setL1Cand(matchedL1Muon);
 
       const double l1DeltaR = deltaR(overlapLeadingMuonPosEta, overlapLeadingMuonPosPhi, matchedL1Muon->eta(), matchedL1Muon->phi());
       if ( matchedHLTMuon and l1DeltaR < maxL1DeltaR_ )
       {
-        hOverlapLeadingMuon_->FillHLT(*overlapLeadingMuon, *matchedHLTMuon);
+        hOverlapLeadingMuon_->setHLTCand(matchedHLTMuon);
       }
     }
   }
 
   if ( endcapLeadingMuon )
   {
-    hEndcapLeadingMuon_->FillReco(*endcapLeadingMuon);
+    hEndcapLeadingMuon_->setRecoCand(endcapLeadingMuon);
 
     // Retry matching
     const l1extra::L1MuonParticle* matchedL1Muon = getBestMatch(endcapLeadingMuonPosEta, endcapLeadingMuonPosPhi, l1Muons);
@@ -364,15 +375,26 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
 
     if ( matchedL1Muon )
     {
-      hEndcapLeadingMuon_->FillL1T(*endcapLeadingMuon, *matchedL1Muon, endcapLeadingMuonPosEta, endcapLeadingMuonPosPhi);
+      hEndcapLeadingMuon_->setL1Cand(matchedL1Muon);
 
       const double l1DeltaR = deltaR(endcapLeadingMuonPosEta, endcapLeadingMuonPosPhi, matchedL1Muon->eta(), matchedL1Muon->phi());
       if ( matchedHLTMuon and l1DeltaR < maxL1DeltaR_ )
       {
-        hEndcapLeadingMuon_->FillHLT(*endcapLeadingMuon, *matchedHLTMuon);
+        hEndcapLeadingMuon_->setHLTCand(matchedHLTMuon);
       }
     }
   }
+
+  // Fill histograms
+  hAllMuon_->fill();
+  hBarrelMuon_->fill(); 
+  hOverlapMuon_->fill();
+  hEndcapMuon_->fill();
+
+  hAllLeadingMuon_->fill();
+  hBarrelLeadingMuon_->fill();
+  hOverlapLeadingMuon_->fill();
+  hEndcapLeadingMuon_->fill();
 
   hAllMuon_->hNReco->Fill(nReco);
   hBarrelMuon_->hNReco->Fill(nRecoBarrel);
