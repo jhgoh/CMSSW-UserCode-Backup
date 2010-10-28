@@ -151,189 +151,14 @@ Histograms::Histograms(TFileDirectory& dir, TString prefix, edm::ParameterSet& c
   }
 }
 
-void Histograms::FillReco(const reco::Candidate& recoCand)
+void Histograms::init()
 {
-  const double recoEt = recoCand.et();
-  const double recoEta = recoCand.eta();
-  const double recoPhi = recoCand.phi();
-
-  hEtReco->Fill(recoEt);
-
-  if ( recoEt < workingPointEt_ ) return;
-
-  hEtaReco->Fill(recoEta);
-  hPhiReco->Fill(recoPhi);
-
-  if ( objectType_ == ObjectType::Muon )
-  {
-    const reco::Muon* recoMuonP = dynamic_cast<const reco::Muon*>(&recoCand);
-    if ( !recoMuonP ) return;
-
-    const reco::Muon& recoMuon = *recoMuonP;
-
-    if ( !recoMuon.isGlobalMuon() or !recoMuon.isTrackerMuon() ) return;
-
-    const reco::TrackRef trkTrack = recoMuon.innerTrack();
-    //const reco::TrackRef staTrack = recoMuon->outerTrack();
-    const reco::TrackRef glbTrack = recoMuon.globalTrack();
-
-    const reco::HitPattern& trkHit = trkTrack->hitPattern();
-    //const reco::HitPattern& staHit = staTrack->hitPattern();
-    const reco::HitPattern& glbHit = glbTrack->hitPattern();
-
-    const double glbX2 = glbTrack->normalizedChi2();
-    const double trkX2 = trkTrack->normalizedChi2();
-    const int nMuonHit = glbHit.numberOfValidMuonHits();
-    const int nTrkHit = trkHit.numberOfValidTrackerHits();
-    //const int nPixelHit = trkHit.numberOfValidPixelHits();
-    //const int nMatches = recoMuon->numberOfMatches();
-
-    //const int misHitInner = trkTrack->trackerExpectedHitsInner().numberOfHits();
-    //const int misHitOuter = trkTrack->trackerExpectedHitsOuter().numberOfHits();
-
-    const double trackIso = recoMuon.isolationR03().sumPt;
-    const double caloIso = recoMuon.isolationR03().emEt + recoMuon.isolationR03().hadEt;
-    const double relIso = (trackIso+caloIso)/recoEt;
-
-    hGlbNHit->Fill(nMuonHit);
-    hGlbX2->Fill(glbX2);
-
-    hTrkNHit->Fill(nTrkHit);
-    hTrkX2->Fill(trkX2);
-
-    hRelIso->Fill(relIso);
-  }
+  recoCand_ = 0;
+  l1Cand_ = 0;
+  hltCand_ = 0;
 }
 
-void Histograms::FillL1T(const reco::Candidate& recoCand, const reco::LeafCandidate& l1Cand)
-{
-  if ( objectType_ == ObjectType::Muon )
-  {
-    edm::LogError("Histograms") << "Wrong function. Please replace to FillL1T(const reco::Candidate& recoCand, const reco::LeafCandidate& l1Cand, const double recoPosEta, const double recoPosPhi)\n";
-    return;
-  }
-
-  const double recoEt = recoCand.et();
-  const double recoEta = recoCand.eta();
-  const double recoPhi = recoCand.phi();
-  //const double recoCharge = recoCand.charge();
-
-  const double l1Et = l1Cand.et();
-  const double l1Eta = l1Cand.eta();
-  const double l1Phi = l1Cand.phi();
-  //const double l1Charge = l1Cand.charge();
-
-  const double dR = deltaR(recoCand, l1Cand);
-  const double dEta = l1Eta - recoEta;
-  const double dPhi = deltaPhi(recoPhi, l1Phi);
-
-  hDeltaRL1T->Fill(dR);
-  hDeltaEtaL1T->Fill(dEta);
-  hDeltaPhiL1T->Fill(dPhi);
-  hDeltaEtaVsDeltaPhiL1T->Fill(dEta, dPhi);
-
-  if ( maxL1DeltaR_ < dR ) return;
-
-  hEtL1T->Fill(recoEt);
-  hL1EtL1T->Fill(l1Et);
-
-  hEtVsL1Et->Fill(recoEt, l1Et);
-  hEtaVsL1Eta->Fill(recoEta, l1Eta);
-  hPhiVsL1Phi->Fill(recoPhi, l1Phi);
-
-  if ( recoEt < workingPointEt_ ) return;
-  
-  hEtaL1T->Fill(recoEta);
-  hPhiL1T->Fill(recoPhi);
-
-  hL1EtaL1T->Fill(l1Eta);
-  hL1PhiL1T->Fill(l1Phi);
-}
-
-void Histograms::FillL1T(const reco::Muon& recoMuon, const reco::LeafCandidate& l1Cand, const double recoPosEta, const double recoPosPhi)
-{
-  const double recoEt = recoMuon.et();
-  const double recoEta = recoMuon.eta();
-  const double recoPhi = recoMuon.phi();
-  //const double recoCharge = recoMuon.charge();
-
-  const double l1Et = l1Cand.et();
-  const double l1Eta = l1Cand.eta();
-  const double l1Phi = l1Cand.phi();
-  //const double l1Charge = l1Cand.charge();
-
-  const double dR = deltaR(recoPosEta, recoPosPhi, l1Eta, l1Phi);
-  const double dEta = l1Eta - recoPosEta;
-  const double dPhi = deltaPhi(recoPosPhi, l1Phi);
-
-  hDeltaRL1T->Fill(dR);
-  hDeltaEtaL1T->Fill(dEta);
-  hDeltaPhiL1T->Fill(dPhi);
-  hDeltaPhiL1T->Fill(dPhi);
-  hDeltaEtaVsDeltaPhiL1T->Fill(dEta, dPhi);
-
-  if ( maxL1DeltaR_ < dR ) return;
-
-  hEtL1T->Fill(recoEt);
-  hL1EtL1T->Fill(l1Et);
-
-  hEtVsL1Et->Fill(recoEt, l1Et);
-  hEtaVsL1Eta->Fill(recoEta, l1Eta);
-  hPhiVsL1Phi->Fill(recoPhi, l1Phi);
-
-  if ( recoEt < workingPointEt_ ) return;
-  
-  hEtaL1T->Fill(recoEta);
-  hPhiL1T->Fill(recoPhi);
-
-  hL1EtaL1T->Fill(l1Eta);
-  hL1PhiL1T->Fill(l1Phi);
-}
-
-void Histograms::FillHLT(const reco::Candidate& recoCand, const trigger::TriggerObject& triggerObject)
-{
-  const double recoEt = recoCand.et();
-  const double recoEta = recoCand.eta();
-  const double recoPhi = recoCand.phi();
-  //const double recoCharge = recoCand.charge();
-
-  const double hltEt = triggerObject.et();
-  const double hltEta = triggerObject.eta();
-  const double hltPhi = triggerObject.phi();
-  //const double hltCharge = triggerObject.charge();
-
-  const double dR = deltaR(recoCand, triggerObject);
-  const double dEta = hltEta - recoEta;
-  const double dPhi = deltaPhi(recoPhi, hltPhi);
-
-  hDeltaRHLT->Fill(dR);
-  hDeltaEtaHLT->Fill(dEta);
-  hDeltaPhiHLT->Fill(dPhi);
-  hDeltaEtaVsDeltaPhiHLT->Fill(dEta, dPhi);
-
-  if ( maxHLTDeltaR_ < dR ) return;
-
-  hEtHLT->Fill(recoEt);
-  hHLTEtHLT->Fill(hltEt);
-
-  hEtVsHLTEt->Fill(recoEt, hltEt);
-  hEtaVsHLTEta->Fill(recoEta, hltEta);
-  hPhiVsHLTPhi->Fill(recoPhi, hltPhi);
-
-  if ( recoEt < workingPointEt_ ) return;
-  
-  hEtaHLT->Fill(recoEta);
-  hPhiHLT->Fill(recoPhi);
-
-  hHLTEtaHLT->Fill(hltEta);
-  hHLTPhiHLT->Fill(hltPhi);
-}
-
-void Histograms::reset()
-{
-}
-
-void Histograms::setRecoCand(const edm::Ref<std::vector<reco::Candidate> > recoCand, 
+void Histograms::setRecoCand(const reco::Candidate* recoCand, 
                              const double recoPosEta, const double recoPosPhi)
 {
   recoCand_ = recoCand;
@@ -343,7 +168,7 @@ void Histograms::setRecoCand(const edm::Ref<std::vector<reco::Candidate> > recoC
   recoPosPhi_ = recoPosPhi;
 }
 
-void Histograms::setL1Cand(const edm::Ref<std::vector<reco::LeafCandidate> > l1Cand)
+void Histograms::setL1Cand(const reco::LeafCandidate* l1Cand)
 {
   if ( objectType_ == ObjectType::Muon )
   {
@@ -354,7 +179,7 @@ void Histograms::setL1Cand(const edm::Ref<std::vector<reco::LeafCandidate> > l1C
   l1Cand_ = l1Cand;
 }
 
-void Histograms::setHLTCand(const edm::Ref<std::vector<trigger::TriggerObject> > hltCand)
+void Histograms::setHLTCand(const trigger::TriggerObject* hltCand)
 {
   hltCand_ = hltCand;
 }
@@ -363,7 +188,7 @@ void Histograms::fill()
 {
   // Histograms are based on associations of reco->trigger objects
   // So nothing can be done without reco object
-  if ( recoCand_.isNull() or !recoCand_.isAvailable() ) return;
+  if ( !recoCand_ ) return;
 
   const double recoEt = recoCand_->et();
   const double recoEta = recoCand_->eta();
@@ -424,7 +249,7 @@ void Histograms::fill()
   // Fill L1 histograms
   do
   {
-    if ( l1Cand_.isNull() or !l1Cand_.isAvailable() ) continue;
+    if ( !l1Cand_ ) continue;
 
     const bool isMuon = objectType_ == ObjectType::Muon and recoCand_->isMuon();
 
@@ -463,7 +288,7 @@ void Histograms::fill()
   // Fill HLT histograms
   do
   {
-    if ( hltCand_.isNull() or !hltCand_.isAvailable() ) continue;
+    if ( !hltCand_ ) continue;
 
     const double hltEt = hltCand_->et();
     const double hltEta = hltCand_->eta();
