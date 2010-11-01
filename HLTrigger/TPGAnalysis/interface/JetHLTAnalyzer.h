@@ -21,8 +21,7 @@
 #include <TH1F.h>
 #include <TH2F.h>
 
-#include <map>
-
+class HTrigger;
 class Histograms;
 
 class JetHLTAnalyzer : public edm::EDAnalyzer
@@ -52,25 +51,8 @@ private:
   //edm::InputTag triggerEventTag_;
   edm::InputTag recoJetTag_;
 
-  TH1FP hNReco_;
-  TH1FP hNCentralL1T_, hNForwardL1T_, hNDuplicatedL1T_; 
-  TH1FP hNCentralHLT_, hNForwardHLT_;
-
-  std::map<int, Histograms*> hAllJet_ByRun_, hAllLeadingJet_ByRun_;
-  std::map<int, Histograms*> hCentralJet_ByRun_, hCentralLeadingJet_ByRun_;
-  std::map<int, Histograms*> hForwardJet_ByRun_, hForwardLeadingJet_ByRun_;
-
-  Histograms* hAllJet_, * hAllLeadingJet_;
-  Histograms* hCentralJet_, * hCentralLeadingJet_;
-  Histograms* hForwardJet_, * hForwardLeadingJet_;
-
-  Histograms* hAllJet_AllRun_, * hAllLeadingJet_AllRun_;
-  Histograms* hCentralJet_AllRun_, * hCentralLeadingJet_AllRun_;
-  Histograms* hForwardJet_AllRun_, * hForwardLeadingJet_AllRun_;
-
-  Histograms* hAllJetNoL1_;
-  Histograms* hCentralJetNoL1_;
-  Histograms* hForwardJetNoL1_;
+  HTrigger* hAll_, * hCentral_, * hForward_;
+  HTrigger* hLeadingAll_, * hLeadingCentral_, * hLeadingForward_;
 };
 
 #endif

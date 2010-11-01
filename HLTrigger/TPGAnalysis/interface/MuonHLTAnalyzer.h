@@ -22,8 +22,7 @@
 #include <TH1F.h>
 #include <TH2F.h>
 
-#include <map>
-
+class HTrigger;
 class Histograms;
 
 class MuonHLTAnalyzer : public edm::EDAnalyzer
@@ -60,10 +59,8 @@ private:
   edm::InputTag recoMuonTag_;
   
   // List of histograms
-  std::map<int, Histograms*> hAllMuon_ByRun_, hBarrelMuon_ByRun_, hOverlapMuon_ByRun_, hEndcapMuon_ByRun_;
-  std::map<int, Histograms*> hAllLeadingMuon_ByRun_, hBarrelLeadingMuon_ByRun_, hOverlapLeadingMuon_ByRun_, hEndcapLeadingMuon_ByRun_;
-  Histograms* hAllMuon_, * hBarrelMuon_, * hOverlapMuon_, * hEndcapMuon_;
-  Histograms* hAllLeadingMuon_, * hBarrelLeadingMuon_, * hOverlapLeadingMuon_, * hEndcapLeadingMuon_;
+  HTrigger* hAll_, * hBarrel_, * hOverlap_, * hEndcap_;
+  HTrigger* hLeadingAll_, * hLeadingBarrel_, * hLeadingOverlap_, * hLeadingEndcap_;
 
   L1MuonMatcherAlgo* l1Matcher_;
 //  edm::ESHandle<MagneticField> bField_;

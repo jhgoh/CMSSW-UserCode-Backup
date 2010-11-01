@@ -40,47 +40,24 @@ JetHLTAnalyzer::JetHLTAnalyzer(const edm::ParameterSet& pset)
   interestedFilterName_ = pset.getParameter<std::string>("interestedFilterName");
   recoJetTag_ = pset.getParameter<edm::InputTag>("recoJet");
 
-  jetCutSet_ = pset.getParameter<edm::ParameterSet>("cut");
+  edm::ParameterSet jetCutSet = pset.getParameter<edm::ParameterSet>("cut");
 
-  recoMinEt_ = jetCutSet_.getParameter<double>("recoMinEt");
-  l1MinEt_ = jetCutSet_.getParameter<double>("l1MinEt");
-  maxL1DeltaR_ = jetCutSet_.getParameter<double>("maxL1DeltaR");
+  recoMinEt_ = jetCutSet.getParameter<double>("recoMinEt");
+  l1MinEt_ = jetCutSet.getParameter<double>("l1MinEt");
+  maxL1DeltaR_ = jetCutSet.getParameter<double>("maxL1DeltaR");
+  const double workingPointEt = jetCutSet.getParameter<double>("workingPointEt");
+  const double maxHLTDeltaR = jetCutSet.getParameter<double>("maxHLTDeltaR");
+  const double maxL1DeltaR = jetCutSet.getParameter<double>("maxL1DeltaR");
 
-  // Book run independent histograms
-  edm::Service<TFileService> fs;
   const int objectType = Histograms::ObjectType::Jet;
 
-  TFileDirectory allJetDir = fs->mkdir("All");
-  TFileDirectory centralJetDir = fs->mkdir("Central");
-  TFileDirectory forwardJetDir = fs->mkdir("Forward");
+  hAll_ = new HTrigger("All", "All", workingPointEt, maxL1DeltaR, maxHLTDeltaR, objectType);
+  hCentral_ = new HTrigger("Central", "Central", workingPointEt, maxL1DeltaR, maxHLTDeltaR, objectType);
+  hForward_ = new HTrigger("Forward", "Forward", workingPointEt, maxL1DeltaR, maxHLTDeltaR, objectType);
 
-  TFileDirectory allLeadingJetDir = fs->mkdir("AllLeading");
-  TFileDirectory centralLeadingJetDir = fs->mkdir("CentralLeading");
-  TFileDirectory forwardLeadingJetDir = fs->mkdir("ForwardLeading");
-
-  hAllJet_AllRun_ = new Histograms(allJetDir, "All", jetCutSet_, objectType);
-  hCentralJet_AllRun_ = new Histograms(centralJetDir, "Central", jetCutSet_, objectType);
-  hForwardJet_AllRun_ = new Histograms(forwardJetDir, "Forward", jetCutSet_, objectType);
-
-  hAllLeadingJet_AllRun_ = new Histograms(allLeadingJetDir, "All Leading", jetCutSet_, objectType);
-  hCentralLeadingJet_AllRun_ = new Histograms(centralLeadingJetDir, "Central Leading", jetCutSet_, objectType);
-  hForwardLeadingJet_AllRun_ = new Histograms(forwardLeadingJetDir, "Forward Leading", jetCutSet_, objectType);  
-
-  // Special histograms
-  hNReco_ = fs->make<TH1F>("hNReco", "Number of reco object", 6, -0.5, 5.5);
-  hNCentralL1T_ = fs->make<TH1F>("hNCentralL1T", "Number of matched Central L1T object", 6, -0.5, 5.5);
-  hNForwardL1T_ = fs->make<TH1F>("hNForwardL1T", "Number of matched Forward L1T object", 6, -0.5, 5.5);
-  hNCentralHLT_ = fs->make<TH1F>("hNCentralHLT", "Number of matched Central HLT object", 6, -0.5, 5.5);
-  hNForwardHLT_ = fs->make<TH1F>("hNForwardHLT", "Number of matched Forward HLT object", 6, -0.5, 5.5);
-  hNDuplicatedL1T_ = fs->make<TH1F>("hNDuplicatedL1T", "Number of duplicated L1T-reco matching in Central L1T - Forward L1T", 6, -0.5, 5.5);
-
-  TFileDirectory allJetNoL1Dir = fs->mkdir("AllJetNoL1");
-  TFileDirectory centralJetNoL1Dir = fs->mkdir("CentralJetNoL1");
-  TFileDirectory forwardJetNoL1Dir = fs->mkdir("ForwardJetNoL1");
-
-  hAllJetNoL1_ = new Histograms(allJetNoL1Dir, "All Jets no L1 matching", jetCutSet_, objectType);
-  hCentralJetNoL1_ = new Histograms(centralJetNoL1Dir, "Central Jets no L1 matching", jetCutSet_, objectType);
-  hForwardJetNoL1_ = new Histograms(forwardJetNoL1Dir, "Forward Jets no L1 matching", jetCutSet_, objectType);
+  hLeadingAll_ = new HTrigger("All1", "All leading", workingPointEt, maxL1DeltaR, maxHLTDeltaR, objectType);
+  hLeadingCentral_ = new HTrigger("Central1", "Central leading", workingPointEt, maxL1DeltaR, maxHLTDeltaR, objectType);
+  hLeadingForward_ = new HTrigger("Forward1", "Forward leading", workingPointEt, maxL1DeltaR, maxHLTDeltaR, objectType);
 }
 
 JetHLTAnalyzer::~JetHLTAnalyzer()
@@ -89,40 +66,6 @@ JetHLTAnalyzer::~JetHLTAnalyzer()
 
 void JetHLTAnalyzer::beginRun(const edm::Run& run, const edm::EventSetup& eventSetup)
 {
-  const int runNumber = run.run();
-
-  if ( hCentralJet_ByRun_.find(runNumber) == hCentralJet_ByRun_.end() )
-  {
-    edm::Service<TFileService> fs;
-
-    TFileDirectory runDir = fs->mkdir(Form("Run %d", runNumber));
-
-    TFileDirectory allJetDir = runDir.mkdir("All");
-    TFileDirectory centralJetDir = runDir.mkdir("Central");
-    TFileDirectory forwardJetDir = runDir.mkdir("Forward");
-
-    TFileDirectory allLeadingJetDir = runDir.mkdir("AllLeading");
-    TFileDirectory centralLeadingJetDir = runDir.mkdir("CentralLeading");
-    TFileDirectory forwardLeadingJetDir = runDir.mkdir("ForwardLeading");
-
-    const int objectType = Histograms::ObjectType::Jet;
-
-    hAllJet_ByRun_[runNumber] = new Histograms(allJetDir, "All", jetCutSet_, objectType);
-    hCentralJet_ByRun_[runNumber] = new Histograms(centralJetDir, "Central", jetCutSet_, objectType);
-    hForwardJet_ByRun_[runNumber] = new Histograms(forwardJetDir, "Forward", jetCutSet_, objectType);
-
-    hAllLeadingJet_ByRun_[runNumber] = new Histograms(allLeadingJetDir, "All Leading", jetCutSet_, objectType);
-    hCentralLeadingJet_ByRun_[runNumber] = new Histograms(centralLeadingJetDir, "Central Leading", jetCutSet_, objectType);
-    hForwardLeadingJet_ByRun_[runNumber] = new Histograms(forwardLeadingJetDir, "Forward Leading", jetCutSet_, objectType);   
-  }
-
-  hAllJet_ = hAllJet_ByRun_[runNumber];
-  hCentralJet_ = hCentralJet_ByRun_[runNumber];
-  hForwardJet_ = hForwardJet_ByRun_[runNumber];
-
-  hAllLeadingJet_ = hAllLeadingJet_ByRun_[runNumber];
-  hCentralLeadingJet_ = hCentralLeadingJet_ByRun_[runNumber];
-  hForwardLeadingJet_ = hForwardLeadingJet_ByRun_[runNumber];
 }
 
 void JetHLTAnalyzer::endRun()
@@ -169,31 +112,13 @@ void JetHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& eve
   JetIDSelectionFunctor jetIDSelector(JetIDSelectionFunctor::PURE09, JetIDSelectionFunctor::LOOSE);
 
   // Initialize histogram objects
-  hAllJet_->init();
-  hCentralJet_->init();
-  hForwardJet_->init();
+  hAll_->init(event.id());
+  hCentral_->init(event.id());
+  hForward_->init(event.id());
 
-  hAllLeadingJet_->init();
-  hCentralLeadingJet_->init();
-  hForwardLeadingJet_->init();  
-
-  hAllJet_AllRun_->init();
-  hCentralJet_AllRun_->init();
-  hForwardJet_AllRun_->init();
-
-  hAllLeadingJet_AllRun_->init();
-  hCentralLeadingJet_AllRun_->init();
-  hForwardLeadingJet_AllRun_->init();
-
-  hAllJetNoL1_->init();
-  hCentralJetNoL1_->init();
-  hForwardJetNoL1_->init();
-
-  // Loop over all reco jets
-  int nReco = 0;
-  int nDuplicatedL1T = 0;
-  int nCentralL1T = 0, nForwardL1T = 0;
-  int nCentralHLT = 0, nForwardHLT = 0;
+  hLeadingAll_->init(event.id());
+  hLeadingCentral_->init(event.id());
+  hLeadingForward_->init(event.id());
 
   // Collect L1 objects
   l1extra::L1JetParticleCollection centralL1Jets;
@@ -235,8 +160,8 @@ void JetHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& eve
   }
 
   const reco::CaloJet* leadingJet = 0;
-  const reco::CaloJet* centralLeadingJet = 0;
-  const reco::CaloJet* forwardLeadingJet = 0;
+  const reco::CaloJet* leadingCentralJet = 0;
+  const reco::CaloJet* leadingForwardJet = 0;
   for ( edm::View<reco::CaloJet>::const_iterator recoJet = recoJetHandle->begin();
         recoJet != recoJetHandle->end(); ++recoJet )
   {
@@ -246,212 +171,51 @@ void JetHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& eve
     reco::JetID const& jetID = jetIDMapHandle->operator[](recoJetRef);
     if ( !jetIDSelector(*recoJet, jetID) ) continue;
 
-    ++nReco;
     const double recoJetAbsEta = fabs(recoJet->eta());
     const double recoJetEt = recoJet->et();
 
-    // Fill basic information of recoJet
-    // and find the leading Jet
-    hAllJet_->setRecoCand(&*recoJet);
-    hAllJetNoL1_->setRecoCand(&*recoJet);
-    hAllJet_AllRun_->setRecoCand(&*recoJet);
-    if ( !leadingJet or leadingJet->et() < recoJetEt ) leadingJet = &(*recoJet);
-    if ( recoJetAbsEta < 3.0 )
-    {
-      hCentralJet_->setRecoCand(&*recoJet);
-      hCentralJetNoL1_->setRecoCand(&*recoJet);
-      hCentralJet_AllRun_->setRecoCand(&*recoJet);
-      if ( !centralLeadingJet or centralLeadingJet->et() < recoJetEt ) centralLeadingJet = &(*recoJet);
-    }
-    else
-    {
-      hForwardJet_->setRecoCand(&*recoJet);
-      hForwardJetNoL1_->setRecoCand(&*recoJet);
-      hForwardJet_AllRun_->setRecoCand(&*recoJet);
-      if ( !forwardLeadingJet or forwardLeadingJet->et() < recoJetEt ) forwardLeadingJet = &(*recoJet);
-    }
+    // All jets
+    const reco::CaloJet* recoJetP = &*recoJet;
+    const l1extra::L1JetParticle* matchedL1 = getBestMatch(*recoJet, recoJetAbsEta < 3.0 ? centralL1Jets : forwardL1Jets); 
+    const trigger::TriggerObject* matchedHLT = getBestMatch(*recoJet, triggerObjects);
 
-    // Try matching
-    const trigger::TriggerObject* matchedHLTJet = getBestMatch(*recoJet, triggerObjects);
+    const double l1DeltaR = deltaR(*recoJet, *matchedL1);
+    const double hltDeltaR = deltaR(*recoJet, *matchedHLT);
 
-    if ( recoJetAbsEta < 3.0 ) 
-    {
-      // Barrel region
-      const l1extra::L1JetParticle* matchedL1Jet = getBestMatch(*recoJet, centralL1Jets);
-      if ( matchedL1Jet )
-      {
-        ++nCentralL1T;
+    if ( !leadingJet or leadingJet->et() < recoJetEt ) leadingJet = recoJetP;
+    if ( recoJetAbsEta < 3.0 and (!leadingCentralJet or leadingCentralJet->et() < recoJetEt ) ) leadingCentralJet = recoJetP;
+    if ( recoJetAbsEta >= 3.0 and (!leadingForwardJet or leadingForwardJet->et() < recoJetEt ) ) leadingForwardJet = recoJetP;
 
-        hAllJet_->setL1Cand(matchedL1Jet);
-        hCentralJet_->setL1Cand(matchedL1Jet);
-
-        hAllJet_AllRun_->setL1Cand(matchedL1Jet);
-        hCentralJet_AllRun_->setL1Cand(matchedL1Jet);
-
-        if ( matchedHLTJet and deltaR(*recoJet, *matchedL1Jet) < maxL1DeltaR_ )
-        {
-          ++nCentralHLT;
-
-          hAllJet_->setHLTCand(matchedHLTJet);
-          hCentralJet_->setHLTCand(matchedHLTJet);
-
-          hAllJet_AllRun_->setHLTCand(matchedHLTJet);
-          hCentralJet_AllRun_->setHLTCand(matchedHLTJet);
-        }
-      }
-    }
-    else
-    {
-      // Forward region. They are comming from HF
-      const l1extra::L1JetParticle* matchedL1Jet = getBestMatch(*recoJet, forwardL1Jets);
-      if ( matchedL1Jet )
-      {
-        ++nForwardL1T;
-
-        hAllJet_->setL1Cand(matchedL1Jet);
-        hForwardJet_->setL1Cand(matchedL1Jet);
-
-        hAllJet_AllRun_->setL1Cand(matchedL1Jet);
-        hForwardJet_AllRun_->setL1Cand(matchedL1Jet);
-
-        if ( matchedHLTJet and deltaR(*recoJet, *matchedL1Jet) < maxL1DeltaR_ )
-        {
-          ++nForwardHLT;
-
-          hAllJet_->setHLTCand(matchedHLTJet);
-          hForwardJet_->setHLTCand(matchedHLTJet);
-
-          hAllJet_AllRun_->setHLTCand(matchedHLTJet);
-          hForwardJet_AllRun_->setHLTCand(matchedHLTJet);
-        }
-      }
-    }
-
-    if ( matchedHLTJet )
-    {
-      hAllJetNoL1_->setHLTCand(matchedHLTJet);
-      if ( recoJetAbsEta < 3 ) hCentralJetNoL1_->setHLTCand(matchedHLTJet);
-      else hForwardJetNoL1_->setHLTCand(matchedHLTJet);
-    }
+    hAll_->fill(recoJetP, matchedL1, matchedHLT);
+    if ( recoJetAbsEta < 3.0 ) hCentral_->fill(recoJetP, matchedL1, matchedHLT);
+    else hForward_->fill(recoJetP, matchedL1, matchedHLT);
   }
 
-  // We found leading jets. do the trigger object matching
   if ( leadingJet )
   {
-    hAllLeadingJet_->setRecoCand(&*leadingJet);
-    hAllLeadingJet_AllRun_->setRecoCand(&*leadingJet);
-
-    // Retry matching
-    const l1extra::L1JetParticle* matchedCentralL1Jet = getBestMatch(*leadingJet, centralL1Jets);
-    const l1extra::L1JetParticle* matchedForwardL1Jet = getBestMatch(*leadingJet, forwardL1Jets);
-
-    if ( matchedCentralL1Jet )
-    {
-      hAllLeadingJet_->setL1Cand(matchedCentralL1Jet);
-      hAllLeadingJet_AllRun_->setL1Cand(matchedCentralL1Jet);
-
-      const trigger::TriggerObject* matchedHLTJet = getBestMatch(*leadingJet, triggerObjects);
-      const double l1DeltaR = deltaR(*leadingJet, *matchedCentralL1Jet);
-      if ( matchedHLTJet and l1DeltaR < maxL1DeltaR_ )
-      {
-        hAllLeadingJet_->setHLTCand(matchedHLTJet);
-        hAllLeadingJet_AllRun_->setHLTCand(matchedHLTJet);
-      }
-    }
-    if ( matchedForwardL1Jet )
-    {
-      hAllLeadingJet_->setL1Cand(matchedForwardL1Jet);
-      hAllLeadingJet_AllRun_->setL1Cand(matchedForwardL1Jet);
-
-      const trigger::TriggerObject* matchedHLTJet = getBestMatch(*leadingJet, triggerObjects);
-      const double l1DeltaR = deltaR(*leadingJet, *matchedForwardL1Jet);
-      if ( matchedHLTJet and l1DeltaR < maxL1DeltaR_ )
-      {
-        hAllLeadingJet_->setHLTCand(matchedHLTJet);
-        hAllLeadingJet_AllRun_->setHLTCand(matchedHLTJet);
-      }
-    }
+    const double recoJetAbsEta = fabs(leadingJet->eta());
+    const l1extra::L1JetParticle* matchedL1 = getBestMatch(*leadingJet, recoJetAbsEta < 3.0 ? centralL1Jets : forwardL1Jets);
+    const trigger::TriggerObject* matchedHLT = getBestMatch(*leadingJet, triggerObjects);
+    hLeadingAll_->fill(leadingJet, matchedL1, matchedHLT);
   }
 
-  if ( centralLeadingJet )
+  if ( leadingCentralJet )
   {
-    hCentralLeadingJet_->setRecoCand(&*centralLeadingJet);
-    hCentralLeadingJet_AllRun_->setRecoCand(&*centralLeadingJet);
-
-    // Retry matching
-    const l1extra::L1JetParticle* matchedCentralL1Jet = getBestMatch(*centralLeadingJet, centralL1Jets);
-
-    if ( matchedCentralL1Jet )
-    {
-      hCentralLeadingJet_->setL1Cand(matchedCentralL1Jet);
-      hCentralLeadingJet_AllRun_->setL1Cand(matchedCentralL1Jet);
-
-      const trigger::TriggerObject* matchedHLTJet = getBestMatch(*centralLeadingJet, triggerObjects);
-      const double l1DeltaR = deltaR(*centralLeadingJet, *matchedCentralL1Jet);
-      if ( matchedHLTJet and l1DeltaR < maxL1DeltaR_ )
-      {
-        hCentralLeadingJet_->setHLTCand(matchedHLTJet);
-        hCentralLeadingJet_AllRun_->setHLTCand(matchedHLTJet);
-      }
-    }
+    const l1extra::L1JetParticle* matchedL1 = getBestMatch(*leadingCentralJet, centralL1Jets);
+    const trigger::TriggerObject* matchedHLT = getBestMatch(*leadingCentralJet, triggerObjects);
+    hLeadingCentral_->fill(leadingCentralJet, matchedL1, matchedHLT);
   }
 
-  if ( forwardLeadingJet )
+  if ( leadingForwardJet )
   {
-    hForwardLeadingJet_->setRecoCand(&*forwardLeadingJet);
-    hForwardLeadingJet_AllRun_->setRecoCand(&*forwardLeadingJet);
-
-    // Retry matching
-    const l1extra::L1JetParticle* matchedForwardL1Jet = getBestMatch(*forwardLeadingJet, forwardL1Jets);
-
-    if ( matchedForwardL1Jet )
-    {
-      hForwardLeadingJet_->setL1Cand(matchedForwardL1Jet);
-      hForwardLeadingJet_AllRun_->setL1Cand(matchedForwardL1Jet);
-
-      const trigger::TriggerObject* matchedHLTJet = getBestMatch(*forwardLeadingJet, triggerObjects);
-      const double l1DeltaR = deltaR(*forwardLeadingJet, *matchedForwardL1Jet);
-      if ( matchedHLTJet and l1DeltaR < maxL1DeltaR_ )
-      {
-        hForwardLeadingJet_->setHLTCand(matchedHLTJet);
-        hForwardLeadingJet_AllRun_->setHLTCand(matchedHLTJet);
-      }
-    }
+    const l1extra::L1JetParticle* matchedL1 = getBestMatch(*leadingForwardJet, forwardL1Jets);
+    const trigger::TriggerObject* matchedHLT = getBestMatch(*leadingForwardJet, triggerObjects);
+    hForward_->fill(leadingForwardJet, matchedL1, matchedHLT);
   }
 
-  hAllJet_->fill();
-  hCentralJet_->fill();
-  hForwardJet_->fill();
-
-  hAllLeadingJet_->fill();
-  hCentralLeadingJet_->fill();
-  hForwardLeadingJet_->fill();  
-
-  hAllJet_AllRun_->fill();
-  hCentralJet_AllRun_->fill();
-  hForwardJet_AllRun_->fill();
-
-  hAllLeadingJet_AllRun_->fill();
-  hCentralLeadingJet_AllRun_->fill();
-  hForwardLeadingJet_AllRun_->fill();
-
-  hAllJetNoL1_->fill();
-  hCentralJetNoL1_->fill();
-  hForwardJetNoL1_->fill();
-
-  hNReco_->Fill(nReco);
-
-  hNDuplicatedL1T_->Fill(nDuplicatedL1T);
-
-  hNCentralL1T_->Fill(nCentralL1T);
-  hNForwardL1T_->Fill(nForwardL1T);
-
-  hNCentralHLT_->Fill(nCentralHLT);
-  hNForwardHLT_->Fill(nForwardHLT);
 }
 
 bool JetHLTAnalyzer::isGoodJet(const reco::CaloJet& recoJet, const edm::Event& event)
 {
   return true;
 }
-
