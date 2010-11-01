@@ -3,19 +3,67 @@
 #include "DataFormats/TrackReco/interface/Track.h"
 #include "DataFormats/Math/interface/deltaR.h"
 
+#include "FWCore/ServiceRegistry/interface/Service.h"
+#include "CommonTools/UtilAlgos/interface/TFileService.h"
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 
 #include <TString.h>
 #include <TH1F.h>
 #include <TH2F.h>
 
-Histograms::Histograms(TFileDirectory& dir, TString prefix, edm::ParameterSet& cutSet, int objectType):
+HTrigger::HTrigger(TString subDir, const std::string prefix, 
+                   const double workingPointEt, const double maxL1DeltaR, const double maxHLTDeltaR,
+                   int objectType):
+  subDir_(subDir), prefix_(prefix),
+  workingPointEt_(workingPointEt), maxL1DeltaR_(maxL1DeltaR), maxHLTDeltaR_(maxHLTDeltaR),
   objectType_(objectType)
 {
-  workingPointEt_ = cutSet.getParameter<double>("workingPointEt");
-  maxL1DeltaR_ = cutSet.getParameter<double>("maxL1DeltaR");
-  maxHLTDeltaR_ = cutSet.getParameter<double>("maxHLTDeltaR");
+  runNumber_ = -1;
+  runHist_ = 0;
 
+  TString dirName = subDir_ + "/Merged";
+  hist_ = new Histograms(dirName, prefix_.c_str(), workingPointEt_, maxL1DeltaR_, maxHLTDeltaR_, objectType_);
+}
+
+void HTrigger::init(const edm::EventID& eventID)
+{
+  const int runNumber = eventID.run();
+
+  // Check run-by-run histograms
+  if ( runNumber != runNumber or !runHist_ )
+  {
+    // Book new histogram set if this run number is not yet processed
+    if ( runToHistMap_.find(runNumber) == runToHistMap_.end() )
+    {
+      TString dirName = Form("%s/Runs/Run %d", subDir_.Data(), runNumber);
+      runToHistMap_[runNumber] = new Histograms(dirName, prefix_.c_str(), workingPointEt_, maxL1DeltaR_, maxHLTDeltaR_, objectType_);
+    }
+
+    runHist_ = runToHistMap_[runNumber];
+    runNumber_ = runNumber;
+  }
+
+  // Check Prescale-by-prescale histograms
+  // Implementation to be done using HLTConfigProvider
+}
+
+void HTrigger::fill(const reco::Candidate* recoCand,
+                    const reco::LeafCandidate* l1Cand,
+                    const trigger::TriggerObject* hltCand,
+                    const double recoPosEta, const double recoPosPhi)
+{
+  if ( !hist_ or !runHist_ ) return;
+
+  hist_->fill(recoCand, l1Cand, hltCand, recoPosEta, recoPosPhi);
+  runHist_->fill(recoCand, l1Cand, hltCand, recoPosEta, recoPosPhi);
+}
+
+Histograms::Histograms(TString dirName, TString prefix, 
+                       const double workingPointEt, const double maxL1DeltaR, const double maxHLTDeltaR,
+                       int objectType):
+  objectType_(objectType),
+  workingPointEt_(workingPointEt), maxL1DeltaR_(maxL1DeltaR), maxHLTDeltaR_(maxHLTDeltaR)
+{
   if ( prefix.Length() != 0 ) prefix += " ";
 
   std::vector<double> binsEt;
@@ -90,6 +138,17 @@ Histograms::Histograms(TFileDirectory& dir, TString prefix, edm::ParameterSet& c
   const unsigned int nBinEta = binsEta.size()-1;
   const double* binsEtaPtr = &binsEta[0];
 
+  edm::Service<TFileService> fs;
+  TFileDirectory dir = *fs;
+  TObjArray* dirSequence = dirName.Tokenize('/');
+  for ( int i=0; i<dirSequence->GetEntries(); ++i )
+  {
+    TString subDirName = dirSequence->At(i)->GetName();
+    if ( subDirName.Length() == 0 or subDirName[0] == '/' ) continue;
+    dir = dir.mkdir(subDirName.Data());
+  }
+  dirSequence->Delete();
+
   hNReco = dir.make<TH1F>("hNReco", prefix+"Number of reco object per event;Number of reco object", 4, 1, 5);
   hNL1T = dir.make<TH1F>("hNL1T", prefix+"Number of L1T matched reco objects per event;Number of reco object", 4, 1, 5);
   hNHLT = dir.make<TH1F>("hNHLT", prefix+"Number of HLT matched reco objects per event;Number of reco object", 4, 1, 5);
@@ -151,48 +210,18 @@ Histograms::Histograms(TFileDirectory& dir, TString prefix, edm::ParameterSet& c
   }
 }
 
-void Histograms::init()
-{
-  recoCand_ = 0;
-  l1Cand_ = 0;
-  hltCand_ = 0;
-}
-
-void Histograms::setRecoCand(const reco::Candidate* recoCand, 
-                             const double recoPosEta, const double recoPosPhi)
-{
-  recoCand_ = recoCand;
-
-  // reco position eta,phi are needed for recoMuon-L1Muon association
-  recoPosEta_ = recoPosEta;
-  recoPosPhi_ = recoPosPhi;
-}
-
-void Histograms::setL1Cand(const reco::LeafCandidate* l1Cand)
-{
-  if ( objectType_ == ObjectType::Muon )
-  {
-    edm::LogError("Histograms") << "Wrong function. Please replace to FillL1T(const reco::Candidate& recoCand, const reco::LeafCandidate& l1Cand, const double recoPosEta, const double recoPosPhi)\n";
-    return;
-  }
-
-  l1Cand_ = l1Cand;
-}
-
-void Histograms::setHLTCand(const trigger::TriggerObject* hltCand)
-{
-  hltCand_ = hltCand;
-}
-
-void Histograms::fill()
+void Histograms::fill(const reco::Candidate* recoCand,
+                      const reco::LeafCandidate* l1Cand,
+                      const trigger::TriggerObject* hltCand,
+                      const double recoPosEta, const double recoPosPhi)
 {
   // Histograms are based on associations of reco->trigger objects
   // So nothing can be done without reco object
-  if ( !recoCand_ ) return;
+  if ( !recoCand ) return;
 
-  const double recoEt = recoCand_->et();
-  const double recoEta = recoCand_->eta();
-  const double recoPhi = recoCand_->phi();
+  const double recoEt = recoCand->et();
+  const double recoEta = recoCand->eta();
+  const double recoPhi = recoCand->phi();
 
   // Fill basic reco histograms
   // This do-while statement is dummy, to make histogram filling code
@@ -206,9 +235,9 @@ void Histograms::fill()
     hPhiReco->Fill(recoPhi);
 
     // Muon specific histograms
-    if ( objectType_ == ObjectType::Muon and recoCand_->isMuon() ) 
+    if ( objectType_ == ObjectType::Muon and recoCand->isMuon() ) 
     {
-      const reco::Muon* recoMuonP = dynamic_cast<const reco::Muon*>(&*recoCand_);
+      const reco::Muon* recoMuonP = dynamic_cast<const reco::Muon*>(&*recoCand);
       if ( !recoMuonP ) continue;
       const reco::Muon& recoMuon = *recoMuonP;
 
@@ -249,17 +278,27 @@ void Histograms::fill()
   // Fill L1 histograms
   do
   {
-    if ( !l1Cand_ ) continue;
+    if ( !l1Cand ) continue;
 
-    const bool isMuon = objectType_ == ObjectType::Muon and recoCand_->isMuon();
+    const bool isMuon = objectType_ == ObjectType::Muon and recoCand->isMuon();
 
-    const double l1Et = l1Cand_->et();
-    const double l1Eta = l1Cand_->eta();
-    const double l1Phi = l1Cand_->phi();
+    const double l1Et = l1Cand->et();
+    const double l1Eta = l1Cand->eta();
+    const double l1Phi = l1Cand->phi();
 
-    const double l1DeltaR = isMuon ? deltaR(recoPosEta_, recoPosPhi_, l1Eta, l1Phi) : deltaR(*recoCand_, *l1Cand_);
-    const double l1DeltaEta = isMuon ? l1Eta - recoPosEta_ : l1Eta - recoEta;
-    const double l1DeltaPhi = isMuon ? deltaPhi(l1Phi, recoPosPhi_) : deltaPhi(l1Phi, recoPhi);
+    double l1DeltaR = 0, l1DeltaEta = 0, l1DeltaPhi = 0;
+    if ( isMuon )
+    {
+      l1DeltaR = deltaR(recoPosEta, recoPosPhi, l1Eta, l1Phi);
+      l1DeltaEta = l1Eta - recoPosEta;
+      l1DeltaPhi = deltaPhi(l1Phi, recoPosPhi);
+    }
+    else
+    {
+      l1DeltaR = deltaR(*recoCand, *l1Cand);
+      l1DeltaEta = l1Eta - recoEta;
+      l1DeltaPhi = deltaPhi(l1Phi, recoPhi);
+    }
 
     hDeltaRL1T->Fill(l1DeltaR);
     hDeltaEtaL1T->Fill(l1DeltaEta);
@@ -288,14 +327,14 @@ void Histograms::fill()
   // Fill HLT histograms
   do
   {
-    if ( !hltCand_ ) continue;
+    if ( !hltCand ) continue;
 
-    const double hltEt = hltCand_->et();
-    const double hltEta = hltCand_->eta();
-    const double hltPhi = hltCand_->phi();
-    //const double hltCharge = hltCand_->charge();
+    const double hltEt = hltCand->et();
+    const double hltEta = hltCand->eta();
+    const double hltPhi = hltCand->phi();
+    //const double hltCharge = hltCand->charge();
 
-    const double hltDeltaR = deltaR(*recoCand_, *hltCand_);
+    const double hltDeltaR = deltaR(*recoCand, *hltCand);
     const double hltDeltaEta = hltEta - recoEta;
     const double hltDeltaPhi = deltaPhi(recoPhi, hltPhi);
 

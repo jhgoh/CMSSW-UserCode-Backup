@@ -1,30 +1,55 @@
 #ifndef HLTrigger_TPGAnalysis_Histograms_H
 #define HLTrigger_TPGAnalysis_Histograms_H
 
+#include "DataFormats/Provenance/interface/EventID.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "DataFormats/HLTReco/interface/TriggerObject.h"
 #include "DataFormats/Candidate/interface/LeafCandidate.h"
 #include "DataFormats/Candidate/interface/Candidate.h"
 #include "DataFormats/MuonReco/interface/Muon.h"
-#include "CommonTools/Utils/interface/TFileDirectory.h"
 
 #include <TString.h>
 #include <TH1F.h>
 #include <TH2F.h>
 
+#include <string>
+
+struct Histograms;
+class HTrigger;
+
+class HTrigger
+{
+public:
+  HTrigger(TString subDir, const std::string prefix_,
+           const double workingPointEt, const double maxL1DeltaR, const double maxHLTDeltaR, 
+           int objectType);
+  void init(const edm::EventID& eventID);
+  void fill(const reco::Candidate* recoCand, const reco::LeafCandidate* l1Cand, const trigger::TriggerObject* hltCand,
+            const double recoPosEta = 0, const double recoPosPhi = 0);
+
+private:
+  // Histogram collections
+  Histograms* hist_; // All run, menu merged histogram
+  std::map<int, Histograms*> runToHistMap_; // Run-by-run histograms
+  //std::map<int, Histograms*> prescaleToHistMap_; // Prescale-by-prescale histograms
+
+  TString subDir_;
+  std::string prefix_;
+  const double workingPointEt_, maxL1DeltaR_, maxHLTDeltaR_;
+  int objectType_;
+
+  // Cashed histograms
+  int runNumber_;
+  Histograms* runHist_;
+};
+
 struct Histograms
 {
-  Histograms(TFileDirectory& dir, TString prefix, edm::ParameterSet& cutSet, int objectType);
-
-  void setRecoCand(const reco::Candidate* recoCand,
-                   const double recoPosEta = 0, const double recoPosPhi = 0);
-  void setL1Cand(const reco::LeafCandidate* l1Cand);
-  void setHLTCand(const trigger::TriggerObject* hltCand);
-  void init();
-  void fill();
-
-  // L1 Muon association is special, associated by by position deltaR
-  void setL1MuonCand(const reco::LeafCandidate* l1Cand); 
+  Histograms(TString dirName, TString prefix,
+             const double workingPointEt, const double maxL1DeltaR, const double maxHLTDeltaR,
+             int objectType);
+  void fill(const reco::Candidate* recoCand, const reco::LeafCandidate* l1Cand, const trigger::TriggerObject* hltCand,
+            const double recoPosEta = 0, const double recoPosPhi = 0);
 
   struct ObjectType
   {
@@ -67,8 +92,9 @@ protected:
   const reco::LeafCandidate* l1Cand_;
   const trigger::TriggerObject* hltCand_;
 
-  double workingPointEt_, maxL1DeltaR_, maxHLTDeltaR_;
+  const double workingPointEt_, maxL1DeltaR_, maxHLTDeltaR_;
   double recoPosEta_, recoPosPhi_;
+
 };
 
 #endif
