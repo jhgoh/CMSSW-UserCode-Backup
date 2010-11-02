@@ -189,6 +189,10 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
     }
   }
 
+  int nReco = 0, nBarrelReco = 0, nOverlapReco = 0, nEndcapReco = 0;
+  int nL1 = 0, nBarrelL1 = 0, nOverlapL1 = 0, nEndcapL1 = 0;
+  int nHLT = 0, nBarrelHLT = 0, nOverlapHLT = 0, nEndcapHLT = 0;
+
   const reco::Muon* leadingMuon = 0;
   const reco::Muon* leadingBarrelMuon = 0;
   const reco::Muon* leadingOverlapMuon = 0;
@@ -254,18 +258,58 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
       }
     }
 
+    ++nReco;
+    if ( matchedL1 ) ++nL1;
+    if ( matchedHLT ) ++nHLT;
+
     hAll_->fill(recoMuonP, matchedL1, matchedHLT);
-    if ( recoMuonAbsEta < maxEtaBarrel_ ) hBarrel_->fill(recoMuonP, matchedL1, matchedHLT);
-    else if ( recoMuonAbsEta < maxEtaOverlap_ ) hOverlap_->fill(recoMuonP, matchedL1, matchedHLT);
-    else hEndcap_->fill(recoMuonP, matchedL1, matchedHLT);
+
+    if ( recoMuonAbsEta < maxEtaBarrel_ )
+    {
+      ++nBarrelReco;
+      if ( matchedL1 ) ++nBarrelL1;
+      if ( matchedHLT ) ++nBarrelHLT;
+
+      hBarrel_->fill(recoMuonP, matchedL1, matchedHLT);
+    }
+    else if ( recoMuonAbsEta < maxEtaOverlap_ )
+    {
+      ++nOverlapReco;
+      if ( matchedL1 ) ++nOverlapL1;
+      if ( matchedHLT ) ++nOverlapHLT;
+
+      hOverlap_->fill(recoMuonP, matchedL1, matchedHLT);
+    }
+    else
+    {
+      ++nEndcapReco;
+      if ( matchedL1 ) ++nEndcapL1;
+      if ( matchedHLT ) ++nEndcapHLT;
+
+      hEndcap_->fill(recoMuonP, matchedL1, matchedHLT);
+    }
   }
 
+  hAll_->fillNCand(nReco, nL1, nHLT);
+  hBarrel_->fillNCand(nBarrelReco, nBarrelL1, nBarrelHLT);
+  hOverlap_->fillNCand(nOverlapReco, nOverlapL1, nOverlapHLT);
+  hEndcap_->fillNCand(nEndcapReco, nEndcapL1, nEndcapHLT);
+
   // We found leading muons. do the trigger object matching
+  int nLeadingReco = 0, nLeadingBarrelReco = 0, nLeadingOverlapReco = 0, nLeadingEndcapReco = 0;
+  int nLeadingL1 = 0, nLeadingBarrelL1 = 0, nLeadingOverlapL1 = 0, nLeadingEndcapL1 = 0;
+  int nLeadingHLT = 0, nLeadingBarrelHLT = 0, nLeadingOverlapHLT = 0, nLeadingEndcapHLT = 0;
+
   if ( leadingMuon )
   {
     // Retry matching
     const l1extra::L1MuonParticle* matchedL1 = getBestMatch(leadingMuonPosEta, leadingMuonPosPhi, l1Muons);
     const trigger::TriggerObject* matchedHLT = getBestMatch(*leadingMuon, triggerObjects);
+
+    nLeadingReco = 1;
+    if ( matchedL1 ) nLeadingL1 = 1;
+    if ( matchedHLT ) nLeadingHLT = 1;
+
     hLeadingAll_->fill(leadingMuon, matchedL1, matchedHLT, leadingMuonPosEta, leadingMuonPosPhi);
   }
 
@@ -274,6 +318,11 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
     // Retry matching
     const l1extra::L1MuonParticle* matchedL1 = getBestMatch(leadingBarrelMuonPosEta, leadingBarrelMuonPosPhi, l1Muons);
     const trigger::TriggerObject* matchedHLT = getBestMatch(*leadingBarrelMuon, triggerObjects);
+
+    nLeadingBarrelReco = 1;
+    if ( matchedL1 ) nLeadingBarrelL1 = 1;
+    if ( matchedHLT ) nLeadingBarrelHLT = 1;
+
     hLeadingBarrel_->fill(leadingBarrelMuon, matchedL1, matchedHLT, leadingBarrelMuonPosEta, leadingBarrelMuonPosPhi);
   }
 
@@ -282,6 +331,11 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
     // Retry matching
     const l1extra::L1MuonParticle* matchedL1 = getBestMatch(leadingOverlapMuonPosEta, leadingOverlapMuonPosPhi, l1Muons);
     const trigger::TriggerObject* matchedHLT = getBestMatch(*leadingOverlapMuon, triggerObjects);
+
+    nLeadingOverlapReco = 1;
+    if ( matchedL1 ) nLeadingOverlapL1 = 1;
+    if ( matchedHLT ) nLeadingOverlapHLT = 1;
+
     hLeadingOverlap_->fill(leadingOverlapMuon, matchedL1, matchedHLT, leadingOverlapMuonPosEta, leadingOverlapMuonPosPhi);
   }
 
@@ -290,6 +344,11 @@ void MuonHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& ev
     // Retry matching
     const l1extra::L1MuonParticle* matchedL1 = getBestMatch(leadingEndcapMuonPosEta, leadingEndcapMuonPosPhi, l1Muons);
     const trigger::TriggerObject* matchedHLT = getBestMatch(*leadingEndcapMuon, triggerObjects);
+
+    nLeadingEndcapReco = 1;
+    if ( matchedL1 ) nLeadingEndcapL1 = 1;
+    if ( matchedHLT ) nLeadingEndcapHLT = 1;
+
     hLeadingEndcap_->fill(leadingEndcapMuon, matchedL1, matchedHLT, leadingEndcapMuonPosEta, leadingEndcapMuonPosPhi);
   }
 

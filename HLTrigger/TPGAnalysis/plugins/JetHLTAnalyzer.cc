@@ -159,6 +159,10 @@ void JetHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& eve
     }
   }
 
+  int nReco = 0, nCentralReco = 0, nForwardReco = 0;
+  int nL1 = 0, nCentralL1 = 0, nForwardL1 = 0;
+  int nHLT = 0, nCentralHLT = 0, nForwardHLT = 0;
+  
   const reco::CaloJet* leadingJet = 0;
   const reco::CaloJet* leadingCentralJet = 0;
   const reco::CaloJet* leadingForwardJet = 0;
@@ -179,23 +183,55 @@ void JetHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& eve
     const l1extra::L1JetParticle* matchedL1 = getBestMatch(*recoJet, recoJetAbsEta < 3.0 ? centralL1Jets : forwardL1Jets); 
     const trigger::TriggerObject* matchedHLT = getBestMatch(*recoJet, triggerObjects);
 
-    const double l1DeltaR = deltaR(*recoJet, *matchedL1);
-    const double hltDeltaR = deltaR(*recoJet, *matchedHLT);
+    //const double l1DeltaR = deltaR(*recoJet, *matchedL1);
+    //const double hltDeltaR = deltaR(*recoJet, *matchedHLT);
 
     if ( !leadingJet or leadingJet->et() < recoJetEt ) leadingJet = recoJetP;
     if ( recoJetAbsEta < 3.0 and (!leadingCentralJet or leadingCentralJet->et() < recoJetEt ) ) leadingCentralJet = recoJetP;
     if ( recoJetAbsEta >= 3.0 and (!leadingForwardJet or leadingForwardJet->et() < recoJetEt ) ) leadingForwardJet = recoJetP;
 
+    ++nReco;
+    if ( matchedL1 ) ++nL1;
+    if ( matchedHLT ) ++nHLT;
+
     hAll_->fill(recoJetP, matchedL1, matchedHLT);
-    if ( recoJetAbsEta < 3.0 ) hCentral_->fill(recoJetP, matchedL1, matchedHLT);
-    else hForward_->fill(recoJetP, matchedL1, matchedHLT);
+
+    if ( recoJetAbsEta < 3.0 )
+    {
+      ++nCentralReco;
+      if ( matchedL1 ) ++nCentralL1;
+      if ( matchedHLT ) ++nCentralHLT;
+
+      hCentral_->fill(recoJetP, matchedL1, matchedHLT);
+    }
+    else
+    {
+      ++nForwardReco;
+      if ( matchedL1 ) ++nForwardL1;
+      if ( matchedHLT ) ++nForwardHLT;
+
+      hForward_->fill(recoJetP, matchedL1, matchedHLT);
+    }
   }
+
+  hAll_->fillNCand(nReco, nL1, nHLT);
+  hCentral_->fillNCand(nCentralReco, nCentralL1, nCentralHLT);
+  hForward_->fillNCand(nForwardReco, nForwardL1, nForwardHLT);
+
+  int nLeadingReco = 0, nLeadingCentralReco = 0, nLeadingForwardReco = 0;
+  int nLeadingL1 = 0, nLeadingCentralL1 = 0, nLeadingForwardL1 = 0;
+  int nLeadingHLT = 0, nLeadingCentralHLT = 0, nLeadingForwardHLT = 0;
 
   if ( leadingJet )
   {
     const double recoJetAbsEta = fabs(leadingJet->eta());
     const l1extra::L1JetParticle* matchedL1 = getBestMatch(*leadingJet, recoJetAbsEta < 3.0 ? centralL1Jets : forwardL1Jets);
     const trigger::TriggerObject* matchedHLT = getBestMatch(*leadingJet, triggerObjects);
+    
+    nLeadingReco = 1;
+    if ( matchedL1 ) nLeadingL1 = 1;
+    if ( matchedHLT ) nLeadingHLT = 1;
+
     hLeadingAll_->fill(leadingJet, matchedL1, matchedHLT);
   }
 
@@ -203,6 +239,11 @@ void JetHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& eve
   {
     const l1extra::L1JetParticle* matchedL1 = getBestMatch(*leadingCentralJet, centralL1Jets);
     const trigger::TriggerObject* matchedHLT = getBestMatch(*leadingCentralJet, triggerObjects);
+
+    nLeadingCentralReco = 1;
+    if ( matchedL1 ) nLeadingCentralL1 = 1;
+    if ( matchedHLT ) nLeadingCentralHLT = 1;
+
     hLeadingCentral_->fill(leadingCentralJet, matchedL1, matchedHLT);
   }
 
@@ -210,8 +251,17 @@ void JetHLTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& eve
   {
     const l1extra::L1JetParticle* matchedL1 = getBestMatch(*leadingForwardJet, forwardL1Jets);
     const trigger::TriggerObject* matchedHLT = getBestMatch(*leadingForwardJet, triggerObjects);
+
+    nLeadingForwardReco = 1;
+    if ( matchedL1 ) nLeadingForwardL1 = 1;
+    if ( matchedHLT ) nLeadingForwardHLT = 1;
+
     hForward_->fill(leadingForwardJet, matchedL1, matchedHLT);
   }
+
+  hLeadingAll_->fillNCand(nLeadingReco, nLeadingL1, nLeadingHLT);
+  hLeadingCentral_->fillNCand(nLeadingCentralReco, nLeadingCentralL1, nLeadingCentralHLT);
+  hLeadingForward_->fillNCand(nLeadingForwardReco, nLeadingForwardL1, nLeadingForwardHLT);
 
 }
 
