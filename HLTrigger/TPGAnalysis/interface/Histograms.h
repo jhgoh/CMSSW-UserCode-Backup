@@ -21,11 +21,12 @@ class HTrigger
 {
 public:
   HTrigger(TString subDir, const std::string prefix_,
-           const double workingPointEt, const double maxL1DeltaR, const double maxHLTDeltaR, 
+           const double workingPointEt, const double maxL1DeltaR, const double maxHLTDeltaR,
            int objectType);
   void init(const edm::EventID& eventID);
   void fill(const reco::Candidate* recoCand, const reco::LeafCandidate* l1Cand, const trigger::TriggerObject* hltCand,
             const double recoPosEta = 0, const double recoPosPhi = 0);
+  void fillNCand(const int nReco, const int nL1, const int nHLT);
 
 private:
   // Histogram collections
@@ -50,6 +51,7 @@ struct Histograms
              int objectType);
   void fill(const reco::Candidate* recoCand, const reco::LeafCandidate* l1Cand, const trigger::TriggerObject* hltCand,
             const double recoPosEta = 0, const double recoPosPhi = 0);
+  void fillNCand(const int nReco, const int nL1, const int nHLT);
 
   struct ObjectType
   {
@@ -62,11 +64,11 @@ struct Histograms
   typedef TH1F* TH1FP;
   typedef TH2F* TH2FP;
 
-  TH1FP hNReco, hNL1T, hNHLT;
+  TH1FP hNReco, hNL1, hNHLT;
 
   TH1FP hEtReco, hEtaReco, hPhiReco;
-  TH1FP hEtL1T, hEtaL1T, hPhiL1T;
-  TH1FP hL1EtL1T, hL1EtaL1T, hL1PhiL1T;
+  TH1FP hEtL1, hEtaL1, hPhiL1;
+  TH1FP hL1EtL1, hL1EtaL1, hL1PhiL1;
   TH1FP hEtHLT, hEtaHLT, hPhiHLT;
   TH1FP hHLTEtHLT, hHLTEtaHLT, hHLTPhiHLT;
 
@@ -74,10 +76,10 @@ struct Histograms
   TH2FP hEtaVsL1Eta, hEtaVsHLTEta;
   TH2FP hPhiVsL1Phi, hPhiVsHLTPhi;
 
-  TH1FP hDeltaRL1T, hDeltaPhiL1T, hDeltaEtaL1T;
+  TH1FP hDeltaRL1, hDeltaPhiL1, hDeltaEtaL1;
   TH1FP hDeltaRHLT, hDeltaPhiHLT, hDeltaEtaHLT;
 
-  TH2FP hDeltaEtaVsDeltaPhiL1T;
+  TH2FP hDeltaEtaVsDeltaPhiL1;
   TH2FP hDeltaEtaVsDeltaPhiHLT;
 
   // For the Muons
@@ -88,12 +90,7 @@ struct Histograms
   const int objectType_;
 
 protected:
-  const reco::Candidate* recoCand_;
-  const reco::LeafCandidate* l1Cand_;
-  const trigger::TriggerObject* hltCand_;
-
   const double workingPointEt_, maxL1DeltaR_, maxHLTDeltaR_;
-  double recoPosEta_, recoPosPhi_;
 
 };
 
