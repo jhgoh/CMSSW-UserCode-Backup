@@ -11,7 +11,7 @@
 #include <TH1F.h>
 #include <TH2F.h>
 
-HTrigger::HTrigger(TString subDir, const std::string prefix, 
+HTrigger::HTrigger(TString subDir, const std::string prefix,
                    const double workingPointEt, const double maxL1DeltaR, const double maxHLTDeltaR,
                    int objectType):
   subDir_(subDir), prefix_(prefix),
@@ -30,7 +30,7 @@ void HTrigger::init(const edm::EventID& eventID)
   const int runNumber = eventID.run();
 
   // Check run-by-run histograms
-  if ( runNumber != runNumber or !runHist_ )
+  if ( runNumber != runNumber_ )
   {
     // Book new histogram set if this run number is not yet processed
     if ( runToHistMap_.find(runNumber) == runToHistMap_.end() )
@@ -58,7 +58,15 @@ void HTrigger::fill(const reco::Candidate* recoCand,
   runHist_->fill(recoCand, l1Cand, hltCand, recoPosEta, recoPosPhi);
 }
 
-Histograms::Histograms(TString dirName, TString prefix, 
+void HTrigger::fillNCand(const int nReco, const int nL1, const int nHLT)
+{
+  if ( !hist_ or !runHist_ ) return;
+
+  hist_->fillNCand(nReco, nL1, nHLT);
+  runHist_->fillNCand(nReco, nL1, nHLT);
+}
+
+Histograms::Histograms(TString dirName, TString prefix,
                        const double workingPointEt, const double maxL1DeltaR, const double maxHLTDeltaR,
                        int objectType):
   objectType_(objectType),
@@ -149,26 +157,26 @@ Histograms::Histograms(TString dirName, TString prefix,
   }
   dirSequence->Delete();
 
-  hNReco = dir.make<TH1F>("hNReco", prefix+"Number of reco object per event;Number of reco object", 4, 1, 5);
-  hNL1T = dir.make<TH1F>("hNL1T", prefix+"Number of L1T matched reco objects per event;Number of reco object", 4, 1, 5);
-  hNHLT = dir.make<TH1F>("hNHLT", prefix+"Number of HLT matched reco objects per event;Number of reco object", 4, 1, 5);
+  hNReco = dir.make<TH1F>("hNReco", prefix+"Number of reco object per event;Number of reco object", 11, -0.5, 10.5);
+  hNL1 = dir.make<TH1F>("hNL1", prefix+"Number of L1 matched reco objects per event;Number of reco object", 11, -0.5, 10.5);
+  hNHLT = dir.make<TH1F>("hNHLT", prefix+"Number of HLT matched reco objects per event;Number of reco object", 11, -0.5, 10.5);
 
   // Kinematic variables of Reco objects
   hEtReco = dir.make<TH1F>("hEtReco", prefix+"Transverse energy of reco object;Reco p_{T} [GeV/c]", nBinEt, binsEtPtr);
   hEtaReco = dir.make<TH1F>("hEtaReco", prefix+"Pseudorapidity of reco object;Reco #eta", nBinEta, binsEtaPtr);
   hPhiReco = dir.make<TH1F>("hPhiReco", prefix+"Azimuthal angle of reco object;Reco #phi [Radian]", 50, -3.15, 3.15);
 
-  // Kinematic variables of L1T objects
-  hEtL1T = dir.make<TH1F>("hEtL1T", prefix+"Transverse energy of reco object matched to L1T object;Reco p_{T} [GeV/c]", nBinEt, binsEtPtr);
-  hEtaL1T = dir.make<TH1F>("hEtaL1T", prefix+"Pseudorapidity of reco object matched to L1T object;Reco #eta", nBinEta, binsEtaPtr);
-  hPhiL1T = dir.make<TH1F>("hPhiL1T", prefix+"Azimuthal angle of reco object matched to L1T object;Reco #phi [Radian]", 50, -3.15, 3.15);
+  // Kinematic variables of L1 objects
+  hEtL1 = dir.make<TH1F>("hEtL1", prefix+"Transverse energy of reco object matched to L1 object;Reco p_{T} [GeV/c]", nBinEt, binsEtPtr);
+  hEtaL1 = dir.make<TH1F>("hEtaL1", prefix+"Pseudorapidity of reco object matched to L1 object;Reco #eta", nBinEta, binsEtaPtr);
+  hPhiL1 = dir.make<TH1F>("hPhiL1", prefix+"Azimuthal angle of reco object matched to L1 object;Reco #phi [Radian]", 50, -3.15, 3.15);
 
-  hL1EtL1T = dir.make<TH1F>("hL1EtL1T", prefix+"Transverse energy of L1 object matched to reco object;L1 p_{T} [GeV/c]", nBinEt, binsEtPtr);
-  hL1EtaL1T = dir.make<TH1F>("hL1EtaL1T", prefix+"Pseudorapidity of L1 object matched to reco object;L1 #eta", nBinEta, binsEtaPtr);
-  hL1PhiL1T = dir.make<TH1F>("hL1PhiL1T", prefix+"Azimuthal angle of L1 object matched to reco object;L1 #phi [Radian]", 50, -3.15, 3.15);
+  hL1EtL1 = dir.make<TH1F>("hL1EtL1", prefix+"Transverse energy of L1 object matched to reco object;L1 p_{T} [GeV/c]", nBinEt, binsEtPtr);
+  hL1EtaL1 = dir.make<TH1F>("hL1EtaL1", prefix+"Pseudorapidity of L1 object matched to reco object;L1 #eta", nBinEta, binsEtaPtr);
+  hL1PhiL1 = dir.make<TH1F>("hL1PhiL1", prefix+"Azimuthal angle of L1 object matched to reco object;L1 #phi [Radian]", 50, -3.15, 3.15);
 
-  hEtVsL1Et = dir.make<TH2F>("hEtVsL1Et", prefix+"Transverse energy of reco object vs L1 object;Reco p_{T} [GeV/c];L1 p_{T} [GeV/c]", nBinEt, binsEtPtr, nBinEt, binsEtPtr);
-  hEtaVsL1Eta = dir.make<TH2F>("hEtaVsL1Eta", prefix+"Pseudorapidity of reco object vs L1 object;Reco #eta;L1 #eta", nBinEta, binsEtaPtr, nBinEta, binsEtaPtr);
+  hEtVsL1Et = dir.make<TH2F>("hEtVsL1Et", prefix+"Transverse energy of reco object vs L1 object;Reco p_{T} [GeV/c];L1 p_{T} [GeV/c]", 50, binsEtPtr[0], binsEtPtr[nBinEt], 50, binsEtPtr[0], binsEtPtr[nBinEt]);
+  hEtaVsL1Eta = dir.make<TH2F>("hEtaVsL1Eta", prefix+"Pseudorapidity of reco object vs L1 object;Reco #eta;L1 #eta", 50, binsEtaPtr[0], binsEtaPtr[nBinEta], nBinEta, binsEtaPtr[0], binsEtaPtr[nBinEta]);
   hPhiVsL1Phi = dir.make<TH2F>("hPhiVsL1Phi", prefix+"Azimuthal angle of reco object vs L1 object;Reco #phi [Radian];L1 #phi [Radian]", 50, -3.15, 3.15, 50, -3.15, 3.15);
 
   // Kinematic variables of HLT objects
@@ -180,15 +188,15 @@ Histograms::Histograms(TString dirName, TString prefix,
   hHLTEtaHLT = dir.make<TH1F>("hHLTEtaHLT", prefix+"Pseudorapidity of HLT object matched to reco object;HLT #eta", nBinEta, binsEtaPtr);
   hHLTPhiHLT = dir.make<TH1F>("hHLTPhiHLT", prefix+"Azimuthal angle of HLT object matched to reco object;HLT #phi [Radian]", 50, -3.15, 3.15);
 
-  hEtVsHLTEt = dir.make<TH2F>("hEtVsHLTEt", prefix+"Transverse energy of reco object vs HLT object;Reco p_{T} [GeV/c];HLT p_{T} [GeV/c]", nBinEt, binsEtPtr, nBinEt, binsEtPtr);
-  hEtaVsHLTEta = dir.make<TH2F>("hEtaVsHLTEta", prefix+"Pseudorapidity of reco object vs HLT object;Reco #eta;HLT #eta", nBinEta, binsEtaPtr, nBinEta, binsEtaPtr);
+  hEtVsHLTEt = dir.make<TH2F>("hEtVsHLTEt", prefix+"Transverse energy of reco object vs HLT object;Reco p_{T} [GeV/c];HLT p_{T} [GeV/c]", 50, binsEtPtr[0], binsEtPtr[nBinEt], 50, binsEtPtr[0], binsEtPtr[nBinEt]);
+  hEtaVsHLTEta = dir.make<TH2F>("hEtaVsHLTEta", prefix+"Pseudorapidity of reco object vs HLT object;Reco #eta;HLT #eta", 50, binsEtaPtr[0], binsEtaPtr[nBinEta], 50, binsEtaPtr[0], binsEtaPtr[nBinEta]);
   hPhiVsHLTPhi = dir.make<TH2F>("hPhiVsHLTPhi", prefix+"Azimuthal angle of reco object vs HLT object;Reco #phi [Radian];HLT #phi [Radian]", 50, -3.15, 3.15, 50, -3.15, 3.15);
 
   // Matching variables
-  hDeltaRL1T = dir.make<TH1F>("hDeltaRL1T", prefix+"#DeltaR between reco object - L1T object;#DeltaR = #sqrt{#Delta#eta^{2} + #Delta#phi^{2}}", 100, 0, 1);
-  hDeltaPhiL1T = dir.make<TH1F>("hDeltaPhiL1T", prefix+"#Delta#phi between reco object - L1T object;#Delta#phi [Radian]", 100, -1, 1);
-  hDeltaEtaL1T = dir.make<TH1F>("hDeltaEtaL1T", prefix+"#Delta#eta between reco object - L1T object;#Delta#eta", 100, -1, 1);
-  hDeltaEtaVsDeltaPhiL1T = dir.make<TH2F>("hDeltaEtaVsDeltaPhiL1T", prefix+"#Delta#eta vs #Delta#phi between reco object - L1T object;#Delta#eta;#Delta;#phi [Radian]", 100, -1, 1, 100, -1, 1);
+  hDeltaRL1 = dir.make<TH1F>("hDeltaRL1", prefix+"#DeltaR between reco object - L1 object;#DeltaR = #sqrt{#Delta#eta^{2} + #Delta#phi^{2}}", 100, 0, 1);
+  hDeltaPhiL1 = dir.make<TH1F>("hDeltaPhiL1", prefix+"#Delta#phi between reco object - L1 object;#Delta#phi [Radian]", 100, -1, 1);
+  hDeltaEtaL1 = dir.make<TH1F>("hDeltaEtaL1", prefix+"#Delta#eta between reco object - L1 object;#Delta#eta", 100, -1, 1);
+  hDeltaEtaVsDeltaPhiL1 = dir.make<TH2F>("hDeltaEtaVsDeltaPhiL1", prefix+"#Delta#eta vs #Delta#phi between reco object - L1 object;#Delta#eta;#Delta;#phi [Radian]", 100, -1, 1, 100, -1, 1);
 
   hDeltaRHLT = dir.make<TH1F>("hDeltaRHLT", prefix+"#DeltaR between reco object - HLT object;#DeltaR = #sqrt{#Delta#eta^{2} + #Delta#phi^{2}}", 100, 0, 1);
   hDeltaPhiHLT = dir.make<TH1F>("hDeltaPhiHLT", prefix+"#Delta#phi between reco object - HLT object;#Delta#phi [Radian]", 100, -1, 1);
@@ -235,7 +243,7 @@ void Histograms::fill(const reco::Candidate* recoCand,
     hPhiReco->Fill(recoPhi);
 
     // Muon specific histograms
-    if ( objectType_ == ObjectType::Muon and recoCand->isMuon() ) 
+    if ( objectType_ == ObjectType::Muon and recoCand->isMuon() )
     {
       const reco::Muon* recoMuonP = dynamic_cast<const reco::Muon*>(&*recoCand);
       if ( !recoMuonP ) continue;
@@ -276,6 +284,7 @@ void Histograms::fill(const reco::Candidate* recoCand,
   } while ( false );
 
   // Fill L1 histograms
+  double l1DeltaR = 0; // This L1DeltaR can be used in the HLT matching
   do
   {
     if ( !l1Cand ) continue;
@@ -286,7 +295,7 @@ void Histograms::fill(const reco::Candidate* recoCand,
     const double l1Eta = l1Cand->eta();
     const double l1Phi = l1Cand->phi();
 
-    double l1DeltaR = 0, l1DeltaEta = 0, l1DeltaPhi = 0;
+    double l1DeltaEta = 0, l1DeltaPhi = 0;
     if ( isMuon )
     {
       l1DeltaR = deltaR(recoPosEta, recoPosPhi, l1Eta, l1Phi);
@@ -300,15 +309,15 @@ void Histograms::fill(const reco::Candidate* recoCand,
       l1DeltaPhi = deltaPhi(l1Phi, recoPhi);
     }
 
-    hDeltaRL1T->Fill(l1DeltaR);
-    hDeltaEtaL1T->Fill(l1DeltaEta);
-    hDeltaPhiL1T->Fill(l1DeltaPhi);
-    hDeltaEtaVsDeltaPhiL1T->Fill(l1DeltaEta, l1DeltaPhi);
+    hDeltaRL1->Fill(l1DeltaR);
+    hDeltaEtaL1->Fill(l1DeltaEta);
+    hDeltaPhiL1->Fill(l1DeltaPhi);
+    hDeltaEtaVsDeltaPhiL1->Fill(l1DeltaEta, l1DeltaPhi);
 
     if ( maxL1DeltaR_ < l1DeltaR ) continue;
 
-    hEtL1T->Fill(recoEt);
-    hL1EtL1T->Fill(l1Et);
+    hEtL1->Fill(recoEt);
+    hL1EtL1->Fill(l1Et);
 
     hEtVsL1Et->Fill(recoEt, l1Et);
     hEtaVsL1Eta->Fill(recoEta, l1Eta);
@@ -316,17 +325,18 @@ void Histograms::fill(const reco::Candidate* recoCand,
 
     if ( recoEt < workingPointEt_ ) continue;
 
-    hEtaL1T->Fill(recoEta);
-    hPhiL1T->Fill(recoPhi);
+    hEtaL1->Fill(recoEta);
+    hPhiL1->Fill(recoPhi);
 
-    hL1EtaL1T->Fill(l1Eta);
-    hL1PhiL1T->Fill(l1Phi);
+    hL1EtaL1->Fill(l1Eta);
+    hL1PhiL1->Fill(l1Phi);
 
   } while ( false );
 
   // Fill HLT histograms
   do
   {
+    if ( maxL1DeltaR_ > 0 and maxL1DeltaR_ < l1DeltaR ) continue;
     if ( !hltCand ) continue;
 
     const double hltEt = hltCand->et();
@@ -343,7 +353,7 @@ void Histograms::fill(const reco::Candidate* recoCand,
     hDeltaPhiHLT->Fill(hltDeltaPhi);
     hDeltaEtaVsDeltaPhiHLT->Fill(hltDeltaEta, hltDeltaPhi);
 
-    if ( maxHLTDeltaR_ < hltDeltaR ) return;
+    if ( maxHLTDeltaR_ < hltDeltaR ) continue;
 
     hEtHLT->Fill(recoEt);
     hHLTEtHLT->Fill(hltEt);
@@ -352,7 +362,7 @@ void Histograms::fill(const reco::Candidate* recoCand,
     hEtaVsHLTEta->Fill(recoEta, hltEta);
     hPhiVsHLTPhi->Fill(recoPhi, hltPhi);
 
-    if ( recoEt < workingPointEt_ ) return;
+    if ( recoEt < workingPointEt_ ) continue;
 
     hEtaHLT->Fill(recoEta);
     hPhiHLT->Fill(recoPhi);
@@ -363,3 +373,9 @@ void Histograms::fill(const reco::Candidate* recoCand,
   } while ( false );
 }
 
+void Histograms::fillNCand(const int nReco, const int nL1, const int nHLT)
+{
+  hNReco->Fill(nReco);
+  hNL1->Fill(nL1);
+  hNHLT->Fill(nHLT);
+}
