@@ -15,7 +15,9 @@ sys.argv = [sys.argv[0], '-b']+sys.argv[1:]
 import ROOT
 
 # Set constants
-selections = ("SimVsReco", "DTVsReco", "CSCVsReco")#, "TrackVsReco")
+selections = ("SimVsReco",)
+              #"SimVsDTExt", "SimVsCSCExt",
+              #"DTVsReco", "CSCVsReco")#, "TrackVsReco")
 overlayHists = ("ClusterSize", 
                 #"Effic_Eta",
                 "globalEfficiencies", "Effic_Wheel", "Effic_Disk",
@@ -97,10 +99,11 @@ for sample in samples:
 
                 histName = h.GetName().lower()
                 if 'effic' in histName or 'rate' in histName:
-                    h.SetMinimum(0)
+                    h.SetMinimum(0.0)
                     h.SetMaximum(1.1)
 
-                h.SetLineColor(colorIdx+2)
+                h.SetLineColor(colorIdx+ROOT.kOrange)
+                h.SetLineWidth(2)
 
                 hStack.Add(h)
                 legend.AddEntry(h, release)
