@@ -37,7 +37,7 @@ for CMSSW_VERSION in $@; do
     fi
     vi ${CMSSW_VERSION}.txt
   fi
-  DATASETS=`cat ${CMSSW_VERSION}.txt`
+  DATASETS=`cat ${CMSSW_VERSION}.txt | grep -v '^#'`
 
   echo "@@@ Set up workarea for $CMSSW_VERSION @@@"
 
@@ -60,6 +60,19 @@ for CMSSW_VERSION in $@; do
   scram build
 
   cd Validation/RPCRecHits/test
+
+  ## Modify cfg file if source setting is not yet done
+  if [ `grep -c 'process.GlobalTag.globaltag' rpcRecHitValidation_cfg.py` == 0 ]; then
+    cat >> rpcRecHitValidation_cfg.py <<EOF
+import sys, os
+sampleName = os.environ['SAMPLE']
+sys.path.append('samples')
+sampleCfg = __import__(sampleName+"_cfg")
+process.source = sampleCfg.source
+process.maxEvents = sampleCfg.maxEvents
+process.GlobalTag.globaltag = sampleCfg.globaltag
+EOF
+  fi
 
   # Make bsub-run script
   echo "@@@ Preparing submission script @@@"
