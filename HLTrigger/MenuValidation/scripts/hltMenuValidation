@@ -7,14 +7,24 @@ if not os.path.exists('offline_data.py'):
     print '!! Please check filename and rename it as "offline_data.py"'
     sys.exit(2)
 
+sys.path.append('.')
+from offline_data import process
+
+runNumber = 149181
+hltConfigVer = process.HLTConfigVersion.tableName.value().replace('/', '_').strip('_')
 userName = os.environ['USER']
-remoteDir = 'user/%s/%s/HLTMenuValidation' % (userName[0], userName)
+remoteDir = 'user/%s/%s/HLTMenuValidation/%s' % (userName[0], userName, hltConfigVer)
 
 print '@@ Setting up base directory @@'
 if os.path.exists('run'):
     print '@@@ run directory already exists. Please rename it and run this tool again. @@@'
     sys.exit(2)
 os.mkdir('run')
+os.system("""#!/bin/bash
+REMOTEDIR=%s
+rfmkdir -p /castor/cern.ch/${REMOTEDIR}
+rfchmod 775 /castor/cern.ch/${REMOTEDIR}
+""" % remoteDir)
 
 ## Applying remaining patches
 print '@@ Patching DQM packages to retrive objects from the process name "HLTonline" @@'
@@ -43,14 +53,17 @@ perl -pi -e 's/"HLT"/"'${PROCESS}'"/ if /TriggerResults/' topDiLeptonDQM_cfi.py
 
 ## Prepare configuration files
 print '@@ Copying base configuration files to runtime directory'
-os.system("cp $CMSSW_BASE/src/HLTrigger/MenuValidation/data/multicrab.cfg run/")
-os.system("cp $CMSSW_BASE/src/HLTrigger/MenuValidation/data/crab.cfg run/")
-os.system("cp $CMSSW_BASE/src/HLTrigger/MenuValidation/data/*.py run/")
-os.system("cp $CMSSW_BASE/src/HLTrigger/MenuValidation/data/run.sh run/")
+os.system("""#!/bin/bash
+cp $CMSSW_BASE/src/HLTrigger/MenuValidation/data/multicrab.cfg run/
+cp $CMSSW_BASE/src/HLTrigger/MenuValidation/data/crab.cfg run/
+cp $CMSSW_BASE/src/HLTrigger/MenuValidation/data/*.py run/
+cp $CMSSW_BASE/src/HLTrigger/MenuValidation/data/run.sh run/
+
+sed -i -e 's@^runselection *= *[0-9 ]\+@runselection = %d@g' run/crab.cfg
+sed -i -e 's@^user_remote_dir *= *.*@user_remote_dir = %s@g' run/crab.cfg
+""" % (runNumber, remoteDir))
 
 ## Prepare python configuration files
-sys.path.append('.')
-from offline_data import process
 print '@@ Preparing HLT-rerunning configuration files @@'
 
 process.source.fileNames = [
