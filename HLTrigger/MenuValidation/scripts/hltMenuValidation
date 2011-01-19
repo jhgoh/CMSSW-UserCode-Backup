@@ -1,0 +1,77 @@
+#!/usr/bin/env python
+import FWCore.ParameterSet.Config as cms
+import sys, os
+
+if not os.path.exists('offline_data.py'):
+    print '!! Could not find configuration file for HLT-rerunning.'
+    print '!! Please check filename and rename it as "offline_data.py"'
+    sys.exit(2)
+
+userName = os.environ['USER']
+remoteDir = 'user/%s/%s/HLTMenuValidation' % (userName[0], userName)
+
+print '@@ Setting up base directory @@'
+if os.path.exists('run'):
+    print '@@@ run directory already exists. Please rename it and run this tool again. @@@'
+    sys.exit(2)
+os.mkdir('run')
+
+## Applying remaining patches
+print '@@ Patching DQM packages to retrive objects from the process name "HLTonline" @@'
+os.system("""
+PROCESS=HLTonline
+echo Patching DQM/HLTEvF/python
+cd $CMSSW_BASE/src/DQM/HLTEvF/python;
+perl -pi -e 's/"HLT"/"'${PROCESS}'"/ if /TriggerResults/' *.py;
+perl -pi -e 's/"HLT"/"'${PROCESS}'"/ if /hltTriggerSummaryAOD/' *.py;
+perl -pi -e 's/"HLT"/"'${PROCESS}'"/ if /processname/' *.py;
+perl -pi -e 's/"HLT"/"'${PROCESS}'"/ if /hltTauDQMProcess/' HLTMonTau_cfi.py;
+echo DQM/TrigXMonitor/python
+cd $CMSSW_BASE/src/DQM/TrigXMonitor/python;
+perl -pi -e 's/"HLT"/"'${PROCESS}'"/ if /TriggerResults/' *.py;
+perl -pi -e 's/"HLT"/"'${PROCESS}'"/ if /hltTriggerSummaryAOD/' *.py;
+perl -pi -e 's/"HLT"/"'${PROCESS}'"/ if /processname/' *.py;
+echo DQMOffline/*/python
+cd $CMSSW_BASE/src/DQMOffline
+perl -pi -e 's/"HLT"/"'${PROCESS}'"/' */python/*.py
+perl -pi -e 's/"HLT"/"'${PROCESS}'"/ if /TriggerResults/' Trigger/python/topHLTDiMuonDQM_cfi.py
+echo DQM/Physics/python
+cd $CMSSW_BASE/src/DQM/Physics/python
+perl -pi -e 's/"HLT"/"'${PROCESS}'"/' *.py 
+perl -pi -e 's/"HLT"/"'${PROCESS}'"/ if /TriggerResults/' topDiLeptonDQM_cfi.py
+""")
+
+## Prepare configuration files
+print '@@ Copying base configuration files to runtime directory'
+os.system("cp $CMSSW_BASE/src/HLTrigger/MenuValidation/data/multicrab.cfg run/")
+os.system("cp $CMSSW_BASE/src/HLTrigger/MenuValidation/data/crab.cfg run/")
+os.system("cp $CMSSW_BASE/src/HLTrigger/MenuValidation/data/*.py run/")
+os.system("cp $CMSSW_BASE/src/HLTrigger/MenuValidation/data/run.sh run/")
+
+## Prepare python configuration files
+sys.path.append('.')
+from offline_data import process
+print '@@ Preparing HLT-rerunning configuration files @@'
+
+process.source.fileNames = [
+    'rfio:/castor/cern.ch/user/t/tdaniels/2010_TPG_SKIMS/ExpressPhysics/goldenSample_run139407_EXPRESS_9.root',
+]
+
+process.hltDQML1SeedLogicScalers.processname = 'HLTonline'
+process.hltTrigReport = cms.EDAnalyzer('HLTrigReport',
+    HLTriggerResults = cms.InputTag('TriggerResults', '', process.process)
+)
+process.HLTAnalyzerEndPath = cms.EndPath(process.hltTrigReport)
+process.MessageLogger.cerr.FwkReport.reportEvery = 1000
+
+## Now dump new python configuration
+print '@@ Writing new configuration files @@'
+f = open('run/run_cfg.py', 'w')
+content = process.dumpPython()
+if process.process != 'HLTonline':
+    content = content.replace('"'+process.process+'"', '"HLTonline"')
+f.write(content)
+f.close()
+
+process = None
+
