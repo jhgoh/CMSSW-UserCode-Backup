@@ -1,4 +1,5 @@
 import FWCore.ParameterSet.Config as cms
+import os
 
 process = cms.Process("DQM")
 process.load("DQMServices.Core.DQM_cfg")
@@ -47,10 +48,11 @@ process.DQM.collectorPort = 9190
 process.dqmSaver.dirName = '.'
 process.dqmSaver.producer = 'DQM'
 #process.hltResults.plotAll = True
-process.dqmSaver.convention = 'Online'
+process.dqmSaver.convention = 'Offline'
+process.dqmSaver.workflow = os.environ['WORKFLOW']
 process.dqmEnv.subSystemFolder = 'HLT'
 process.dqmSaver.saveByRun = 1
-process.dqmSaver.saveAtJobEnd = True
+#process.dqmSaver.saveAtJobEnd = True
 
 process.options = cms.untracked.PSet(
     wantSummary = cms.untracked.bool(True)
