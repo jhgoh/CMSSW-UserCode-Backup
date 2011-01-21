@@ -54,7 +54,6 @@ perl -pi -e 's/"HLT"/"'${PROCESS}'"/ if /TriggerResults/' topDiLeptonDQM_cfi.py
 ## Prepare configuration files
 print '@@ Copying base configuration files to runtime directory'
 os.system("""#!/bin/bash
-cp $CMSSW_BASE/src/HLTrigger/MenuValidation/data/multicrab.cfg run/
 cp $CMSSW_BASE/src/HLTrigger/MenuValidation/data/crab.cfg run/
 cp $CMSSW_BASE/src/HLTrigger/MenuValidation/data/*.py run/
 cp $CMSSW_BASE/src/HLTrigger/MenuValidation/data/run.sh run/
@@ -63,7 +62,7 @@ sed -i -e 's@^runselection *= *[0-9 ]\+@runselection = %d@g' run/crab.cfg
 sed -i -e 's@^user_remote_dir *= *.*@user_remote_dir = %s@g' run/crab.cfg
 """ % (runNumber, remoteDir))
 
-f.open("multicrab.cfg", "w")
+f = open("run/multicrab.cfg", "w")
 f.write("""[MULTICRAB]
 cfg=crab.cfg
 
@@ -75,7 +74,7 @@ for datasetName in ("EGMonitor","Electron","Photon","MuMonitor","Mu","Jet","METF
   f.write("""[%s]
 CMSSW.datasetpath=/%s/Run2010B-v1/RAW
 USER.script_arguments=%s,%s
-""",(datasetName,datasetName,datasetName,hltConfigVer))
+""" % (datasetName,datasetName,datasetName,hltConfigVer))
 f.close()
 
 ## Prepare python configuration files
