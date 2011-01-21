@@ -63,6 +63,21 @@ sed -i -e 's@^runselection *= *[0-9 ]\+@runselection = %d@g' run/crab.cfg
 sed -i -e 's@^user_remote_dir *= *.*@user_remote_dir = %s@g' run/crab.cfg
 """ % (runNumber, remoteDir))
 
+f.open("multicrab.cfg", "w")
+f.write("""[MULTICRAB]
+cfg=crab.cfg
+
+[COMMON]
+
+
+""")
+for datasetName in ("EGMonitor","Electron","Photon","MuMonitor","Mu","Jet","METFwd"):
+  f.write("""[%s]
+CMSSW.datasetpath=/%s/Run2010B-v1/RAW
+USER.script_arguments=%s,%s
+""",(datasetName,datasetName,datasetName,hltConfigVer))
+f.close()
+
 ## Prepare python configuration files
 print '@@ Preparing HLT-rerunning configuration files @@'
 
