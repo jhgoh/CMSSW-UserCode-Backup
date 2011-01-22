@@ -29,7 +29,13 @@ rfchmod 775 /castor/cern.ch/${REMOTEDIR}
 ## Applying remaining patches
 print '@@ Patching DQM packages to retrive objects from the process name "HLTonline" @@'
 os.system("""
+eval `scram runtime -sh`
 PROCESS=HLTonline
+[ -d $CMSSW_BASE/src/DQM/HLTEvF/python ] || addpkg DQM/HLTEvF
+[ -d $CMSSW_BASE/src/DQM/TrigXMonitor/python ] || addpkg DQM/TrigXMonitor
+[ -d $CMSSW_BASE/src/DQM/Physics ] || addpkg DQM/Physics
+[ -d $CMSSW_BASE/src/DQMOffline ] || addpkg DQMOffline
+
 echo Patching DQM/HLTEvF/python
 cd $CMSSW_BASE/src/DQM/HLTEvF/python;
 perl -pi -e 's/"HLT"/"'${PROCESS}'"/ if /TriggerResults/' *.py;
@@ -49,6 +55,9 @@ echo DQM/Physics/python
 cd $CMSSW_BASE/src/DQM/Physics/python
 perl -pi -e 's/"HLT"/"'${PROCESS}'"/' *.py 
 perl -pi -e 's/"HLT"/"'${PROCESS}'"/ if /TriggerResults/' topDiLeptonDQM_cfi.py
+
+cd $CMSSW_BASE/src
+scram build
 """)
 
 ## Prepare configuration files
