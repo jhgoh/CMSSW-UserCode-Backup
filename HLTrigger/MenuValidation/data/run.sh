@@ -6,10 +6,11 @@
 #DATASETNAME=$1
 #MENUNAME=$2
 
-DATASETNAME=`cat CMSSW.sh | grep -m1 -o 'PrimaryDataset=\(.*\)' | sed -e 's/PrimaryDataset=//g'`
+DATASETNAME=`cat ${RUNTIME_AREA}/CMSSW.sh | grep -m1 -o 'PrimaryDataset=\(.*\)' | sed -e 's/PrimaryDataset=//g'`
 MENUNAME=NewMenuTest
+OUTPUTKEEPLIST=outputA.root
 
-cmsRun -j $RUNTIME_AREA/crab_fjr_$NJob.xml -p pset.py
+cmsRun -j $RUNTIME_AREA/crab_fjr_$NJob.xml -p run_cfg.py
 echo =====================================================
 ls -l output*.root
 echo =====================================================
@@ -41,6 +42,9 @@ for FNAME in outputHLTDQM; do
 done
 
 rm -f inputfile.root
+for FILE in $OUTPUTKEEPLIST; do
+  echo mv $FILE online/
+done
 tar czf online.tgz online
 rm -f *.root
 
