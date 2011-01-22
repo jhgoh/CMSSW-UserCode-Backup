@@ -1,7 +1,13 @@
 #!/bin/bash
 
-DATASETNAME=$1
-MENUNAME=$2
+## Workarount to retrive PD name and menu name
+## This workarount should be changed if script_arguments option 
+## in the crab is working properly
+#DATASETNAME=$1
+#MENUNAME=$2
+
+DATASETNAME=`cat CMSSW.sh | grep -m1 -o 'PrimaryDataset=\(.*\)' | sed -e 's/PrimaryDataset=//g'`
+MENUNAME=NewMenuTest
 
 cmsRun -j $RUNTIME_AREA/crab_fjr_$NJob.xml -p pset.py
 echo =====================================================

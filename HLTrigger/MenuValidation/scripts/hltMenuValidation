@@ -69,7 +69,8 @@ cp $CMSSW_BASE/src/HLTrigger/MenuValidation/data/run.sh run/
 
 sed -i -e 's@^runselection *= *[0-9 ]\+@runselection = %d@g' run/crab.cfg
 sed -i -e 's@^user_remote_dir *= *.*@user_remote_dir = %s@g' run/crab.cfg
-""" % (runNumber, remoteDir))
+sed -i -e 's@MENUNAME=NewMenuTest@MENUNAME=%s@g' run/run.sh
+""" % (runNumber, remoteDir, hltConfigVer))
 
 f = open("run/multicrab.cfg", "w")
 f.write("""[MULTICRAB]
