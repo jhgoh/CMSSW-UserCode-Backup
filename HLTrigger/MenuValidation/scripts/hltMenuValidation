@@ -66,6 +66,16 @@ os.system("""#!/bin/bash
 cp $CMSSW_BASE/src/HLTrigger/MenuValidation/data/crab.cfg run/
 cp $CMSSW_BASE/src/HLTrigger/MenuValidation/data/*.py run/
 cp $CMSSW_BASE/src/HLTrigger/MenuValidation/data/run.sh run/
+cat > run/dummy_cfg.py <<EOF
+import FWCore.ParameterSet.Config as cms
+process = cms.Process("Dummy")
+process.source = cms.Source("PoolSource",
+    fileNames = cms.untracked.vstring(
+        'file:inputfile.root'
+    )
+)
+
+EOF
 
 sed -i -e 's@^runselection *= *[0-9 ]\+@runselection = %d@g' run/crab.cfg
 sed -i -e 's@^user_remote_dir *= *.*@user_remote_dir = %s@g' run/crab.cfg
