@@ -44,29 +44,29 @@ for FNAME in outputHLTDQM; do
 done
 
 ## Do the reco+offlineDQM step
-mkdir offline
-
-for FNAME in outputHLTMON; do
-  FTYPE=`echo $FNAME | sed 's/output//g'`
-  cmsDriver.py step2 -s RAW2DIGI,RECO,DQM -n -1 --eventcontent DQM \
-    --data --conditions auto:com10 --geometry Ideal \
-    --filein file:${FNAME}.root --fileout step2_${FTYPE}.root --no_exec --python_filename step2_cfg.py
-  ## Temporary remove jetMETHLTOfflineSource due to DQM crash
-  cat >> step2_cfg.py <<EOF
-process.DQMOffline.remove(process.jetMETHLTOfflineSource)
-EOF
-  cmsRun step2_cfg.py >& log/offlineDQM_${FTYPE}.log
-#  cmsDriver.py step3 -s HARVESTING:dqmHarvesting \
-#    --data --conditions auto:com10 \
-#    --filein file:step2_${NAME}.root
-  mv step2_${FTYPE}.root offline/
-done
+#mkdir offline
+#
+#for FNAME in outputHLTMON; do
+#  FTYPE=`echo $FNAME | sed 's/output//g'`
+#  cmsDriver.py step2 -s RAW2DIGI,RECO,DQM -n -1 --eventcontent DQM \
+#    --data --conditions auto:com10 --geometry Ideal \
+#    --filein file:${FNAME}.root --fileout step2_${FTYPE}.root --no_exec --python_filename step2_cfg.py
+#  ## Temporary remove jetMETHLTOfflineSource due to DQM crash
+#  cat >> step2_cfg.py <<EOF
+#process.DQMOffline.remove(process.jetMETHLTOfflineSource)
+#EOF
+#  cmsRun step2_cfg.py >& log/offlineDQM_${FTYPE}.log
+##  cmsDriver.py step3 -s HARVESTING:dqmHarvesting \
+##    --data --conditions auto:com10 \
+##    --filein file:step2_${NAME}.root
+#  mv step2_${FTYPE}.root offline/
+#done
 
 ## Everything done. Clear up output
 rm -f inputfile.root
 tar czf log.tgz log && rm -rf log
 tar czf online.tgz online && rm -rf online
-tar czf offline.tgz offline && rm -rf offline
+#tar czf offline.tgz offline && rm -rf offline
 
 ## Make dummy files to save disk space
 for FNAME in *.root; do
