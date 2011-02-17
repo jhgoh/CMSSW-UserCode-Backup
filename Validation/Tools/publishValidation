@@ -15,26 +15,25 @@ sys.argv = [sys.argv[0], '-b']+sys.argv[1:]
 import ROOT
 
 # Set constants
-selections = ("SimVsReco",)
+selections = ("SimVsReco",
               #"SimVsDTExt", "SimVsCSCExt",
               #"DTVsReco", "CSCVsReco")#, "TrackVsReco")
+)
 overlayHists = ("ClusterSize", 
-                #"Effic_Eta",
-                "globalEfficiencies", "Effic_Wheel", "Effic_Disk",
-                "NoiseRate_Wheel", "NoiseRate_Disk",
-                "LostRate_Wheel", "LostRate_Disk",
-                "Res",
-                "Res_WM2", "Res_WM1", "Res_W00", "Res_WP1", "Res_WP2",
-                "Res_DM3", "Res_DM2", "Res_DM1", "Res_DP1", "Res_DP2", "Res_DP3",
-                "Pull",
-                "Pull_WM2", "Pull_WM1", "Pull_W00", "Pull_WP1", "Pull_WP2",
-                "Pull_DM3", "Pull_DM2", "Pull_DM1", "Pull_DP1", "Pull_DP2", "Pull_DP3")
-fitHists = ("Res",
-            "Res_WM2", "Res_WM1", "Res_W00", "Res_WP1", "Res_WP2",
-            "Res_DM3", "Res_DM2", "Res_DM1", "Res_DP1", "Res_DP2", "Res_DP3",
-            "Pull",
-            "Pull_WM2", "Pull_WM1", "Pull_W00", "Pull_WP1", "Pull_WP2",
-            "Pull_DM3", "Pull_DM2", "Pull_DM1", "Pull_DP1", "Pull_DP2", "Pull_DP3")
+                "Efficiency/globalEfficiencies", 
+                "Efficiency/Effic_Wheel", "Efficiency/Effic_Disk",
+                "Efficiency/Noise_Wheel", "Efficiency/Noise_Disk",
+                "Efficiency/Lost_Wheel", "Efficiency/Lost_Disk",
+                "Residual/Res_W",
+                "Resolution/Res_W_Mean", "Resolution/Res_D_Mean", 
+                "Resolution/Res_W_Sigma", "Resolution/Res_D_Sigma", 
+                "Residual/Pull_W",
+                "Resolution/Pull_W_Mean", "Resolution/Pull_D_Mean",
+                "Resolution/Pull_W_Sigma", "Resolution/Pull_D_Sigma",
+)
+fitHists = ("Residual/Res_W", "Residual/Res_D",
+            "Residual/Pull_W", "Residual/Pull_D",
+)
 ext = ".gif"
 
 # Get list of files
@@ -42,7 +41,8 @@ rootFiles = {}
 releases = []
 samples = set()
 for release in sys.argv[2:]:
-    srcDir = os.path.join(release, 'src/Validation/RPCRecHits/test')
+    #srcDir = os.path.join(release, 'src/Validation/RPCRecHits/test')
+    srcDir = os.path.join('/home/jhgoh/data/Validation', release)
     if not os.path.isdir(srcDir):
         continue
     for fileName in os.listdir(srcDir):
@@ -123,7 +123,7 @@ for sample in samples:
             hStack.Draw("nostack")
             legend.Draw()
 
-            imageFileName = hName+ext
+            imageFileName = hName.replace("/", "__")+ext
             canvas.Print(os.path.join(outDir, imageFileName))
 
         ## Do gaussian fits
@@ -184,5 +184,5 @@ for sample in samples:
             pad.SetGridy()
             hFitChi2.Draw()
 
-            imageFileName = "fit_"+hName+ext
+            imageFileName = "fit_"+hName.replace("/", "__")+ext
             canvas.Print(os.path.join(outDir, imageFileName))
