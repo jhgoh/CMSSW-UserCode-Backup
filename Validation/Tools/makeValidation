@@ -7,6 +7,8 @@ if [ $# == 0 ]; then
 fi
 
 BASEDIR=`pwd`
+OUTHOST=cmskr-skk-goh.cern.ch
+OUTBASE=/home/jhgoh/data/Validation
 RUNTIMEDIR=$(readlink -f $0 | sed -e "s#$(basename $0)##g")'bin'
 
 if [ ! -d $RUNTIMEDIR ]; then
@@ -62,11 +64,11 @@ for CMSSW_VERSION in $@; do
   cd Validation/RPCRecHits/test
 
   ## Modify cfg file if source setting is not yet done
-  if [ `grep -c 'process.GlobalTag.globaltag' rpcRecHitValidation_cfg.py` == 0 ]; then
+  if [ `grep -c 'sampleCfg' rpcRecHitValidation_cfg.py` == 0 ]; then
     cat >> rpcRecHitValidation_cfg.py <<EOF
 import sys, os
 sampleName = os.environ['SAMPLE']
-sys.path.append('samples')
+sys.path.append('`pwd`/samples')
 sampleCfg = __import__(sampleName+"_cfg")
 process.source = sampleCfg.source
 process.maxEvents = sampleCfg.maxEvents
@@ -80,8 +82,14 @@ EOF
   cat > run.sh <<EOF
 #!/bin/bash
 
-cd `pwd`
+WORKDIR=`pwd`
+
+cd \$WORKDIR
 eval \`scram runtime -sh\`
+
+cd -
+
+ssh $OUTHOST "mkdir -p $OUTBASE/\$CMSSW_VERSION"
 
 EOF
   chmod +x run.sh
@@ -144,7 +152,9 @@ EOF
     GLOBALTAG=`grep -m 1 -o '\/GEN-SIM-RECO\/[A-Za-z0-9_]\+' samples/${DATASETNAME}_cfg.py | sed -e 's#/GEN-SIM-RECO/##g'`
     echo "globaltag = '$GLOBALTAG::All'" >> samples/${DATASETNAME}_cfg.py
 
-    echo "SAMPLE=$DATASETNAME cmsRun rpcRecHitValidation_cfg.py" >> run.sh
+    echo "SAMPLE=$DATASETNAME cmsRun \$WORKDIR/rpcRecHitValidation_cfg.py" >> run.sh
+    echo "scp *.root $OUTHOST:$OUTBASE/\$CMSSW_VERSION/" >> run.sh
+    echo "rm -f *.root" >> run.sh
 
   done
 
