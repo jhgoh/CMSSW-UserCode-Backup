@@ -6,9 +6,6 @@
 <use name="DataFormats/L1Trigger" />
 <use name="DataFormats/L1GlobalMuonTrigger" />
 <use name="DataFormats/BeamSpot" />
-<use name="TrackingTools/TrajectoryState" />
-<use name="MuonAnalysis/MuonAssociators" />
-<use name="RecoJets/JetAlgorithms" />
 <use name="DataFormats/Math" />
 <use name="root" />
 <use name="HLTrigger/TPGAnalysis" />
