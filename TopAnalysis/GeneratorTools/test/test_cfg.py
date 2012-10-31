@@ -23,8 +23,8 @@ process.recoToGenJet = cms.EDProducer("RecoToGenJetAssociator",
 
 process.genJetToPartons = cms.EDProducer("GenJetPartonAssociator",
     genJets = cms.InputTag("ak5GenJetsNoNu"),
-#    genParticles = cms.InputTag("genParticlesPruned"),
-    genParticles = cms.InputTag("genParticles"),
+    genParticles = cms.InputTag("genParticlesPruned"),
+#    genParticles = cms.InputTag("genParticles"),
     cuts = cms.PSet(
         minNConstituent = cms.int32(1),
         minFracConstituent = cms.double(0.5),

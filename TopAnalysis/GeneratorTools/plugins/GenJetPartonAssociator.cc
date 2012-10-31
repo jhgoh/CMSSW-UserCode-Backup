@@ -111,8 +111,9 @@ void GenJetPartonAssociator::produce(edm::Event& event, const edm::EventSetup& e
       if ( nMatched < cut_minNConstituent_ ) continue;
       if ( 1.*nMatched/nConstituent < cut_minFracConstituent_ ) continue;
 
-      cout << genJet.p4() << " : " << genParton->pdgId() << ':' << genParton->p4();
-      cout << ' ' << nMatched << '/' << genConstituents.size() << '=' << 1.*nMatched/nConstituent << endl;
+      //DEBUG
+      //cout << genJet.p4() << " : " << genParton->pdgId() << ':' << genParton->p4();
+      //cout << ' ' << nMatched << '/' << genConstituents.size() << '=' << 1.*nMatched/nConstituent << endl;
 
       matchedPartons.push_back(k);
     }
@@ -135,9 +136,15 @@ bool GenJetPartonAssociator::hasMother(const reco::Candidate* p, const reco::Can
 {
   if ( !p or !mother ) return false;
   if ( p == mother ) return false;
-
   const reco::Candidate* m = p->mother();
-  if ( m == mother ) return true;
+  if ( !m ) return false;
+
+  //if ( m == mother ) return true;
+  if ( m->status() == mother->status() and
+       m->pdgId() == mother->pdgId() and
+       m->p4() == mother->p4() and
+       m->numberOfDaughters() == mother->numberOfDaughters() and
+       m->numberOfMothers() == mother->numberOfMothers() ) return true;
 
   return hasMother(m, mother);
 }
