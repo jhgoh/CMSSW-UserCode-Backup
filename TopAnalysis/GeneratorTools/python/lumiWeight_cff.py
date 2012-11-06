@@ -3,6 +3,8 @@ import FWCore.ParameterSet.Config as cms
 lumiWeight = cms.EDProducer("LumiWeightProducer",
     pileupMC = cms.vdouble(),
     pileupRD = cms.vdouble(),
+    pileupUp = cms.vdouble(),
+    pileupDn = cms.vdouble(),
 )
 
 
@@ -121,5 +123,5 @@ lumiWeightPileupRun2012Up = cms.vdouble(
 ## Put values
 lumiWeight.pileupMC = lumiWeightPileupSummer12
 lumiWeight.pileupRD = lumiWeightPileupRun2012
-lumiWeightUp = lumiWeight.clone(pileupRD = lumiWeightPileupRun2012Up)
-lumiWeightDn = lumiWeight.clone(pileupRD = lumiWeightPileupRun2012Dn)
+lumiWeight.pileupUp = lumiWeightPileupRun2012Up
+lumiWeight.pileupDn = lumiWeightPileupRun2012Dn

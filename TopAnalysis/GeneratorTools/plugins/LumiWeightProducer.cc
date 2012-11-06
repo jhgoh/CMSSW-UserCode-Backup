@@ -27,7 +27,7 @@ public:
   void produce(edm::Event& event, const edm::EventSetup& eventSetup);
 
 private:
-  edm::LumiReWeighting lumiWeights_;
+  edm::LumiReWeighting lumiWeights_, lumiWeightsUp_, lumiWeightsDn_;
 
 };
 
@@ -35,18 +35,27 @@ LumiWeightProducer::LumiWeightProducer(const edm::ParameterSet& pset)
 {
   std::vector<double> pileupMC = pset.getParameter<std::vector<double> >("pileupMC");
   std::vector<double> pileupRD = pset.getParameter<std::vector<double> >("pileupRD");
+  std::vector<double> pileupUp = pset.getParameter<std::vector<double> >("pileupUp");
+  std::vector<double> pileupDn = pset.getParameter<std::vector<double> >("pileupDn");
 
   std::vector<float> pileupMCTmp;
   std::vector<float> pileupRDTmp;
+  std::vector<float> pileupUpTmp, pileupDnTmp;
   for ( int i=0, n=min(pileupMC.size(), pileupRD.size()); i<n; ++i )
   {
     pileupMCTmp.push_back(pileupMC[i]);
     pileupRDTmp.push_back(pileupRD[i]);
+    pileupUpTmp.push_back(pileupUp[i]);
+    pileupDnTmp.push_back(pileupDn[i]);
   }
   lumiWeights_ = edm::LumiReWeighting(pileupMCTmp, pileupRDTmp);
+  lumiWeightsUp_ = edm::LumiReWeighting(pileupMCTmp, pileupUpTmp);
+  lumiWeightsDn_ = edm::LumiReWeighting(pileupMCTmp, pileupDnTmp);
 
   produces<int>("nTrueInteraction");
-  produces<double>("weight");
+  produces<double>("");
+  produces<double>("up");
+  produces<double>("dn");
 
 }
 
@@ -57,6 +66,8 @@ void LumiWeightProducer::produce(edm::Event& event, const edm::EventSetup& event
 
   std::auto_ptr<int> nTrueIntr(new int(-1));
   std::auto_ptr<double> weight(new double(1.));
+  std::auto_ptr<double> weightUp(new double(1.));
+  std::auto_ptr<double> weightDn(new double(1.));
 
   if ( puHandle.isValid() )
   {
@@ -78,12 +89,16 @@ void LumiWeightProducer::produce(edm::Event& event, const edm::EventSetup& event
     if ( *nTrueIntr > 0 )
     {
       *weight   = lumiWeights_.weight(*nTrueIntr);
+      *weightUp = lumiWeightsUp_.weight(*nTrueIntr);
+      *weightDn = lumiWeightsDn_.weight(*nTrueIntr);
     }
   }
 
 
   event.put(nTrueIntr, "nTrueInteraction");
-  event.put(weight, "weight");
+  event.put(weight  , "");
+  event.put(weightUp, "up");
+  event.put(weightDn, "dn");
 }
 
 DEFINE_FWK_MODULE(LumiWeightProducer);
