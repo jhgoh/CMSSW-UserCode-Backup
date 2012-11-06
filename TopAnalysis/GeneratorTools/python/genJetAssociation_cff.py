@@ -14,7 +14,7 @@ genJetToPartons = cms.EDProducer("GenJetPartonAssociator",
 #    genParticles = cms.InputTag("genParticles"),
     cuts = cms.PSet(
         minNConstituent = cms.int32(1),
-        minFracConstituent = cms.double(0.5),
+        minFracConstituent = cms.double(0.1),
     ),
 )
 
