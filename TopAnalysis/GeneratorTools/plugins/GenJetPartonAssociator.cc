@@ -1,6 +1,3 @@
-#ifndef TopAnalysis_GeneratorTools_GenJetPartonAssociator_H
-#define TopAnalysis_GeneratorTools_GenJetPartonAssociator_H
-
 #include "FWCore/Framework/interface/Frameworkfwd.h"
 #include "FWCore/Framework/interface/EDProducer.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
@@ -135,21 +132,17 @@ void GenJetPartonAssociator::produce(edm::Event& event, const edm::EventSetup& e
 bool GenJetPartonAssociator::hasMother(const reco::Candidate* p, const reco::Candidate* mother)
 {
   if ( !p or !mother ) return false;
-  if ( p == mother ) return false;
+  //if ( p == mother ) return false;
   const reco::Candidate* m = p->mother();
   if ( !m ) return false;
 
   //if ( m == mother ) return true;
   if ( m->status() == mother->status() and
        m->pdgId() == mother->pdgId() and
-       m->p4() == mother->p4() and
-       m->numberOfDaughters() == mother->numberOfDaughters() and
-       m->numberOfMothers() == mother->numberOfMothers() ) return true;
+       m->p4() == mother->p4() ) return true;
 
   return hasMother(m, mother);
 }
 
 DEFINE_FWK_MODULE(GenJetPartonAssociator);
-
-#endif
 
