@@ -1,7 +1,7 @@
 import FWCore.ParameterSet.Config as cms
 import os
 
-def parseJobSectionOption(argv):
+def parseJobSectionOption():
     usage = """Needed environment variables:
     DATASET  : Name of dataset
     SECTION  : Section number
