@@ -15,7 +15,7 @@ process.MessageLogger.cerr.FwkReport.reportEvery = 1000
 
 process.source = cms.Source("PoolSource", fileNames = cms.untracked.vstring())
 from TopAnalysis.TTbarDilepton.dataset_cff import *
-dataset, section, nFiles = parseJobSectionOption(sys.argv)
+dataset, section, nFiles = parseJobSectionOption()
 files = loadDataset(dataset)
 begin, end = calculateRange(files, section, nFiles)
 process.source.fileNames = files[begin:end]
@@ -64,38 +64,17 @@ process.goodOfflinePrimaryVertices = cms.EDFilter("PrimaryVertexObjectFilter",
     filter = cms.bool(True),
 )
 
+process.load("Configuration.StandardSequences.Generator_cff")
+process.genParticlesForJetsNoNu.src = "genParticlesPruned"
+
 process.load('CommonTools/RecoAlgos/HBHENoiseFilter_cfi')
-
-process.load("HLTrigger.HLTfilters.hltHighLevel_cfi")
-HLTPaths = {
-    "MuHad_5E33":["HLT_IsoMu20_eta2p1_TriCentralPFJet30_v*", "HLT_IsoMu20_eta2p1_TriCentralPFNoPUJet30_v*"],
-    "MuHad_7E33":["HLT_IsoMu17_eta2p1_TriCentralPFNoPUJet30_v*", "HLT_IsoMu17_eta2p1_TriCentralPFNoPUJet30_30_20_v*", "HLT_IsoMu17_eta2p1_TriCentralPFNoPUJet45_35_25_v*"],
-
-    "EleHad_5E33":["HLT_Ele25_CaloIdVT_CaloIsoT_TrkIdT_TrkIsoT_TriCentralPFJet30_v*", "HLT_Ele25_CaloIdVT_CaloIsoT_TrkIdT_TrkIsoT_TriCentralPFNoPUJet30_v*"],
-    "EleHad_7E33":["HLT_Ele25_CaloIdVT_CaloIsoT_TrkIdT_TrkIsoT_TriCentralPFNoPUJet30_v*", "HLT_Ele25_CaloIdVT_CaloIsoT_TrkIdT_TrkIsoT_TriCentralPFNoPUJet30_30_20_v*", "HLT_Ele25_CaloIdVT_CaloIsoVL_TrkIdVL_TrkIsoT_TriCentralPFNoPUJet45_35_25_v*"],
-
-    "Mu_51X":["HLT_IsoMu17_eta2p1_TriCentralPFJet30_v4",],
-    "Mu_52X_GTV5":["HLT_IsoMu20_eta2p1_TriCentralPFJet30_v2",],
-    "Mu_52X_GTV9":["HLT_IsoMu17_eta2p1_TriCentralPFJet30_v2", "HLT_IsoMu20_eta2p1_TriCentralPFNoPUJet30_v2",],
-    "Mu_53X_GTV7":["HLT_IsoMu17_eta2p1_TriCentralPFNoPUJet50_40_30_v1",],
-
-    "Ele_51X":["HLT_Ele25_CaloIdVT_CaloIsoT_TrkIdT_TrkIsoT_TriCentralPFJet30_v4",],
-    "Ele_52X_GTV5":["HLT_Ele25_CaloIdVT_CaloIsoT_TrkIdT_TrkIsoT_TriCentralPFJet30_v8",],
-    "Ele_52X_GTV9":["HLT_Ele25_CaloIdVT_CaloIsoT_TrkIdT_TrkIsoT_TriCentralPFNoPUJet30_v3",],
-    "Ele_53X_GTV7":["HLT_Ele25_CaloIdVT_CaloIsoT_TrkIdT_TrkIsoT_TriCentralPFNoPUJet50_40_30_v5", "HLT_Ele25_CaloIdVT_CaloIsoVL_TrkIdVL_TrkIsoT_TriCentralPFNoPUJet50_40_30_v1",],
-}
-
-if isRealData(dataset):
-    process.hltHighLevel.HLTPaths = HLTPaths["MuHad_5E33"] + HLTPaths["MuHad_7E33"]
-else:
-    process.hltHighLevel.HLTPaths = HLTPaths["Mu_53X_GTV7"]
-process.hltHighLevel.throw = False
+from TopAnalysis.TTbarDilepton.trigger_cff import *
 
 process.load("TopAnalysis.GeneratorTools.genJetAssociation_cff")
 process.load("TopAnalysis.GeneratorTools.lumiWeight_cff")
 
 process.event = cms.EDAnalyzer("EventTupleProducer",
-    doMCMatch = cms.bool(False), #not isRealData(dataset)),
+    doMCMatch = cms.bool(not isRealData(dataset)),
     gen = cms.InputTag("genParticlesPruned"),
     genJetToPartonsMap = cms.InputTag("genJetToPartons"),
     recoToGenJetMap = cms.InputTag("recoToGenJet"),
@@ -154,7 +133,8 @@ else:
         process.goodOfflinePrimaryVertices
     #  + process.genParticleCount + process.genParticleTauVeto
     #  + process.hltHighLevel
-    #  + process.recoToGenJet + process.genJetToPartons
+      + process.genParticlesForJetsNoNu * process.ak5GenJetsNoNu
+      + process.recoToGenJet + process.genJetToPartons
       + process.lumiWeight
       * process.event
     #   process.printDecay
