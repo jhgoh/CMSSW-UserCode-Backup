@@ -74,6 +74,11 @@ process.load("TopAnalysis.GeneratorTools.genJetAssociation_cff")
 process.load("TopAnalysis.GeneratorTools.lumiWeight_cff")
 
 process.event = cms.EDAnalyzer("EventTupleProducer",
+    eventCounters = cms.vstring(
+        'prePathCounter',
+        'postPathCounter',
+    ),
+
     doMCMatch = cms.bool(not isRealData(dataset)),
     gen = cms.InputTag("genParticlesPruned"),
     genJetToPartonsMap = cms.InputTag("genJetToPartons"),
@@ -90,7 +95,7 @@ process.event = cms.EDAnalyzer("EventTupleProducer",
             " && sourcePtr.get.gsfTrack.isNonnull && sourcePtr.get.gsfTrack.trackerExpectedHitsInner.numberOfLostHits<2"
             " && sourcePtr.get.gsfTrack.trackerExpectedHitsInner.numberOfHits <= 1 "
             #" && !(1.4442 < abs(sourcePtr.get.superCluster.eta) && abs(sourcePtr.get.superCluster.eta) < 1.5660)"
-            " && relIso(0, 0, 0.3) < 0.2 && sourcePtr.get.dB < 0.04"
+            " && relIso(0.5, 0, 0.3) < 0.15 && sourcePtr.get.dB < 0.04"
             ' && passConversionVeto && sourcePtr.get.electronID("mvaTrigV0") >= 0'
         ),
     ),
@@ -124,7 +129,6 @@ process.event = cms.EDAnalyzer("EventTupleProducer",
 if isRealData(dataset):
     process.p = cms.Path(
         process.goodOfflinePrimaryVertices
-      + process.lumiWeight
     #  + process.hltHighLevel
       * process.event
     )

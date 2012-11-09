@@ -38,6 +38,8 @@
 #include <vector>
 #include <string>
 
+using namespace std;
+
 class EventTupleProducer : public edm::EDAnalyzer
 {
 public:
@@ -45,7 +47,7 @@ public:
   ~EventTupleProducer();
 
   //void beginJob();
-  //void beginLuminosityBlock(edm::LuminosityBlock& lumi, const edm::EventSetup& eventSetup);
+  void beginLuminosityBlock(const edm::LuminosityBlock& lumi, const edm::EventSetup& eventSetup);
   void analyze(const edm::Event& event, const edm::EventSetup& eventSetup);
 
 private:
@@ -65,10 +67,14 @@ private:
   edm::InputTag metLabel_;
   std::string bTagType_;
 
+  std::vector<std::string> eventCounterLabels_;
+
   // Cuts
   StringCutObjectSelector<cmg::Muon, true>* isGoodMuon_;
   StringCutObjectSelector<cmg::Electron, true>* isGoodElectron_;
   StringCutObjectSelector<cmg::PFJet, true>* isGoodJet_;
+
+  TH1F* hEventCounter_;
 
   // Output tree
   TTree* eventTree_;
@@ -122,8 +128,17 @@ EventTupleProducer::EventTupleProducer(const edm::ParameterSet& pset)
   jetLabel_ = jetPSet.getParameter<edm::InputTag>("src");
   bTagType_ = jetPSet.getParameter<std::string>("bTagType");
 
+  // Event counter
+  eventCounterLabels_ = pset.getParameter<std::vector<std::string> >("eventCounters");
+
   // Output histograms and tree
   edm::Service<TFileService> fs;
+  hEventCounter_ = fs->make<TH1F>("hEventCounter", "Event counter", eventCounterLabels_.size(), 1, eventCounterLabels_.size()+1);
+  for ( int i=0, n=eventCounterLabels_.size(); i<n; ++i )
+  {
+    hEventCounter_->GetXaxis()->SetBinLabel(i+1, eventCounterLabels_.at(i).c_str());
+  }
+
   eventTree_ = fs->make<TTree>("event", "Mixed event tree");
   eventTree_->Branch("run", &run_, "run/I");
   eventTree_->Branch("lumi", &lumi_, "lumi/I");
@@ -159,6 +174,18 @@ EventTupleProducer::EventTupleProducer(const edm::ParameterSet& pset)
 
 EventTupleProducer::~EventTupleProducer()
 {
+}
+
+void EventTupleProducer::beginLuminosityBlock(const edm::LuminosityBlock& lumi, const edm::EventSetup& eventSetup)
+{
+  for ( int i=0, n=eventCounterLabels_.size(); i<n; ++i )
+  {
+    edm::Handle<edm::MergeableCounter> eventCounterHandle;
+    lumi.getByLabel(edm::InputTag(eventCounterLabels_.at(i)), eventCounterHandle);
+    if ( !eventCounterHandle.isValid() ) continue;
+
+    hEventCounter_->Fill(i+1, eventCounterHandle->value);
+  }
 }
 
 void EventTupleProducer::analyze(const edm::Event& event, const edm::EventSetup& eventSetup)
