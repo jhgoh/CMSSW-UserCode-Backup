@@ -21,7 +21,7 @@ begin, end = calculateRange(files, section, nFiles)
 process.source.fileNames = files[begin:end]
 
 process.TFileService = cms.Service("TFileService",
-    fileName = cms.string("ntuple_%s_%03d.root" % (dataset, section)),
+    fileName = cms.string("ntuple/unmerged/ntuple_%s_%03d.root" % (dataset, section)),
 )
 
 process.genParticleCount = cms.EDFilter("GenParticleCountFilter",
