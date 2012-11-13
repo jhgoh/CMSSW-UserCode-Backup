@@ -21,7 +21,7 @@ goodOfflinePrimaryVertices = cms.EDFilter("PrimaryVertexObjectFilter",
 
 commonSequenceForData = cms.Sequence(
     goodOfflinePrimaryVertices
-  + noscraping
+#  + noscraping ## Noscrapping does not work in cmgTuple since no generalTracks in the event
 )
 
 commonSequenceForMC = cms.Sequence(
