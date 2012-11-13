@@ -47,96 +47,53 @@ process.printDecay = cms.EDAnalyzer("ParticleDecayDrawer",
     printVertex = cms.untracked.bool(False)
 )
 
-process.noscraping = cms.EDFilter("FilterOutScraping",
-    applyfilter = cms.untracked.bool(True),
-    debugOn = cms.untracked.bool(False),
-    numtrack = cms.untracked.uint32(10),
-    thresh = cms.untracked.double(0.25),
-)
-
-process.goodOfflinePrimaryVertices = cms.EDFilter("PrimaryVertexObjectFilter", 
-    src = cms.InputTag('offlinePrimaryVertices'),
-    filterParams =  cms.PSet(
-        minNdof = cms.double(4.),
-        maxZ    = cms.double(24.), 
-        maxRho  = cms.double(2.)
-    ),
-    filter = cms.bool(True),
-)
-
 process.load("Configuration.StandardSequences.Generator_cff")
 process.genParticlesForJetsNoNu.src = "genParticlesPruned"
 
-process.load('CommonTools/RecoAlgos/HBHENoiseFilter_cfi')
+process.load("HLTrigger.HLTfilters.hltHighLevel_cfi")
+process.hltHighLevel.throw = False
+process.hltEE = process.hltHighLevel.clone()
+process.hltMM = process.hltHighLevel.clone()
+process.hltME = process.hltHighLevel.clone()
 from TopAnalysis.TTbarDilepton.trigger_cff import *
 
 process.load("TopAnalysis.GeneratorTools.genJetAssociation_cff")
 process.load("TopAnalysis.GeneratorTools.lumiWeight_cff")
+process.load("TopAnalysis.TTbarDilepton.commonFilters_cff")
+process.load("TopAnalysis.TTbarDilepton.eventTupleProducer_cfi")
 
-process.event = cms.EDAnalyzer("EventTupleProducer",
-    eventCounters = cms.vstring(
-        'prePathCounter',
-        'postPathCounter',
-    ),
+process.mm = process.eventTuple.clone()
+process.ee = process.eventTuple.clone()
+process.me = process.eventTuple.clone()
 
-    doMCMatch = cms.bool(not isRealData(dataset)),
-    gen = cms.InputTag("genParticlesPruned"),
-    genJetToPartonsMap = cms.InputTag("genJetToPartons"),
-    recoToGenJetMap = cms.InputTag("recoToGenJet"),
-
-    weight = cms.string("lumiWeight"),
-    vertex = cms.InputTag("goodOfflinePrimaryVertices"),
-    met = cms.InputTag("cmgPFMET"),
-
-    electron = cms.PSet(
-        src = cms.InputTag("cmgElectronSel"),
-        cut = cms.string(
-            "pt>20 && abs(eta) < 2.5"
-            " && sourcePtr.get.gsfTrack.isNonnull && sourcePtr.get.gsfTrack.trackerExpectedHitsInner.numberOfLostHits<2"
-            " && sourcePtr.get.gsfTrack.trackerExpectedHitsInner.numberOfHits <= 1 "
-            " && relIso(0.5, 0, 0.3) < 0.15 && sourcePtr.get.dB < 0.04"
-            ' && passConversionVeto && sourcePtr.get.electronID("mvaTrigV0") >= 0'
-        ),
-        dz = cms.double(999),
-    ),
-    muon = cms.PSet(
-        src = cms.InputTag("cmgMuonSel"),
-        cut = cms.string(
-            "abs(eta) < 2.5 && pt > 20" 
-            " && sourcePtr.get.isPFMuon && (sourcePtr.get.isGlobalMuon || sourcePtr.get.isTrackerMuon)"
-            " && relIso(0.5, 0, 0.3) < 0.15"
-        ),
-        dz = cms.double(999),
-    ),
-    jet = cms.PSet(
-        src = cms.InputTag("cmgPFJetSelCHS"),
-        cut = cms.string(
-            " abs(eta) < 2.5 && pt > 30 && nConstituents > 1"
-            " && component(5).fraction < 0.99 && component(4).fraction < 0.99"
-            " && (abs(eta) >= 2.4 || component(2).fraction < 0.99 )"
-            " && (abs(eta) >= 2.4 || component(1).fraction > 0 )"
-            " && (abs(eta) >= 2.4 || component(1).number > 0 ) "
-        ),
-        leptonMinDeltaR = cms.double(0.3),
-        bTagType = cms.string("combinedSecondaryVertexBJetTags"),
-    ),
-)
+process.mm.muon.minNumber = 2
+process.ee.electron.minNumber = 2
+process.me.muon.minNumber = 1
+process.me.electron.minNumber = 1
 
 if isRealData(dataset):
-    process.p = cms.Path(
-        process.goodOfflinePrimaryVertices
-    #  + process.hltHighLevel
-      * process.event
+    process.commonSequence = cms.Sequence(
+        process.commonSequenceForData
     )
+
+    process.pEE = cms.Path(process.commonSequence + process.hltEE + process.ee)
+    process.pMM = cms.Path(process.commonSequence + process.hltMM + process.mm)
+    process.pME = cms.Path(process.commonSequence + process.hltME + process.me)
+
 else:
-    process.p = cms.Path(
-        process.goodOfflinePrimaryVertices
+    process.mm.doMCMatch = True
+    process.ee.doMCMatch = True
+    process.me.doMCMatch = True
+
+    process.commonSequence = cms.Sequence(
+        process.commonSequenceForMC
     #  + process.genParticleCount + process.genParticleTauVeto
-    #  + process.hltHighLevel
       + process.genParticlesForJetsNoNu * process.ak5GenJetsNoNu
       + process.recoToGenJet + process.genJetToPartons
       + process.lumiWeight
-      * process.event
-    #   process.printDecay
     )
+
+    process.pEE = cms.Path(process.commonSequence + process.hltEE + process.ee)
+    process.pMM = cms.Path(process.commonSequence + process.hltEE + process.mm)
+    process.pME = cms.Path(process.commonSequence + process.hltEE + process.me)
 
