@@ -74,6 +74,9 @@ private:
   StringCutObjectSelector<cmg::Electron, true>* isGoodElectron_;
   StringCutObjectSelector<cmg::PFJet, true>* isGoodJet_;
 
+  unsigned int muonMinNumber_, electronMinNumber_;
+  unsigned int muonMaxNumber_, electronMaxNumber_;
+
   double muonDz_, electronDz_;
   double jetLeptonDeltaR_;
 
@@ -119,12 +122,16 @@ EventTupleProducer::EventTupleProducer(const edm::ParameterSet& pset)
   std::string electronCut = electronPSet.getParameter<std::string>("cut");
   isGoodElectron_ = new StringCutObjectSelector<cmg::Electron, true>(electronCut);
   electronDz_ = electronPSet.getParameter<double>("dz");
+  electronMinNumber_ = electronPSet.getParameter<unsigned int>("minNumber");
+  electronMaxNumber_ = electronPSet.getParameter<unsigned int>("maxNumber");
   electronLabel_ = electronPSet.getParameter<edm::InputTag>("src");
 
   edm::ParameterSet muonPSet = pset.getParameter<edm::ParameterSet>("muon");
   std::string muonCut = muonPSet.getParameter<std::string>("cut");
   isGoodMuon_ = new StringCutObjectSelector<cmg::Muon, true>(muonCut);
   muonDz_ = muonPSet.getParameter<double>("dz");
+  muonMinNumber_ = muonPSet.getParameter<unsigned int>("minNumber");
+  muonMaxNumber_ = muonPSet.getParameter<unsigned int>("maxNumber");
   muonLabel_ = muonPSet.getParameter<edm::InputTag>("src");
 
   edm::ParameterSet jetPSet = pset.getParameter<edm::ParameterSet>("jet");
@@ -247,6 +254,8 @@ void EventTupleProducer::analyze(const edm::Event& event, const edm::EventSetup&
     electrons_Q_.push_back(e.charge());
     electrons_Iso_.push_back(e.relIso(0.5, 0, 0.3)); // Default isolation cone size to be checked
   }
+  if ( electrons_.size() < electronMinNumber_ ) return;
+  if ( electrons_.size() > electronMaxNumber_ ) return;
 
   edm::Handle<std::vector<cmg::Muon> > muonHandle;
   event.getByLabel(muonLabel_, muonHandle);
@@ -260,8 +269,8 @@ void EventTupleProducer::analyze(const edm::Event& event, const edm::EventSetup&
     muons_Q_.push_back(mu.charge());
     muons_Iso_.push_back(mu.relIso(0.5, 0, 0.3)); // Default isolation cone size to be checked
   }
-
-  if ( muons_.size() + electrons_.size() < 2 ) return; // Dilepton channel only
+  if ( muons_.size() < muonMinNumber_ ) return;
+  if ( muons_.size() > muonMaxNumber_ ) return;
 
   edm::Handle<std::vector<cmg::BaseMET> > metHandle;
   event.getByLabel(metLabel_, metHandle);
