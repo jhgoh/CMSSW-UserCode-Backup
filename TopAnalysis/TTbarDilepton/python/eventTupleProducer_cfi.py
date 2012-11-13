@@ -48,7 +48,7 @@ eventTuple = cms.EDAnalyzer("EventTupleProducer",
             " && (abs(eta) >= 2.4 || component(1).fraction > 0 )"
             " && (abs(eta) >= 2.4 || component(1).number > 0 ) "
         ),
-        leptonMinDeltaR = cms.double(0.3),
+        leptonDeltaR = cms.double(0.3),
         bTagType = cms.string("combinedSecondaryVertexBJetTags"),
     ),
 )
