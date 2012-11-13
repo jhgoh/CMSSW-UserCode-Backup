@@ -55,7 +55,6 @@ process.hltHighLevel.throw = False
 process.hltEE = process.hltHighLevel.clone()
 process.hltMM = process.hltHighLevel.clone()
 process.hltME = process.hltHighLevel.clone()
-from TopAnalysis.TTbarDilepton.trigger_cff import *
 
 process.load("TopAnalysis.GeneratorTools.genJetAssociation_cff")
 process.load("TopAnalysis.GeneratorTools.lumiWeight_cff")
@@ -71,19 +70,32 @@ process.ee.electron.minNumber = 2
 process.me.muon.minNumber = 1
 process.me.electron.minNumber = 1
 
+production, primaryDS = dataset.split('-')
+from TopAnalysis.TTbarDilepton.trigger_cff import *
+
 if isRealData(dataset):
     process.commonSequence = cms.Sequence(
         process.commonSequenceForData
     )
 
-    process.pEE = cms.Path(process.commonSequence + process.hltEE + process.ee)
-    process.pMM = cms.Path(process.commonSequence + process.hltMM + process.mm)
-    process.pME = cms.Path(process.commonSequence + process.hltME + process.me)
+    if 'DoubleMu' == primaryDS:
+        process.hltMM.HLTPaths = HLTPaths[dataset]
+        process.p = cms.Path(process.commonSequence + process.hltMM + process.mm)
+    elif 'DoubleElectron' == primaryDS:
+        process.hltEE.HLTPaths = HLTPaths[dataset]
+        process.p = cms.Path(process.commonSequence + process.hltEE + process.ee)
+    elif 'MuEG' == primaryDS:
+        process.hltME.HLTPaths = HLTPaths[dataset]
+        process.p = cms.Path(process.commonSequence + process.hltME + process.me)
 
 else:
     process.mm.doMCMatch = True
     process.ee.doMCMatch = True
     process.me.doMCMatch = True
+
+    process.hltMM.HLTPaths = HLTPaths["%s-DoubleMu"       % production]
+    process.hltEE.HLTPaths = HLTPaths["%s-DoubleElectron" % production]
+    process.hltME.HLTPaths = HLTPaths["%s-MuEG"           % production]
 
     process.commonSequence = cms.Sequence(
         process.commonSequenceForMC
@@ -93,7 +105,9 @@ else:
       + process.lumiWeight
     )
 
+    prod, sample = dataset.split('-')
+
+    process.pMM = cms.Path(process.commonSequence + process.hltMM + process.mm)
     process.pEE = cms.Path(process.commonSequence + process.hltEE + process.ee)
-    process.pMM = cms.Path(process.commonSequence + process.hltEE + process.mm)
-    process.pME = cms.Path(process.commonSequence + process.hltEE + process.me)
+    process.pME = cms.Path(process.commonSequence + process.hltME + process.me)
 
