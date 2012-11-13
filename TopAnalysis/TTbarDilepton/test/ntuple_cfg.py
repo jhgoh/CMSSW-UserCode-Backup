@@ -94,24 +94,19 @@ process.event = cms.EDAnalyzer("EventTupleProducer",
             "pt>20 && abs(eta) < 2.5"
             " && sourcePtr.get.gsfTrack.isNonnull && sourcePtr.get.gsfTrack.trackerExpectedHitsInner.numberOfLostHits<2"
             " && sourcePtr.get.gsfTrack.trackerExpectedHitsInner.numberOfHits <= 1 "
-            #" && !(1.4442 < abs(sourcePtr.get.superCluster.eta) && abs(sourcePtr.get.superCluster.eta) < 1.5660)"
             " && relIso(0.5, 0, 0.3) < 0.15 && sourcePtr.get.dB < 0.04"
             ' && passConversionVeto && sourcePtr.get.electronID("mvaTrigV0") >= 0'
         ),
+        dz = cms.double(999),
     ),
     muon = cms.PSet(
         src = cms.InputTag("cmgMuonSel"),
         cut = cms.string(
-            "abs(eta) < 2.4 && pt > 20" 
-            #" && sourcePtr.get.dB < 0.2"
+            "abs(eta) < 2.5 && pt > 20" 
             " && sourcePtr.get.isPFMuon && (sourcePtr.get.isGlobalMuon || sourcePtr.get.isTrackerMuon)"
-            #" && sourcePtr.get.normChi2 < 10"
-            #" && sourcePtr.get.track.hitPattern.trackerLayersWithMeasurement > 5"
-            #" && sourcePtr.get.globalTrack.hitPattern.numberOfValidMuonHits > 0"
-            #" && sourcePtr.get.innerTrack.hitPattern.numberOfValidPixelHits > 0"
-            #" && sourcePtr.get.numberOfMatchedStations > 1"
-            " && relIso(0.5, 0, 0.3) < 0.2"
+            " && relIso(0.5, 0, 0.3) < 0.15"
         ),
+        dz = cms.double(999),
     ),
     jet = cms.PSet(
         src = cms.InputTag("cmgPFJetSelCHS"),
@@ -122,6 +117,7 @@ process.event = cms.EDAnalyzer("EventTupleProducer",
             " && (abs(eta) >= 2.4 || component(1).fraction > 0 )"
             " && (abs(eta) >= 2.4 || component(1).number > 0 ) "
         ),
+        leptonMinDeltaR = cms.double(0.3),
         bTagType = cms.string("combinedSecondaryVertexBJetTags"),
     ),
 )

@@ -74,6 +74,9 @@ private:
   StringCutObjectSelector<cmg::Electron, true>* isGoodElectron_;
   StringCutObjectSelector<cmg::PFJet, true>* isGoodJet_;
 
+  double muonDz_, electronDz_;
+  double jetLeptonDeltaR_;
+
   TH1F* hEventCounter_;
 
   // Output tree
@@ -115,16 +118,19 @@ EventTupleProducer::EventTupleProducer(const edm::ParameterSet& pset)
   edm::ParameterSet electronPSet = pset.getParameter<edm::ParameterSet>("electron");
   std::string electronCut = electronPSet.getParameter<std::string>("cut");
   isGoodElectron_ = new StringCutObjectSelector<cmg::Electron, true>(electronCut);
+  electronDz_ = electronPSet.getParameter<double>("dz");
   electronLabel_ = electronPSet.getParameter<edm::InputTag>("src");
 
   edm::ParameterSet muonPSet = pset.getParameter<edm::ParameterSet>("muon");
   std::string muonCut = muonPSet.getParameter<std::string>("cut");
   isGoodMuon_ = new StringCutObjectSelector<cmg::Muon, true>(muonCut);
+  muonDz_ = muonPSet.getParameter<double>("dz");
   muonLabel_ = muonPSet.getParameter<edm::InputTag>("src");
 
   edm::ParameterSet jetPSet = pset.getParameter<edm::ParameterSet>("jet");
   std::string jetCut = jetPSet.getParameter<std::string>("cut");
   isGoodJet_ = new StringCutObjectSelector<cmg::PFJet, true>(jetCut);
+  jetLeptonDeltaR_ = jetPSet.getParameter<double>("leptonDeltaR");
   jetLabel_ = jetPSet.getParameter<edm::InputTag>("src");
   bTagType_ = jetPSet.getParameter<std::string>("bTagType");
 
@@ -212,6 +218,7 @@ void EventTupleProducer::analyze(const edm::Event& event, const edm::EventSetup&
   edm::Handle<reco::VertexCollection> vertexHandle;
   event.getByLabel(vertexLabel_, vertexHandle);
   nVertex_ = vertexHandle->size();
+  const reco::Vertex& pv = vertexHandle->at(0);
 
   if ( event.isRealData() )
   {
@@ -234,6 +241,7 @@ void EventTupleProducer::analyze(const edm::Event& event, const edm::EventSetup&
   {
     const cmg::Electron& e = electronHandle->at(i);
     if ( !(*isGoodElectron_)(e) ) continue;
+    if ( abs(e.dz(pv.position())) > electronDz_ ) continue;
 
     electrons_.push_back(e.p4());
     electrons_Q_.push_back(e.charge());
@@ -246,6 +254,7 @@ void EventTupleProducer::analyze(const edm::Event& event, const edm::EventSetup&
   {
     const cmg::Muon& mu = muonHandle->at(i);
     if ( !(*isGoodMuon_)(mu) ) continue;
+    if ( abs(mu.dz(pv.position())) > muonDz_ ) continue;
 
     muons_.push_back(mu.p4());
     muons_Q_.push_back(mu.charge());
@@ -306,7 +315,26 @@ void EventTupleProducer::analyze(const edm::Event& event, const edm::EventSetup&
   {
     const cmg::PFJet& jet = jetHandle->at(i);
 
+    bool isOverlap = false;
     if ( !(*isGoodJet_)(jet) ) continue;
+    for ( int j=0, m=electrons_.size(); j<m; ++j )
+    {
+      const math::XYZTLorentzVector& e = electrons_.at(j);
+      if ( deltaR(e, jet.p4()) < jetLeptonDeltaR_ )
+      {
+        isOverlap = true;
+        break;
+      }
+    }
+    for ( int j=0, m=muons_.size(); j<m; ++j )
+    {
+      const math::XYZTLorentzVector& mu = muons_.at(j);
+      if ( deltaR(mu, jet.p4()) < jetLeptonDeltaR_ )
+      {
+        isOverlap = true;
+        break;
+      }
+    }
 
     jets_.push_back(jet.p4());
     jets_bTag_.push_back(jet.btag(bTagType_.c_str()));
