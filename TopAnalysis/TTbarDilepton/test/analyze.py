@@ -9,7 +9,7 @@ gROOT.ProcessLine(".x rootlogon.C")
 gSystem.CompileMacro("../src/TTbarDileptonNtupleAnalyzer.cc")
 
 #from sampleInfo import *
-srcDir = "/users/jhgoh/data/CMS/ntuple/Generic/20121112_1"
+srcDir = "ntuple/merged"
 samples = [
     "Run2012A-DoubleElectron", "Run2012A-DoubleMu", "Run2012A-MuEG",
     "Run2012B-DoubleElectron", "Run2012B-DoubleMu", "Run2012B-MuEG",
@@ -24,25 +24,20 @@ samples = [
     "Summer12-ZZ",
 ]
 
-modules = []
-for sample in samples:
-    module = TTbarDileptonNtupleAnalyzer("%s/ntuple_%s.root" % (srcDir, sample), "hist/hist_%s.root" % sample)
-    modules.append(module)
+os.exit(0)
 
 def runModule(module):
     module.analyze(1)
     module.endJob(1)
 
 procs = []
-for module in modules:
-    proc = Process(target=runModule, args=(module,))
-    proc.start()
+for sample in samples:
+    module = TTbarDileptonNtupleAnalyzer("%s/ntuple_%s.root" % (srcDir, sample), "hist/hist_%s.root" % sample)
 
+    proc = Process(target=runModule, args=(module,))
     procs.append(proc)
 
-#while procs:
-#    procs.pop().join()
+    proc.start()
 
-#for module in modules:
-#    module.analyze(1)
+#    runModule(module)
 #    module.endJob(1)
