@@ -1,0 +1,19 @@
+<use name="FWCore/Framework" />
+<use name="FWCore/PluginManager" />
+<use name="FWCore/ParameterSet" />
+
+<use name="DataFormats/TrackReco" />
+<use name="DataFormats/Candidate" />
+<use name="DataFormats/PatCandidates" />
+<use name="PhysicsTools/CandUtils" />
+<use name="PhysicsTools/PatUtils" />
+<use name="PhysicsTools/UtilAlgos" />
+<use name="PhysicsTools/RecoUtils" />
+<use name="RecoVertex/VertexTools" />
+
+<use name="AnalysisDataFormats/CMGTools" />
+
+<use name="root" />
+
+<export name="1">
+</export>
