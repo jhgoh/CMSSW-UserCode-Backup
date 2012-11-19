@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE data [<!ATTLIST data id ID #IMPLIED>]>
+<dataset>
+
+<data id="Summer12" type="MC">
+  <sample name="t#bar{t}" color="kRed+1">
+    <channel name="TTJets" xsec="225.197" />
+    <!--<channel name="TTJetsOthers" xsec="225.197" />-->
+  </sample>
+  <sample name="W#rightarrow l#nu" color="kGreen-3">
+    <channel name="WJets" xsec="36257.2" />
+  </sample>
+  <sample name="VV" color="kGray+4">
+    <channel name="ZZ" xsec="7.7" />
+    <channel name="WW" xsec="54.8" />
+    <channel name="WZ" xsec="32.3" />
+  </sample>
+  <sample name="Single top" color="kMagenta">
+    <channel name="SingleTop" xsec="22.2" />
+  </sample>
+  <!--//
+  <sample name="Z/#gamma*#rightarrow#tau^{+}#tau^{-}" color="kAzure+8">
+    <channel name="DYtt" xsec="" />
+    <channel name="DYtt10To50" xsec="" />
+  </sample>
+  //-->
+  <sample name="Z/#gamma*#rightarrowl^{+}l^{-}" color="kAzure-2">
+    <channel name="ZJets" xsec="3503.17" />
+    <channel name="ZJets10To50" xsec="860" />
+  </sample>
+</data>
+
+<data id="Fall11" type="MC">
+  <sample name="t#bar{t}" color="kRed+1">
+    <channel name="TTJets" xsec="157.5" />
+    <channel name="TTJetsOthers" xsec="157.5" />
+  </sample>
+  <sample name="W#rightarrow l#nu" color="kGreen-3">
+    <channel name="WJets" xsec="31314" />
+  </sample>
+  <sample name="VV" color="kGray+4">
+    <channel name="ZZ" xsec="5.9" />
+    <channel name="WW" xsec="43" />
+    <channel name="WZ" xsec="18.2" />
+  </sample>
+  <sample name="Single top" color="kMagenta">
+    <channel name="SingleTop" xsec="10.6" />
+  </sample>
+  <sample name="Z/#gamma*#rightarrow#tau^{+}#tau^{-}" color="kAzure+8">
+    <channel name="DYtt" xsec="3048" />
+    <channel name="DYtt10To50" xsec="4998" />
+  </sample>
+  <sample name="Z/#gamma*#rightarrowl^{+}l^{-}" color="kAzure-2">
+    <channel name="ZJets" xsec="3048" />
+    <channel name="ZJets10To50" xsec="4998" />
+  </sample>
+</data>
+
+</dataset>
