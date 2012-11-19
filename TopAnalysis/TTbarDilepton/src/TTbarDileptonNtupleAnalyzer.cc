@@ -39,7 +39,7 @@ public:
   struct Selector;
   struct HistSet;
 
-  TTbarDileptonNtupleAnalyzer(const std::string inputFileName, const std::string outputFileName);
+  TTbarDileptonNtupleAnalyzer(const std::string inputFileName, const std::string mode, const std::string outputFileName);
   ~TTbarDileptonNtupleAnalyzer() {};
   void analyze(int verboseLevel=1);
   void endJob(int verboseLevel=1);
@@ -132,7 +132,9 @@ public:
 private:
   TFile* inputFile_, * outputFile_;
   Event* event_;
-  std::vector<HistSet*> histsMM_, histsEE_, histsME_;
+  std::vector<HistSet*> hists_;
+
+  Selector::MODE mode_;
 };
 
 const int TTbarDileptonNtupleAnalyzer::Selector::nCutSteps = 6;
@@ -140,26 +142,49 @@ const double TTbarDileptonNtupleAnalyzer::Selector::cut_btagTight_ = 0.898;
 const double TTbarDileptonNtupleAnalyzer::Selector::cut_btagMedium_ = 0.679;
 const double TTbarDileptonNtupleAnalyzer::Selector::cut_btagLoose_ = 0.244;
 
-TTbarDileptonNtupleAnalyzer::TTbarDileptonNtupleAnalyzer(const std::string inputFileName, const std::string outputFileName)
+TTbarDileptonNtupleAnalyzer::TTbarDileptonNtupleAnalyzer(const std::string inputFileName, const std::string mode, const std::string outputFileName)
 {
+  event_ = 0;
+
   inputFile_ = TFile::Open(inputFileName.c_str());
-  TDirectory* eventDir = inputFile_->GetDirectory("event");
+  if ( !inputFile_ or !inputFile_->IsOpen() or inputFile_->IsZombie() )
+  {
+    cout << "File open error, " << inputFileName << endl;
+    return;
+  }
+  TDirectory* eventDir = inputFile_->GetDirectory(mode.c_str());
+  if ( !eventDir )
+  {
+    cout << "Incorrect directory structure, " << inputFileName << ":/" << mode << endl;
+    return;
+  }
+
+  outputFile_ = new TFile(outputFileName.c_str(), "RECREATE");
+  if ( !outputFile_ or !outputFile_->IsOpen() or outputFile_->IsZombie() )
+  {
+    cout << "Output file open error, " << outputFileName << endl;
+    return;
+  }
+
   event_ = new Event(eventDir);
 
-  outputFile_ = TFile::Open(outputFileName.c_str(), "RECREATE");
-  TDirectory* mmDir = outputFile_->mkdir("MM");
-  TDirectory* eeDir = outputFile_->mkdir("EE");
-  TDirectory* meDir = outputFile_->mkdir("ME");
   for ( int i=0; i<Selector::nCutSteps; ++i )
   {
-    histsMM_.push_back(new HistSet(mmDir->mkdir(Form("Step%2d", i))));
-    histsEE_.push_back(new HistSet(eeDir->mkdir(Form("Step%2d", i))));
-    histsME_.push_back(new HistSet(meDir->mkdir(Form("Step%2d", i))));
+    hists_.push_back(new HistSet(outputFile_->mkdir(Form("Step%2d", i))));
   }
+
+  if ( mode == "mm" ) mode_ = Selector::MM;
+  else if ( mode == "ee" ) mode_ = Selector::EE;
+  else if ( mode == "me" ) mode_ = Selector::ME;
+  else mode_ = Selector::END;
+
+  if ( mode_ == Selector::END ) event_ = 0;
 }
 
 void TTbarDileptonNtupleAnalyzer::endJob(int verboseLevel)
 {
+  if ( !event_ ) return;
+
   if ( verboseLevel >= 1 )
   {
     cout << "Finishing job for " << inputFile_->GetName() << endl;
@@ -168,16 +193,12 @@ void TTbarDileptonNtupleAnalyzer::endJob(int verboseLevel)
   delete event_;
   for ( int i=0; i<Selector::nCutSteps; ++i )
   {
-    histsMM_.at(i)->write();
-    histsEE_.at(i)->write();
-    histsME_.at(i)->write();
+    hists_.at(i)->write();
   }
   outputFile_->Close();
   for ( int i=0; i<Selector::nCutSteps; ++i )
   {
-    delete histsMM_.at(i);
-    delete histsEE_.at(i);
-    delete histsME_.at(i);
+    delete hists_.at(i);
   }
 }
 
@@ -280,66 +301,66 @@ TTbarDileptonNtupleAnalyzer::HistSet::HistSet(TDirectory* dir)
   hNVertex_ = new TH1F("hNVertex", "Number of vertex", 50, 0, 50);
 
   hNMuon_     = new TH1F("hNMuon"    , "Number of muons;;Events", 5, 0, 5);
-  hMuon1_pt_  = new TH1F("hMuon1_pt" , "Muon1 p_{T};p_{T} (GeV/c);Events per 10GeV/c", 50, 0, 500);
-  hMuon1_eta_ = new TH1F("hMuon1_eta", "Muon1 #eta;#eta;Events", 50, -2.5, 2.5);
-  hMuon1_phi_ = new TH1F("hMuon1_phi", "Muon1 #phi;#phi;Events", 50, -TMath::Pi(), TMath::Pi());
-  hMuon1_iso_ = new TH1F("hMuon1_iso", "Muon1 isolation;Relative isolation;Events", 50, 0, 0.5);
-  hMuon2_pt_  = new TH1F("hMuon2_pt" , "Muon2 p_{T};p_{T} (GeV/c);Events per 10GeV/c", 50, 0, 500);
-  hMuon2_eta_ = new TH1F("hMuon2_eta", "Muon2 #eta;#eta;Events", 50, -2.5, 2.5);
-  hMuon2_phi_ = new TH1F("hMuon2_phi", "Muon2 #phi;#phi;Events", 50, -TMath::Pi(), TMath::Pi());
-  hMuon2_iso_ = new TH1F("hMuon2_iso", "Muon2 isolation;Relative isolation;Events", 50, 0, 0.5);
+  hMuon1_pt_  = new TH1F("hMuon1_pt" , "Muon1 p_{T};p_{T} (GeV/c);Events per 5GeV/c", 100, 0, 500);
+  hMuon1_eta_ = new TH1F("hMuon1_eta", "Muon1 #eta;#eta;Events", 100, -2.5, 2.5);
+  hMuon1_phi_ = new TH1F("hMuon1_phi", "Muon1 #phi;#phi;Events", 100, -TMath::Pi(), TMath::Pi());
+  hMuon1_iso_ = new TH1F("hMuon1_iso", "Muon1 isolation;Relative isolation;Events", 100, 0, 0.5);
+  hMuon2_pt_  = new TH1F("hMuon2_pt" , "Muon2 p_{T};p_{T} (GeV/c);Events per 5GeV/c", 100, 0, 500);
+  hMuon2_eta_ = new TH1F("hMuon2_eta", "Muon2 #eta;#eta;Events", 100, -2.5, 2.5);
+  hMuon2_phi_ = new TH1F("hMuon2_phi", "Muon2 #phi;#phi;Events", 100, -TMath::Pi(), TMath::Pi());
+  hMuon2_iso_ = new TH1F("hMuon2_iso", "Muon2 isolation;Relative isolation;Events", 100, 0, 0.5);
 
   hNElectron_     = new TH1F("hNElectron"    , "Number of muons;;Events", 5, 0, 5);
-  hElectron1_pt_  = new TH1F("hElectron1_pt" , "Electron1 p_{T};p_{T} (GeV/c);Events per 10GeV/c", 50, 0, 500);
-  hElectron1_eta_ = new TH1F("hElectron1_eta", "Electron1 #eta;#eta;Events", 50, -2.5, 2.5);
-  hElectron1_phi_ = new TH1F("hElectron1_phi", "Electron1 #phi;#phi;Events", 50, -TMath::Pi(), TMath::Pi());
-  hElectron1_iso_ = new TH1F("hElectron1_iso", "Electron1 isolation;Relative isolation;Events", 50, 0, 0.5);
-  hElectron2_pt_  = new TH1F("hElectron2_pt" , "Electron2 p_{T};p_{T} (GeV/c);Events per 10GeV/c", 50, 0, 500);
-  hElectron2_eta_ = new TH1F("hElectron2_eta", "Electron2 #eta;#eta;Events", 50, -2.5, 2.5);
-  hElectron2_phi_ = new TH1F("hElectron2_phi", "Electron2 #phi;#phi;Events", 50, -TMath::Pi(), TMath::Pi());
-  hElectron2_iso_ = new TH1F("hElectron2_iso", "Electron2 isolation;Relative isolation;Events", 50, 0, 0.5);
+  hElectron1_pt_  = new TH1F("hElectron1_pt" , "Electron1 p_{T};p_{T} (GeV/c);Events per 5GeV/c", 100, 0, 500);
+  hElectron1_eta_ = new TH1F("hElectron1_eta", "Electron1 #eta;#eta;Events", 100, -2.5, 2.5);
+  hElectron1_phi_ = new TH1F("hElectron1_phi", "Electron1 #phi;#phi;Events", 100, -TMath::Pi(), TMath::Pi());
+  hElectron1_iso_ = new TH1F("hElectron1_iso", "Electron1 isolation;Relative isolation;Events", 100, 0, 0.5);
+  hElectron2_pt_  = new TH1F("hElectron2_pt" , "Electron2 p_{T};p_{T} (GeV/c);Events per 5GeV/c", 100, 0, 500);
+  hElectron2_eta_ = new TH1F("hElectron2_eta", "Electron2 #eta;#eta;Events", 100, -2.5, 2.5);
+  hElectron2_phi_ = new TH1F("hElectron2_phi", "Electron2 #phi;#phi;Events", 100, -TMath::Pi(), TMath::Pi());
+  hElectron2_iso_ = new TH1F("hElectron2_iso", "Electron2 isolation;Relative isolation;Events", 100, 0, 0.5);
 
   hNJets_    = new TH1F("hNJets"   , "Number of jets;;Events", 5, 0, 5);
   hNTbjets_  = new TH1F("hNTbjets" , "Number of Tight b jets;;Events", 5, 0, 5);
   hNMbjets_  = new TH1F("hNMbjets" , "NUmber of Medium b jets;;Events", 5, 0, 5);
   hNLbjets_  = new TH1F("hNLbjets" , "NUmber of Loose b jets;;Events", 5, 0, 5);
-  hJet1_pt_   = new TH1F("hJet1_pt"  , "Jet1 p_{T};p_{T} (GeV/c;Events per 10GeV/c", 50, 0, 500);
-  hJet1_eta_  = new TH1F("hJet1_eta" , "Jet1 #eta;#eta;Events", 50, -2.5, 2.5);
-  hJet1_phi_  = new TH1F("hJet1_phi" , "Jet1 #phi;#phi;Events", 50, -TMath::Pi(), TMath::Pi());
-  hJet1_btag_ = new TH1F("hJet1_btag", "Jet1 b tag;b discriminator;Events", 50, 0, 1);
-  hJet2_pt_   = new TH1F("hJet2_pt"  , "Jet2 p_{T};p_{T} (GeV/c);Events per 10GeV/c", 50, 0, 500);
-  hJet2_eta_  = new TH1F("hJet2_eta" , "Jet2 #eta;#eta;Events", 50, -2.5, 2.5);
-  hJet2_phi_  = new TH1F("hJet2_phi" , "Jet2 #phi;#phi;Events", 50, -TMath::Pi(), TMath::Pi());
-  hJet2_btag_ = new TH1F("hJet2_btag", "Jet1 b tag;b discriminator;Events", 50, 0, 1);
-  hJet3_pt_   = new TH1F("hJet3_pt"  , "Jet3 p_{T};p_{T} (GeV/c);Events per 10GeV/c", 50, 0, 500);
-  hJet3_eta_  = new TH1F("hJet3_eta" , "Jet3 #eta;#eta;Events", 50, -2.5, 2.5);
-  hJet3_phi_  = new TH1F("hJet3_phi" , "Jet3 #phi;#phi;Events", 50, -TMath::Pi(), TMath::Pi());
-  hJet3_btag_ = new TH1F("hJet3_btag", "Jet1 b tag;b discriminator;Events", 50, 0, 1);
-  hJet4_pt_   = new TH1F("hJet4_pt"  , "Jet4 p_{T};p_{T} (GeV/c);Events per 10GeV/c", 50, 0, 500);
-  hJet4_eta_  = new TH1F("hJet4_eta" , "Jet4 #eta;#eta;Events", 50, -2.5, 2.5);
-  hJet4_phi_  = new TH1F("hJet4_phi" , "Jet4 #phi;#phi;Events", 50, -TMath::Pi(), TMath::Pi());
-  hJet4_btag_ = new TH1F("hJet4_btag", "Jet1 b tag;b discriminator;Events", 50, 0, 1);
+  hJet1_pt_   = new TH1F("hJet1_pt"  , "Jet1 p_{T};p_{T} (GeV/c;Events per 5GeV/c", 100, 0, 500);
+  hJet1_eta_  = new TH1F("hJet1_eta" , "Jet1 #eta;#eta;Events", 100, -2.5, 2.5);
+  hJet1_phi_  = new TH1F("hJet1_phi" , "Jet1 #phi;#phi;Events", 100, -TMath::Pi(), TMath::Pi());
+  hJet1_btag_ = new TH1F("hJet1_btag", "Jet1 b tag;b discriminator;Events", 100, 0, 1);
+  hJet2_pt_   = new TH1F("hJet2_pt"  , "Jet2 p_{T};p_{T} (GeV/c);Events per 5GeV/c", 100, 0, 500);
+  hJet2_eta_  = new TH1F("hJet2_eta" , "Jet2 #eta;#eta;Events", 100, -2.5, 2.5);
+  hJet2_phi_  = new TH1F("hJet2_phi" , "Jet2 #phi;#phi;Events", 100, -TMath::Pi(), TMath::Pi());
+  hJet2_btag_ = new TH1F("hJet2_btag", "Jet1 b tag;b discriminator;Events", 100, 0, 1);
+  hJet3_pt_   = new TH1F("hJet3_pt"  , "Jet3 p_{T};p_{T} (GeV/c);Events per 5GeV/c", 100, 0, 500);
+  hJet3_eta_  = new TH1F("hJet3_eta" , "Jet3 #eta;#eta;Events", 100, -2.5, 2.5);
+  hJet3_phi_  = new TH1F("hJet3_phi" , "Jet3 #phi;#phi;Events", 100, -TMath::Pi(), TMath::Pi());
+  hJet3_btag_ = new TH1F("hJet3_btag", "Jet1 b tag;b discriminator;Events", 100, 0, 1);
+  hJet4_pt_   = new TH1F("hJet4_pt"  , "Jet4 p_{T};p_{T} (GeV/c);Events per 5GeV/c", 100, 0, 500);
+  hJet4_eta_  = new TH1F("hJet4_eta" , "Jet4 #eta;#eta;Events", 100, -2.5, 2.5);
+  hJet4_phi_  = new TH1F("hJet4_phi" , "Jet4 #phi;#phi;Events", 100, -TMath::Pi(), TMath::Pi());
+  hJet4_btag_ = new TH1F("hJet4_btag", "Jet1 b tag;b discriminator;Events", 100, 0, 1);
 
-  hMet_pt_  = new TH1F("hMet_pt" , "Met p_{T};p_{T} (GeV/c);Events per 10GeV/c", 50, 0, 500);
-  hMet_phi_ = new TH1F("hMet_phi", "Met #phi;#phi;Events", 50, -TMath::Pi(), TMath::Pi());
+  hMet_pt_  = new TH1F("hMet_pt" , "Met p_{T};p_{T} (GeV/c);Events per 5GeV/c", 100, 0, 500);
+  hMet_phi_ = new TH1F("hMet_phi", "Met #phi;#phi;Events", 100, -TMath::Pi(), TMath::Pi());
 
   hMM_q_ = new TH1F("hMM_q", "Muon pair charge;Muon pair charge;Events", 3, -1.5, 1.5);
-  hMM_m_ = new TH1F("hMM_m", "Muon pair mass;Muon pair mass (GeV/c^{2});Events per 10GeV/c^{2}", 50, 0, 500);
-  hMM_pt_  = new TH1F("hMM_pt" , "Muon pair p_{T};Muon pair p_{T} (GeV/c);Events per 10GeV", 50, 0, 500);
-  hMM_eta_ = new TH1F("hMM_eta", "Muon pair #eta;Muon pair #eta (GeV/c);Events per 10GeV", 50, -2.5, 2.5);
-  hMM_phi_ = new TH1F("hMM_phi", "Muon pair #phi;Muon pair #phi (GeV/c);Events per 10GeV", 50, -TMath::Pi(), TMath::Pi());
+  hMM_m_ = new TH1F("hMM_m", "Muon pair mass;Muon pair mass (GeV/c^{2});Events per 5GeV/c^{2}", 100, 0, 500);
+  hMM_pt_  = new TH1F("hMM_pt" , "Muon pair p_{T};Muon pair p_{T} (GeV/c);Events per 5GeV", 100, 0, 500);
+  hMM_eta_ = new TH1F("hMM_eta", "Muon pair #eta;Muon pair #eta (GeV/c);Events", 100, -2.5, 2.5);
+  hMM_phi_ = new TH1F("hMM_phi", "Muon pair #phi;Muon pair #phi (GeV/c);Events", 100, -TMath::Pi(), TMath::Pi());
 
   hEE_q_ = new TH1F("hEE_q", "Electron pair charge;Electron pair charge;Events", 3, -1.5, 1.5);
-  hEE_m_ = new TH1F("hEE_m", "Electron pair mass;Electron pair mass (GeV/c^{2});Events per 10GeV/c^{2}", 50, 0, 500);
-  hEE_pt_  = new TH1F("hEE_pt" , "Electron pair p_{T};Electron pair p_{T} (GeV/c);Events per 10GeV", 50, 0, 500);
-  hEE_eta_ = new TH1F("hEE_eta", "Electron pair #eta;Electron pair #eta (GeV/c);Events per 10GeV", 50, -2.5, 2.5);
-  hEE_phi_ = new TH1F("hEE_phi", "Electron pair #phi;Electron pair #phi (GeV/c);Events per 10GeV", 50, -TMath::Pi(), TMath::Pi());
+  hEE_m_ = new TH1F("hEE_m", "Electron pair mass;Electron pair mass (GeV/c^{2});Events per 5GeV/c^{2}", 100, 0, 500);
+  hEE_pt_  = new TH1F("hEE_pt" , "Electron pair p_{T};Electron pair p_{T} (GeV/c);Events per 5GeV", 100, 0, 500);
+  hEE_eta_ = new TH1F("hEE_eta", "Electron pair #eta;Electron pair #eta (GeV/c);Events", 100, -2.5, 2.5);
+  hEE_phi_ = new TH1F("hEE_phi", "Electron pair #phi;Electron pair #phi (GeV/c);Events", 100, -TMath::Pi(), TMath::Pi());
  
   hME_q_ = new TH1F("hME_q", "Muon-Electron pair charge;Muon-Electron pair charge;Events", 3, -1.5, 1.5);
-  hME_m_ = new TH1F("hME_m", "Muon-Electron pair mass;Muon-Electron pair mass (GeV/c^{2});Events per 10GeV/c^{2}", 50, 0, 500);
-  hME_pt_  = new TH1F("hME_pt" , "Muon-Electron pair p_{T};Muon-Electron pair p_{T} (GeV/c);Events per 10GeV", 50, 0, 500);
-  hME_eta_ = new TH1F("hME_eta", "Muon-Electron pair #eta;Muon-Electron pair #eta (GeV/c);Events per 10GeV", 50, -2.5, 2.5);
-  hME_phi_ = new TH1F("hME_phi", "Muon-Electron pair #phi;Muon-Electron pair #phi (GeV/c);Events per 10GeV", 50, -TMath::Pi(), TMath::Pi());
+  hME_m_ = new TH1F("hME_m", "Muon-Electron pair mass;Muon-Electron pair mass (GeV/c^{2});Events per 5GeV/c^{2}", 100, 0, 500);
+  hME_pt_  = new TH1F("hME_pt" , "Muon-Electron pair p_{T};Muon-Electron pair p_{T} (GeV/c);Events per 5GeV", 100, 0, 500);
+  hME_eta_ = new TH1F("hME_eta", "Muon-Electron pair #eta;Muon-Electron pair #eta (GeV/c);Events", 100, -2.5, 2.5);
+  hME_phi_ = new TH1F("hME_phi", "Muon-Electron pair #phi;Muon-Electron pair #phi (GeV/c);Events", 100, -TMath::Pi(), TMath::Pi());
 }
 
 void TTbarDileptonNtupleAnalyzer::HistSet::write()
@@ -598,7 +619,12 @@ TTbarDileptonNtupleAnalyzer::Selector::Selector(Event* event, int mode)
     q1 = event->muons_Q_->at(0);
     q2 = event->electrons_Q_->at(0);
   }
-  else return;
+  else
+  {
+    cout << "Wrong channel mode, " << mode << endl;
+    event_ = 0;
+    return;
+  }
 
   do
   {
@@ -633,13 +659,15 @@ TTbarDileptonNtupleAnalyzer::Selector::Selector(Event* event, int mode)
 
 void TTbarDileptonNtupleAnalyzer::analyze(int verboseLevel)
 {
-  if ( !event_ or !event_->isValid_ ) return;
-
-  for ( int iCutStep = 0, nCutStep = histsMM_.size(); iCutStep < nCutStep; ++iCutStep )
+  if ( !event_ or !event_->isValid_ )
   {
-    histsMM_[iCutStep]->hNEvent_->Fill(1, event_->nEvent_);
-    histsEE_[iCutStep]->hNEvent_->Fill(1, event_->nEvent_);
-    histsME_[iCutStep]->hNEvent_->Fill(1, event_->nEvent_);
+    cout << "Invalid event tree\n";
+    return;
+  }
+
+  for ( int iCutStep = 0, nCutStep = hists_.size(); iCutStep < nCutStep; ++iCutStep )
+  {
+    hists_[iCutStep]->hNEvent_->Fill(1, event_->nEvent_);
   }
 
   if ( verboseLevel >= 1 ) cout << "Beginning processing sample " << inputFile_->GetName() << endl;
@@ -650,14 +678,10 @@ void TTbarDileptonNtupleAnalyzer::analyze(int verboseLevel)
     event_->eventTree_->GetEntry(iEntry);
     event_->genTree_->GetEntry(iEntry);
 
-    Selector selectorMM(event_, Selector::MM);
-    Selector selectorEE(event_, Selector::EE);
-    Selector selectorME(event_, Selector::ME);
-    for ( int iCutStep = 0, nCutStep = histsMM_.size(); iCutStep < nCutStep; ++iCutStep )
+    Selector selector(event_, mode_);
+    for ( int iCutStep = 0, nCutStep = hists_.size(); iCutStep < nCutStep; ++iCutStep )
     {
-      histsMM_[iCutStep]->fill(selectorMM, iCutStep);
-      histsEE_[iCutStep]->fill(selectorEE, iCutStep);
-      histsME_[iCutStep]->fill(selectorME, iCutStep);
+      hists_[iCutStep]->fill(selector, iCutStep);
     }
   }
 }
