@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 
-from ROOT import *
 import sys, os
 from multiprocessing import Process
+
+sys.argv.append('-b')
+from ROOT import *
 
 sys.path.append("../python")
 gROOT.ProcessLine(".x rootlogon.C")
@@ -36,21 +38,23 @@ samples["me"] = [
     "Summer12-WW", "Summer12-WZ", "Summer12-ZZ",
 ]
 
-def runModule(module):
-    module.analyze(1)
-    module.endJob(1)
+def runModule(srcDir, sample, mode, verbose):
+    module = TTbarDileptonNtupleAnalyzer("%s/%s.root" % (srcDir, sample), mode, "hist/%s_%s.root" % (sample, mode))
+    module.analyze(verbose)
+    module.endJob(verbose)
 
 procs = []
 for mode in ["mm", "ee", "me"]:
     for sample in samples[mode]:
-        module = TTbarDileptonNtupleAnalyzer("%s/%s.root" % (srcDir, sample), mode, "hist/%s_%s.root" % (sample, mode))
+#        runModule(srcDir, sample, mode, 2)
+        proc = Process(target=runModule, args=(srcDir, sample, mode, 1))
+        procs.append(proc)
 
-        runModule(module)
-#        proc = Process(target=runModule, args=(module,))
-#        procs.append(proc)
+        proc.start()
 
-#        proc.start()
+for proc in procs:
+    proc.join()
 
-#for proc in procs:
-#    proc.join()
+sys.path.append(".")
+from draw import *
 
