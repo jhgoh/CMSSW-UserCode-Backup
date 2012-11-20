@@ -5,6 +5,7 @@ gRealData = "Run2012"
 
 import sys, os
 from xml.dom.minidom import parse
+
 from ROOT import *
 gROOT.ProcessLine(".x rootlogon.C")
 
@@ -189,6 +190,7 @@ class PlotTool:
             hStack = THStack("hs_%s_%s_%s" % (histName, mode, step), "%s %s %s" % (histName, mode, step))
             legend = TLegend(0.70, 0.70, 0.93, 0.93)
             legend.SetFillColor(kWhite)
+            legend.SetLineColor(kWhite)
             plotElements[mode] = (hStack, legend)
 
         hList = {}
@@ -217,7 +219,7 @@ class PlotTool:
 
         return plotElements
 
-    def draw(self):
+    def draw(self, outDir):
         ## Build plot list from plot.xml
         plotList = {}
         psxml = parse("%s/src/TopAnalysis/TTbarDilepton/data/plots.xml" % os.environ["CMSSW_BASE"])
@@ -260,7 +262,7 @@ class PlotTool:
                 dataHists = self.makeDataMergedHistogram(name, step, opt)
                 plotElement = self.makeStackWithLegend(name, step, opt)
                 plotName = plotElement[self.modes[-1]][0].GetName()
-                plotName.replace(" ", "_")
+                plotName = plotName.replace(" ", "_")
                 if plotName in self.cachedCanvases: plotName += "_"
                 c = TCanvas("c_%s" % plotName, "%s" % plotName, 800, 800)
                 c.Divide(2,2)
@@ -275,12 +277,16 @@ class PlotTool:
                     legend.AddEntry(hData, gRealData, "lp")
 
                     hData.Draw()
-                    hist.Draw("same")
-                    hData.Draw("same")
-                    
                     legend.Draw()
+                    hist.Draw("same")
+                    hData.Draw("sameaxis")
 
                     self.cachedObjs.extend([hData, hist, legend])
+
+                c.Print("image/"+c.GetName()+".pdf")
+                c.Print("image/"+c.GetName()+".png")
+
+
 
     def printCutFlow(self):
         outBorder = "="*(22+10*len(self.steps)+2)
@@ -310,5 +316,5 @@ class PlotTool:
         print outBorder
 
 plotTool = PlotTool()
-plotTool.draw()
+plotTool.draw("image")
 plotTool.printCutFlow()
