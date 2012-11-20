@@ -2,6 +2,20 @@
 <!DOCTYPE data [<!ATTLIST data id ID #IMPLIED>]>
 <dataset>
 
+<data id="Run2012" type="Data">
+  <dataset name="Run2012A-DoubleMu" lumi="0" mode="mm" />
+  <dataset name="Run2012B-DoubleMu" lumi="0" mode="mm" />
+  <dataset name="Run2012C-DoubleMu" lumi="12000" mode="mm" />
+
+  <dataset name="Run2012A-DoubleElectron" lumi="0" mode="ee" />
+  <dataset name="Run2012B-DoubleElectron" lumi="0" mode="ee" />
+  <dataset name="Run2012C-DoubleElectron" lumi="12000" mode="ee" />
+
+  <dataset name="Run2012A-MuEG" lumi="0" mode="me" />
+  <dataset name="Run2012B-MuEG" lumi="0" mode="me" />
+  <dataset name="Run2012C-MuEG" lumi="12000" mode="me" />
+</data>
+
 <data id="Summer12" type="MC">
   <channel name="t#bar{t}" color="kRed+1">
     <sample name="TTJets" xsec="225.197" />
