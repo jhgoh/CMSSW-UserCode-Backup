@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
 gMCProd = "Summer12"
-gRealData = ["Run2012A", "Run2012B", "Run2012C"]
-gLumi = 30.0*1e3
+gRealData = "Run2012"
 
 import sys, os
 from xml.dom.minidom import parse
@@ -25,6 +24,9 @@ class PlotTool:
     def __init__(self):
         self.modes = ["mm", "ee", "me", "ll"]
 
+        self.lumi = {}
+        self.dataFiles = {}
+
         self.channels = []
         channels = self.channels
 
@@ -35,13 +37,35 @@ class PlotTool:
         self.cachedCanvases = {}
 
         dsxml = parse("%s/src/TopAnalysis/TTbarDilepton/data/dataset.xml" % os.environ["CMSSW_BASE"])
-        dataset = dsxml.getElementById(gMCProd)
+        realDataset = dsxml.getElementById(gRealData)
+        simDataset  = dsxml.getElementById(gMCProd  )
 
-        if not dataset:
-            print "Dataset not found"
+        if not realDataset:
+            print "Real dataset not found"
+            return
+        if realDataset.getAttribute("type") != 'Data':
+            print "Wrong real data input"
             return
 
-        for channel in dataset.getElementsByTagName("channel"):
+        for dataset in realDataset.getElementsByTagName("dataset"):
+            dsName = dataset.getAttribute("name")
+            lumi = float(dataset.getAttribute("lumi"))
+            mode = dataset.getAttribute("mode")
+
+            if mode not in self.lumi:
+                self.lumi[mode] = 0.
+                self.dataFiles[mode] = []
+            self.lumi[mode] += lumi
+            self.dataFiles[mode].append(TFile("hist/%s_%s.root" % (dsName, mode)))
+
+        if not simDataset:
+            print "Dataset not found"
+            return
+        if simDataset.getAttribute("type") != 'MC':
+            print "Wrong MC sample input"
+            return
+
+        for channel in simDataset.getElementsByTagName("channel"):
             channelName = channel.getAttribute("name")
             color = channel.getAttribute("color")
             if not color or len(color) == 0:
@@ -95,6 +119,35 @@ class PlotTool:
 
             channels.append(ch)
 
+    def makeDataMergedHistogram(self, histName, step, options):
+        hists = {}
+        for mode in self.modes[:-1]:
+            hist = None
+
+            for f in self.dataFiles[mode]:
+                hSrc = f.Get("%s/%s" % (step, histName))
+                hSrc.Sumw2()
+
+                if not hist:
+                    hist = hSrc.Clone("hdata_%s_%s_%s" % (histName, mode, step))
+                    hist.Reset()
+                    self.cachedObjs.append(hist)
+
+                hist.Add(hSrc) 
+
+            nbin = hist.GetNbinsX()
+            hist.AddBinContent(nbin, hist.GetBinContent(nbin+1))
+            hists[mode] = hist
+
+        hist = hists[self.modes[0]].Clone("hdata_%s_%s_%s" % (histName, self.modes[-1], step))
+        hist.Reset()
+        self.cachedObjs.append(hist)
+        for mode in hists:
+            hist.Add(hists[mode])
+        hists[self.modes[-1]] = hist
+
+        return hists
+
     def makeChannelMergedHistogram(self, histName, channelName, step, options):
         channel = None
         for ch in self.channels:
@@ -115,13 +168,13 @@ class PlotTool:
                     hist.Reset()
                     self.cachedObjs.append(hist)
 
-                hist.Add(hist, hSrc, 1, sample.xsec/sample.nEvent*gLumi)
+                hist.Add(hist, hSrc, 1, sample.xsec/sample.nEvent*self.lumi[mode])
 
             nbin = hist.GetNbinsX()
             hist.AddBinContent(nbin, hist.GetBinContent(nbin+1))
             hists[mode] = hist
 
-        hist = hists["mm"].Clone("hch_%s_%s_%s_%s" % (histName, channelName, self.modes[-1], step))
+        hist = hists[self.modes[0]].Clone("hch_%s_%s_%s_%s" % (histName, channelName, self.modes[-1], step))
         hist.Reset()
         self.cachedObjs.append(hist)
         for mode in hists:
@@ -154,8 +207,8 @@ class PlotTool:
                     hList[mode] = []
                 hList[mode].append((channel.name, hists[mode]))
 
-        #for mode in hList:
-        #    hList[mode].reverse()
+        for mode in hList:
+            hList[mode].reverse()
 
         for mode in hList:
             for label, h in hList[mode]:
@@ -204,6 +257,7 @@ class PlotTool:
 
         for step in plotList:
             for name, opt in plotList[step]:
+                dataHists = self.makeDataMergedHistogram(name, step, opt)
                 plotElement = self.makeStackWithLegend(name, step, opt)
                 plotName = plotElement[self.modes[-1]][0].GetName()
                 plotName.replace(" ", "_")
@@ -215,12 +269,18 @@ class PlotTool:
                     pad = c.cd(i+1)
 
                     if opt["logy"] : pad.SetLogy()
-                    hist, legend = plotElement[mode]
 
-                    hist.Draw()
+                    hData = dataHists[mode]
+                    hist, legend = plotElement[mode]
+                    legend.AddEntry(hData, gRealData, "lp")
+
+                    hData.Draw()
+                    hist.Draw("same")
+                    hData.Draw("same")
+                    
                     legend.Draw()
 
-                    self.cachedObjs.extend([hist, legend])
+                    self.cachedObjs.extend([hData, hist, legend])
 
     def printCutFlow(self):
         outBorder = "="*(22+10*len(self.steps)+2)
