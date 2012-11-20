@@ -138,7 +138,7 @@ private:
   Selector::MODE mode_;
 };
 
-const int TTbarDileptonNtupleAnalyzer::Selector::nCutSteps = 6;
+const int TTbarDileptonNtupleAnalyzer::Selector::nCutSteps = 7;
 const double TTbarDileptonNtupleAnalyzer::Selector::cut_btagTight_ = 0.898;
 const double TTbarDileptonNtupleAnalyzer::Selector::cut_btagMedium_ = 0.679;
 const double TTbarDileptonNtupleAnalyzer::Selector::cut_btagLoose_ = 0.244;
@@ -690,13 +690,16 @@ TTbarDileptonNtupleAnalyzer::Selector::Selector(Event* event, int mode)
     {
       if ( event->jets_bTag_->at(i) > cut_btagMedium_ ) ++nBjets;
     }
-    // B jet multiplicity (2)
+    // B jet multiplicity >= 2
     if ( nBjets < 2 ) break;
     isGoodEvent_[4] = true;
 
-    // B jet multiplicity (3)
-    if ( nBjets < 3 ) break;
+    // Jet multiplicity >= 4 
+    if ( event->jets_->size() < 4 ) break;
     isGoodEvent_[5] = true;
+
+    if ( nBjets < 3 ) break;
+    isGoodEvent_[6] = true;
   } while ( false );
 
 }
