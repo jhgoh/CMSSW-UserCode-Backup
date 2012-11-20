@@ -101,6 +101,7 @@ public:
 
     H1 hMet_pt_, hMet_phi_;
 
+    H1 hLL_q_, hLL_m_, hLL_pt_, hLL_eta_, hLL_phi_;
     H1 hMM_q_, hMM_m_, hMM_pt_, hMM_eta_, hMM_phi_;
     H1 hEE_q_, hEE_m_, hEE_pt_, hEE_eta_, hEE_phi_;
     H1 hME_q_, hME_m_, hME_pt_, hME_eta_, hME_phi_;
@@ -193,6 +194,31 @@ void TTbarDileptonNtupleAnalyzer::endJob(int verboseLevel)
   delete event_;
   for ( int i=0; i<Selector::nCutSteps; ++i )
   {
+    if ( mode_ == Selector::MM )
+    {
+      hists_.at(i)->hLL_q_  ->Add(hists_.at(i)->hMM_q_  );
+      hists_.at(i)->hLL_m_  ->Add(hists_.at(i)->hMM_m_  );
+      hists_.at(i)->hLL_pt_ ->Add(hists_.at(i)->hMM_pt_ );
+      hists_.at(i)->hLL_eta_->Add(hists_.at(i)->hMM_eta_);
+      hists_.at(i)->hLL_phi_->Add(hists_.at(i)->hMM_phi_);
+    }
+    else if ( mode_ == Selector::EE )
+    {
+      hists_.at(i)->hLL_q_  ->Add(hists_.at(i)->hEE_q_  );
+      hists_.at(i)->hLL_m_  ->Add(hists_.at(i)->hEE_m_  );
+      hists_.at(i)->hLL_pt_ ->Add(hists_.at(i)->hEE_pt_ );
+      hists_.at(i)->hLL_eta_->Add(hists_.at(i)->hEE_eta_);
+      hists_.at(i)->hLL_phi_->Add(hists_.at(i)->hEE_phi_);
+    }
+    else if ( mode_ == Selector::ME )
+    {
+      hists_.at(i)->hLL_q_  ->Add(hists_.at(i)->hME_q_  );
+      hists_.at(i)->hLL_m_  ->Add(hists_.at(i)->hME_m_  );
+      hists_.at(i)->hLL_pt_ ->Add(hists_.at(i)->hME_pt_ );
+      hists_.at(i)->hLL_eta_->Add(hists_.at(i)->hME_eta_);
+      hists_.at(i)->hLL_phi_->Add(hists_.at(i)->hME_phi_);
+    }
+
     hists_.at(i)->write();
   }
   outputFile_->Close();
@@ -320,10 +346,10 @@ TTbarDileptonNtupleAnalyzer::HistSet::HistSet(TDirectory* dir)
   hElectron2_phi_ = new TH1F("hElectron2_phi", "Electron2 #phi;#phi;Events", 100, -TMath::Pi(), TMath::Pi());
   hElectron2_iso_ = new TH1F("hElectron2_iso", "Electron2 isolation;Relative isolation;Events", 100, 0, 0.5);
 
-  hNJets_    = new TH1F("hNJets"   , "Number of jets;;Events", 5, 0, 5);
-  hNTbjets_  = new TH1F("hNTbjets" , "Number of Tight b jets;;Events", 5, 0, 5);
-  hNMbjets_  = new TH1F("hNMbjets" , "NUmber of Medium b jets;;Events", 5, 0, 5);
-  hNLbjets_  = new TH1F("hNLbjets" , "NUmber of Loose b jets;;Events", 5, 0, 5);
+  hNJets_    = new TH1F("hNJets"   , "Number of jets;;Events", 10, 0, 10);
+  hNTbjets_  = new TH1F("hNTbjets" , "Number of Tight b jets;;Events", 10, 0, 10);
+  hNMbjets_  = new TH1F("hNMbjets" , "NUmber of Medium b jets;;Events", 10, 0, 10);
+  hNLbjets_  = new TH1F("hNLbjets" , "NUmber of Loose b jets;;Events", 10, 0, 10);
   hJet1_pt_   = new TH1F("hJet1_pt"  , "Jet1 p_{T};p_{T} (GeV/c;Events per 5GeV/c", 100, 0, 500);
   hJet1_eta_  = new TH1F("hJet1_eta" , "Jet1 #eta;#eta;Events", 100, -2.5, 2.5);
   hJet1_phi_  = new TH1F("hJet1_phi" , "Jet1 #phi;#phi;Events", 100, -TMath::Pi(), TMath::Pi());
@@ -343,6 +369,12 @@ TTbarDileptonNtupleAnalyzer::HistSet::HistSet(TDirectory* dir)
 
   hMet_pt_  = new TH1F("hMet_pt" , "Met p_{T};p_{T} (GeV/c);Events per 5GeV/c", 100, 0, 500);
   hMet_phi_ = new TH1F("hMet_phi", "Met #phi;#phi;Events", 100, -TMath::Pi(), TMath::Pi());
+
+  hLL_q_ = new TH1F("hLL_q", "Lepton pair charge;Lepton pair charge;Events", 3, -1.5, 1.5);
+  hLL_m_ = new TH1F("hLL_m", "Lepton pair mass;Lepton pair mass (GeV/c^{2});Events per 5GeV/c^{2}", 100, 0, 500);
+  hLL_pt_  = new TH1F("hLL_pt" , "Lepton pair p_{T};Lepton pair p_{T} (GeV/c);Events per 5GeV", 100, 0, 500);
+  hLL_eta_ = new TH1F("hLL_eta", "Lepton pair #eta;Lepton pair #eta (GeV/c);Events", 100, -2.5, 2.5);
+  hLL_phi_ = new TH1F("hLL_phi", "Lepton pair #phi;Lepton pair #phi (GeV/c);Events", 100, -TMath::Pi(), TMath::Pi());
 
   hMM_q_ = new TH1F("hMM_q", "Muon pair charge;Muon pair charge;Events", 3, -1.5, 1.5);
   hMM_m_ = new TH1F("hMM_m", "Muon pair mass;Muon pair mass (GeV/c^{2});Events per 5GeV/c^{2}", 100, 0, 500);
@@ -413,6 +445,12 @@ void TTbarDileptonNtupleAnalyzer::HistSet::write()
 
   hMet_pt_->Write();
   hMet_phi_->Write();
+
+  hLL_q_->Write();
+  hLL_m_->Write();
+  hLL_pt_->Write();
+  hLL_eta_->Write();
+  hLL_phi_->Write();
 
   hMM_q_->Write();
   hMM_m_->Write();
@@ -630,15 +668,19 @@ TTbarDileptonNtupleAnalyzer::Selector::Selector(Event* event, int mode)
   {
     const double mLL = (lep1+lep2).mass();
 
+    // Cut step 0 : low mass cut, opposite signed pair
     if ( mLL < 12 or q1+q2 != 0 ) break;
     isGoodEvent_[0] = true;
 
+    // Z veto
     if ( mode != ME and abs(mLL-91.2) < 15 ) break;
     isGoodEvent_[1] = true;
 
+    // Jet multiplicity
     if ( event->jets_->size() < 2 ) break;
     isGoodEvent_[2] = true;
 
+    // Missing ET cut
     if ( mode != ME and event->met_->pt() < 30 ) break;
     else if ( event->met_->pt() < 20 ) break;
     isGoodEvent_[3] = true;
@@ -648,9 +690,11 @@ TTbarDileptonNtupleAnalyzer::Selector::Selector(Event* event, int mode)
     {
       if ( event->jets_bTag_->at(i) > cut_btagMedium_ ) ++nBjets;
     }
+    // B jet multiplicity (2)
     if ( nBjets < 2 ) break;
     isGoodEvent_[4] = true;
 
+    // B jet multiplicity (3)
     if ( nBjets < 3 ) break;
     isGoodEvent_[5] = true;
   } while ( false );
