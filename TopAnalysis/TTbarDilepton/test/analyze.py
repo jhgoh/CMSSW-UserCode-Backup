@@ -5,7 +5,7 @@ import sys, os
 from multiprocessing import Process
 
 sys.path.append("../python")
-#gROOT.ProcessLine(".x rootlogon.C")
+gROOT.ProcessLine(".x rootlogon.C")
 gSystem.CompileMacro("../src/TTbarDileptonNtupleAnalyzer.cc")
 
 #from sampleInfo import *
@@ -45,10 +45,12 @@ for mode in ["mm", "ee", "me"]:
     for sample in samples[mode]:
         module = TTbarDileptonNtupleAnalyzer("%s/%s.root" % (srcDir, sample), mode, "hist/%s_%s.root" % (sample, mode))
 
-        proc = Process(target=runModule, args=(module,))
-        procs.append(proc)
+        runModule(module)
+#        proc = Process(target=runModule, args=(module,))
+#        procs.append(proc)
 
-        proc.start()
+#        proc.start()
 
-    #    runModule(module)
-    #    module.endJob(1)
+#for proc in procs:
+#    proc.join()
+
