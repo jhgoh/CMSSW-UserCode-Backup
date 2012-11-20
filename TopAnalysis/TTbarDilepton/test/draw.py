@@ -132,6 +132,7 @@ class PlotTool:
                 if not hist:
                     hist = hSrc.Clone("hdata_%s_%s_%s" % (histName, mode, step))
                     hist.Reset()
+
                     self.cachedObjs.append(hist)
 
                 hist.Add(hSrc) 
@@ -146,6 +147,13 @@ class PlotTool:
         for mode in hists:
             hist.Add(hists[mode])
         hists[self.modes[-1]] = hist
+
+        for mode in hists:
+            hist = hists[mode]
+            if "ymin" in options:
+                hist.SetMinimum(float(options["ymin"]))
+            if "ymax" in options:
+                hist.SetMaximum(float(options["ymax"]))
 
         return hists
 
@@ -279,14 +287,13 @@ class PlotTool:
                     hData.Draw()
                     legend.Draw()
                     hist.Draw("same")
+                    hData.Draw("same")
                     hData.Draw("sameaxis")
 
                     self.cachedObjs.extend([hData, hist, legend])
 
                 c.Print("image/"+c.GetName()+".pdf")
                 c.Print("image/"+c.GetName()+".png")
-
-
 
     def printCutFlow(self):
         outBorder = "="*(22+10*len(self.steps)+2)
@@ -308,7 +315,7 @@ class PlotTool:
                     line = " %20s |" % sample.name
                     for step in self.steps:
                         nPassing = file.Get("%s/hNEvent" % step).GetBinContent(3)
-                        line += "%10.2f" % nPassing
+                        line += "%10.2f" % (nPassing*sample.xsec/sample.nEvent*self.lumi[mode])
                     line += "\n"
 
                     print line,
@@ -316,5 +323,5 @@ class PlotTool:
         print outBorder
 
 plotTool = PlotTool()
-plotTool.draw("image")
+#plotTool.draw("image")
 plotTool.printCutFlow()
