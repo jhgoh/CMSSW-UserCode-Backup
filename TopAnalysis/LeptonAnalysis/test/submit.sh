@@ -14,6 +14,7 @@ eval \`scram runtime -sh\`
 
 cmsRun leptonAnalysis_cfg.py
 EOF
+chmod +x run.sh
 
 MAXFILES=100
 #for SAMPLE in Run2012AElEl Run2012BElEl Run2012CElEl; do
