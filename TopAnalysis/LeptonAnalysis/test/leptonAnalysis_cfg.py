@@ -133,29 +133,34 @@ if isMC:
     process.pEE = cms.Path(
         process.genElectron* process.genElectronFilter*
         process.PUweight+
+        process.patElectronsWithRelIso +
         process.ee
     )
     process.eeOthers = process.ee.clone()
     process.pEEOthers = cms.Path(
         process.genElectron* ~process.genElectronFilter*
         process.PUweight+
+        process.patElectronsWithRelIso + 
         process.eeOthers
     )
     process.pMM = cms.Path(
         process.genMuon* process.genMuonFilter*
         process.PUweight+
+        process.patMuonsWithRelIso +
         process.mm
     )
     process.mmOthers = process.mm.clone()
     process.pMMOthers = cms.Path(
         process.genMuon* ~process.genMuonFilter*
         process.PUweight+
+        process.patMuonsWithRelIso +
         process.mmOthers
     )
     process.pEM = cms.Path(
         process.genMuon* process.genMuEGMuonFilter*
         process.genElectron* process.genMuEGElectronFilter*
         process.PUweight+
+        process.patElectronsWithRelIso + process.patMuonsWithRelIso +
         process.em
     )
     process.emOthers = process.em.clone()
@@ -163,6 +168,7 @@ if isMC:
         process.genMuon* ~process.genMuEGMuonFilter*
         process.genElectron* ~process.genMuEGElectronFilter*
         process.PUweight+
+        process.patElectronsWithRelIso + process.patMuonsWithRelIso +
         process.emOthers
     )
 else:
