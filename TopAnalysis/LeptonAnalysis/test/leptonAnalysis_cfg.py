@@ -37,11 +37,12 @@ process.source.fileNames = process.source.fileNames[begin:end]
 if isMC:
     process.GlobalTag.globaltag = "START53_V7A::All"
 else:
-    process.GlobalTag.globaltag = "GR_R_53_V14::All"
-    process.source.lumisToProcess = cms.untracked.vstring()
-    from CMGTools.Common.Tools.applyJSON_cff import applyJSON
-    json = "/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions12/8TeV/Prompt/Cert_190456-201678_8TeV_PromptReco_Collisions12_JSON.txt"
-    applyJSON(process, json)
+	process.GlobalTag.globaltag = "GR_R_53_V14::All"
+	process.source.lumisToProcess = cms.untracked.vstring()
+	from CMGTools.Common.Tools.applyJSON_cff import applyJSON
+	#json = "/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions12/8TeV/Prompt/Cert_190456-201678_8TeV_PromptReco_Collisions12_JSON.txt"
+	json = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions12/8TeV/Prompt/Cert_190456-203002_8TeV_PromptReco_Collisions12_JSON_v2.txt'
+	applyJSON(process, json)
 
 process.TFileService = cms.Service("TFileService",
     fileName = cms.string("ntuple/ntuple_%s_%04d.root" % (sample, section)),
@@ -85,7 +86,7 @@ process.ee = cms.EDAnalyzer("DoubleElectronAnalyzer",
     lepton1 = cms.InputTag("patElectronsWithRelIso"),
     lepton2 = cms.InputTag("patElectronsWithRelIso"),
     weight = cms.InputTag("PUweight", "weight"),
-    met = cms.InputTag("patMETs"),
+    met = cms.InputTag("cmgPFMET"),
     eventCounter = cms.InputTag("prePathCounter"),
     isoDR = cms.double(0.3),
     idNames1 = cms.vstring(
@@ -106,18 +107,18 @@ process.mm = cms.EDAnalyzer("DoubleMuonAnalyzer",
     lepton1 = cms.InputTag("patMuonsWithRelIso"),
     lepton2 = cms.InputTag("patMuonsWithRelIso"),
     weight = cms.InputTag("PUweight", "weight"),
-    met = cms.InputTag("patMETs"),
+    met = cms.InputTag("cmgPFMET"),
     eventCounter = cms.InputTag("prePathCounter"),
     isoDR = cms.double(0.3),
     idNames1 = cms.vstring(),
     idNames2 = cms.vstring(),
 )
 
-process.em = cms.EDAnalyzer("MuEGAnalyzer",
+process.me = cms.EDAnalyzer("MuEGAnalyzer",
     lepton1 = cms.InputTag("patMuonsWithRelIso"),
     lepton2 = cms.InputTag("patElectronsWithRelIso"),
     weight = cms.InputTag("PUweight", "weight"),
-    met = cms.InputTag("patMETs"),
+    met = cms.InputTag("cmgPFMET"),
     eventCounter = cms.InputTag("prePathCounter"),
     isoDR = cms.double(0.3),
     idNames1 = cms.vstring(),
@@ -156,30 +157,33 @@ if isMC:
         process.patMuonsWithRelIso +
         process.mmOthers
     )
-    process.pEM = cms.Path(
+    process.pME = cms.Path(
         process.genMuon* process.genMuEGMuonFilter*
         process.genElectron* process.genMuEGElectronFilter*
         process.PUweight+
         process.patElectronsWithRelIso + process.patMuonsWithRelIso +
-        process.em
+        process.me
     )
-    process.emOthers = process.em.clone()
-    process.pEMOthers = cms.Path(
+    process.meOthers = process.me.clone()
+    process.pMEOthers = cms.Path(
         process.genMuon* ~process.genMuEGMuonFilter*
         process.genElectron* ~process.genMuEGElectronFilter*
         process.PUweight+
         process.patElectronsWithRelIso + process.patMuonsWithRelIso +
-        process.emOthers
+        process.meOthers
     )
 else:
     process.pEE = cms.Path(
+        process.patElectronsWithRelIso +
         process.ee
     )
     process.pMM = cms.Path(
+        process.patMuonsWithRelIso +
         process.mm
     )
-    process.pEM = cms.Path(
-        process.em
+    process.pME = cms.Path(
+        process.patElectronsWithRelIso + process.patMuonsWithRelIso +
+        process.me
     )
 
 #print process.source.fileNames[0]
