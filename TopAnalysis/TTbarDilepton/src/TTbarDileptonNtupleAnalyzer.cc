@@ -106,6 +106,11 @@ public:
     H1 hEE_q_, hEE_m_, hEE_pt_, hEE_eta_, hEE_phi_;
     H1 hME_q_, hME_m_, hME_pt_, hME_eta_, hME_phi_;
 
+    H1 hTTbarVsum_m_, hTTbarVsum_pt_, hTTbarVsum_eta_, hTTbarVsum_phi_;
+
+    H1 hJJ_m_, hJJ_pt_, hJJ_eta_, hJJ_phi_;
+    H1 hBB_m_, hBB_pt_, hBB_eta_, hBB_phi_;
+
     void fill(Selector& selector, int cutStep);
   };
 
@@ -113,7 +118,8 @@ public:
   {
     Selector(Event* event, int mode);
 
-    enum MODE {MM = 0, EE, ME, END}; 
+    enum MODE {MM = 0, EE, ME, END};
+    int mode_; 
 
     bool isGoodEvent(int cutStep) { return isGoodEvent_.at(cutStep); };
 
@@ -135,7 +141,7 @@ private:
   Event* event_;
   std::vector<HistSet*> hists_;
 
-  Selector::MODE mode_;
+  int mode_;
 };
 
 const int TTbarDileptonNtupleAnalyzer::Selector::nCutSteps = 7;
@@ -194,31 +200,6 @@ void TTbarDileptonNtupleAnalyzer::endJob(int verboseLevel)
   delete event_;
   for ( int i=0; i<Selector::nCutSteps; ++i )
   {
-    if ( mode_ == Selector::MM )
-    {
-      hists_.at(i)->hLL_q_  ->Add(hists_.at(i)->hMM_q_  );
-      hists_.at(i)->hLL_m_  ->Add(hists_.at(i)->hMM_m_  );
-      hists_.at(i)->hLL_pt_ ->Add(hists_.at(i)->hMM_pt_ );
-      hists_.at(i)->hLL_eta_->Add(hists_.at(i)->hMM_eta_);
-      hists_.at(i)->hLL_phi_->Add(hists_.at(i)->hMM_phi_);
-    }
-    else if ( mode_ == Selector::EE )
-    {
-      hists_.at(i)->hLL_q_  ->Add(hists_.at(i)->hEE_q_  );
-      hists_.at(i)->hLL_m_  ->Add(hists_.at(i)->hEE_m_  );
-      hists_.at(i)->hLL_pt_ ->Add(hists_.at(i)->hEE_pt_ );
-      hists_.at(i)->hLL_eta_->Add(hists_.at(i)->hEE_eta_);
-      hists_.at(i)->hLL_phi_->Add(hists_.at(i)->hEE_phi_);
-    }
-    else if ( mode_ == Selector::ME )
-    {
-      hists_.at(i)->hLL_q_  ->Add(hists_.at(i)->hME_q_  );
-      hists_.at(i)->hLL_m_  ->Add(hists_.at(i)->hME_m_  );
-      hists_.at(i)->hLL_pt_ ->Add(hists_.at(i)->hME_pt_ );
-      hists_.at(i)->hLL_eta_->Add(hists_.at(i)->hME_eta_);
-      hists_.at(i)->hLL_phi_->Add(hists_.at(i)->hME_phi_);
-    }
-
     hists_.at(i)->write();
   }
   outputFile_->Close();
@@ -372,27 +353,43 @@ TTbarDileptonNtupleAnalyzer::HistSet::HistSet(TDirectory* dir)
 
   hLL_q_ = new TH1F("hLL_q", "Lepton pair charge;Lepton pair charge;Events", 3, -1.5, 1.5);
   hLL_m_ = new TH1F("hLL_m", "Lepton pair mass;Lepton pair mass (GeV/c^{2});Events per 5GeV/c^{2}", 100, 0, 500);
-  hLL_pt_  = new TH1F("hLL_pt" , "Lepton pair p_{T};Lepton pair p_{T} (GeV/c);Events per 5GeV", 100, 0, 500);
+  hLL_pt_  = new TH1F("hLL_pt" , "Lepton pair p_{T};Lepton pair p_{T} (GeV/c);Events per 5GeV/c", 100, 0, 500);
   hLL_eta_ = new TH1F("hLL_eta", "Lepton pair #eta;Lepton pair #eta (GeV/c);Events", 100, -2.5, 2.5);
   hLL_phi_ = new TH1F("hLL_phi", "Lepton pair #phi;Lepton pair #phi (GeV/c);Events", 100, -TMath::Pi(), TMath::Pi());
 
   hMM_q_ = new TH1F("hMM_q", "Muon pair charge;Muon pair charge;Events", 3, -1.5, 1.5);
   hMM_m_ = new TH1F("hMM_m", "Muon pair mass;Muon pair mass (GeV/c^{2});Events per 5GeV/c^{2}", 100, 0, 500);
-  hMM_pt_  = new TH1F("hMM_pt" , "Muon pair p_{T};Muon pair p_{T} (GeV/c);Events per 5GeV", 100, 0, 500);
+  hMM_pt_  = new TH1F("hMM_pt" , "Muon pair p_{T};Muon pair p_{T} (GeV/c);Events per 5GeV/c", 100, 0, 500);
   hMM_eta_ = new TH1F("hMM_eta", "Muon pair #eta;Muon pair #eta (GeV/c);Events", 100, -2.5, 2.5);
   hMM_phi_ = new TH1F("hMM_phi", "Muon pair #phi;Muon pair #phi (GeV/c);Events", 100, -TMath::Pi(), TMath::Pi());
 
   hEE_q_ = new TH1F("hEE_q", "Electron pair charge;Electron pair charge;Events", 3, -1.5, 1.5);
   hEE_m_ = new TH1F("hEE_m", "Electron pair mass;Electron pair mass (GeV/c^{2});Events per 5GeV/c^{2}", 100, 0, 500);
-  hEE_pt_  = new TH1F("hEE_pt" , "Electron pair p_{T};Electron pair p_{T} (GeV/c);Events per 5GeV", 100, 0, 500);
+  hEE_pt_  = new TH1F("hEE_pt" , "Electron pair p_{T};Electron pair p_{T} (GeV/c);Events per 5GeV/c", 100, 0, 500);
   hEE_eta_ = new TH1F("hEE_eta", "Electron pair #eta;Electron pair #eta (GeV/c);Events", 100, -2.5, 2.5);
   hEE_phi_ = new TH1F("hEE_phi", "Electron pair #phi;Electron pair #phi (GeV/c);Events", 100, -TMath::Pi(), TMath::Pi());
  
   hME_q_ = new TH1F("hME_q", "Muon-Electron pair charge;Muon-Electron pair charge;Events", 3, -1.5, 1.5);
   hME_m_ = new TH1F("hME_m", "Muon-Electron pair mass;Muon-Electron pair mass (GeV/c^{2});Events per 5GeV/c^{2}", 100, 0, 500);
-  hME_pt_  = new TH1F("hME_pt" , "Muon-Electron pair p_{T};Muon-Electron pair p_{T} (GeV/c);Events per 5GeV", 100, 0, 500);
+  hME_pt_  = new TH1F("hME_pt" , "Muon-Electron pair p_{T};Muon-Electron pair p_{T} (GeV/c);Events per 5GeV/c", 100, 0, 500);
   hME_eta_ = new TH1F("hME_eta", "Muon-Electron pair #eta;Muon-Electron pair #eta (GeV/c);Events", 100, -2.5, 2.5);
   hME_phi_ = new TH1F("hME_phi", "Muon-Electron pair #phi;Muon-Electron pair #phi (GeV/c);Events", 100, -TMath::Pi(), TMath::Pi());
+
+  hTTbarVsum_m_   = new TH1F("hTTbarVsum_m"  , "t#bar{t} candidate vector sum mass;t#bar{t} mass (GeV/c^{2});Events per 20GeV/c^{2}", 100, 0, 2000);
+  hTTbarVsum_pt_  = new TH1F("hTTbarVsum_pt" , "t#bar{t} candidate vector sum p_{T};t#bar{t} candidate vector sum p_{T} (GeV/c);Events per 5GeV/c^{2}", 100, 0, 500);
+  hTTbarVsum_eta_ = new TH1F("hTTbarVsum_eta", "t#bar{t} candidate vector sum #eta;t#bar{t} candidate vector sum #eta;Events", 100, -2.5, 2.5);
+  hTTbarVsum_phi_ = new TH1F("hTTbarVsum_phi", "t#bar{t} candidate vector sum #phi;t#bar{t} candidate vector sum #phi;Events", 100, -TMath::Pi(), TMath::Pi());
+
+  hJJ_m_   = new TH1F("hJJ_m"  , "Dijet mass;Dijet mass (GeV/c^{2});Events per 10GeV/c^{2}", 100, 0, 1000);
+  hJJ_pt_  = new TH1F("hJJ_pt" , "Dijet p_{T};Dijet p_{T} (GeV/c);Events per 5GeV/c", 100, 0, 500);
+  hJJ_eta_ = new TH1F("hJJ_eta", "Dijet #eta;Dijet #eta;Events per 5GeV/c", 100, -2.5, 2.5);
+  hJJ_phi_ = new TH1F("hJJ_phi", "Dijet #phi;Dijet #phi;Events per 5GeV/c", 100, -TMath::Pi(), TMath::Pi());
+
+  hBB_m_   = new TH1F("hBB_m"  , "B tagged dijet mass;Dijet mass(GeV/c^{2});Events per 10GeV/c^{2}", 100, 0, 1000);
+  hBB_pt_  = new TH1F("hBB_pt" , "B tagged dijet p_{T};Dijet p_{T} (GeV/c);Events per 5GeV/c", 100, 0, 500);
+  hBB_eta_ = new TH1F("hBB_eta", "B tagged dijet #eta;Dijet #eta;Events per 5GeV/c", 100, -2.5, 2.5);
+  hBB_phi_ = new TH1F("hBB_phi", "B tagged dijet #phi;Dijet #phi;Events per 5GeV/c", 100, -TMath::Pi(), TMath::Pi());
+
 }
 
 void TTbarDileptonNtupleAnalyzer::HistSet::write()
@@ -470,6 +467,21 @@ void TTbarDileptonNtupleAnalyzer::HistSet::write()
   hME_eta_->Write();
   hME_phi_->Write();
 
+  hTTbarVsum_m_  ->Write();
+  hTTbarVsum_pt_ ->Write();
+  hTTbarVsum_eta_->Write();
+  hTTbarVsum_phi_->Write();
+
+  hJJ_m_  ->Write();
+  hJJ_pt_ ->Write();
+  hJJ_eta_->Write();
+  hJJ_phi_->Write();
+
+  hBB_m_  ->Write();
+  hBB_pt_ ->Write();
+  hBB_eta_->Write();
+  hBB_phi_->Write();
+
 }
 
 void TTbarDileptonNtupleAnalyzer::HistSet::fill(TTbarDileptonNtupleAnalyzer::Selector& selector, int cutStep)
@@ -477,6 +489,7 @@ void TTbarDileptonNtupleAnalyzer::HistSet::fill(TTbarDileptonNtupleAnalyzer::Sel
   if ( !selector.isGoodEvent(cutStep) ) return;
 
   Event& event = *selector.event_;
+  const int mode = selector.mode_;
 
   hNEvent_->Fill(2);
   hNEvent_->Fill(3, event.weight_);
@@ -485,7 +498,10 @@ void TTbarDileptonNtupleAnalyzer::HistSet::fill(TTbarDileptonNtupleAnalyzer::Sel
   hNMuon_->Fill(event.muons_->size(), event.weight_);
   hNElectron_->Fill(event.electrons_->size(), event.weight_);
   hNJets_->Fill(event.jets_->size(), event.weight_);
-  
+
+  int zQ = -999;
+  LorentzVector zLVec;
+
   if ( event.muons_->size() > 0 )
   {
     const LorentzVector& lv1 = event.muons_->at(0);
@@ -508,12 +524,18 @@ void TTbarDileptonNtupleAnalyzer::HistSet::fill(TTbarDileptonNtupleAnalyzer::Sel
       hMuon2_phi_->Fill(lv2.phi(), event.weight_);
       hMuon2_iso_->Fill(iso2     , event.weight_);
 
-      const LorentzVector lvLL = lv1+lv2;
+      const LorentzVector llLVec = lv1+lv2;
       hMM_q_->Fill(q1+q2, event.weight_);
-      hMM_m_->Fill(lvLL.mass(), event.weight_);
-      hMM_pt_ ->Fill(lvLL.pt() , event.weight_);
-      hMM_eta_->Fill(lvLL.eta(), event.weight_);
-      hMM_phi_->Fill(lvLL.phi(), event.weight_);
+      hMM_m_->Fill(llLVec.mass(), event.weight_);
+      hMM_pt_ ->Fill(llLVec.pt() , event.weight_);
+      hMM_eta_->Fill(llLVec.eta(), event.weight_);
+      hMM_phi_->Fill(llLVec.phi(), event.weight_);
+
+      if ( mode == Selector::MM )
+      {
+        zQ = q1+q2;
+        zLVec = llLVec;
+      }
     }
   }
 
@@ -539,12 +561,18 @@ void TTbarDileptonNtupleAnalyzer::HistSet::fill(TTbarDileptonNtupleAnalyzer::Sel
       hElectron2_phi_->Fill(lv2.phi(), event.weight_);
       hElectron2_iso_->Fill(iso2     , event.weight_);
 
-      const LorentzVector lvLL = lv1+lv2;
+      const LorentzVector llLVec = lv1+lv2;
       hEE_q_->Fill(q1+q2, event.weight_);
-      hEE_m_->Fill(lvLL.mass(), event.weight_);
-      hEE_pt_ ->Fill(lvLL.pt() , event.weight_);
-      hEE_eta_->Fill(lvLL.eta(), event.weight_);
-      hEE_phi_->Fill(lvLL.phi(), event.weight_);
+      hEE_m_->Fill(llLVec.mass(), event.weight_);
+      hEE_pt_ ->Fill(llLVec.pt() , event.weight_);
+      hEE_eta_->Fill(llLVec.eta(), event.weight_);
+      hEE_phi_->Fill(llLVec.phi(), event.weight_);
+
+      if ( mode == Selector::EE )
+      {
+        zQ = q1+q2;
+        zLVec = llLVec;
+      }
     }
   }
 
@@ -556,12 +584,36 @@ void TTbarDileptonNtupleAnalyzer::HistSet::fill(TTbarDileptonNtupleAnalyzer::Sel
     const int q1 = event.muons_Q_->at(0);
     const int q2 = event.electrons_Q_->at(0);
 
-    const LorentzVector lvLL = lv1+lv2;
+    const LorentzVector llLVec = lv1+lv2;
     hME_q_->Fill(q1+q2, event.weight_);
-    hME_m_->Fill(lvLL.mass(), event.weight_);
-    hME_pt_ ->Fill(lvLL.pt() , event.weight_);
-    hME_eta_->Fill(lvLL.eta(), event.weight_);
-    hME_phi_->Fill(lvLL.phi(), event.weight_);
+    hME_m_->Fill(llLVec.mass(), event.weight_);
+    hME_pt_ ->Fill(llLVec.pt() , event.weight_);
+    hME_eta_->Fill(llLVec.eta(), event.weight_);
+    hME_phi_->Fill(llLVec.phi(), event.weight_);
+
+    if ( mode == Selector::ME )
+    {
+      zQ = q1+q2;
+      zLVec = llLVec;
+    }
+  }
+
+  if ( zQ != -999 )
+  {
+    hLL_q_->Fill(zQ, event.weight_);
+    hLL_m_->Fill(zLVec.mass(), event.weight_);
+    hLL_pt_ ->Fill(zLVec.pt() , event.weight_);
+    hLL_eta_->Fill(zLVec.eta(), event.weight_);
+    hLL_phi_->Fill(zLVec.phi(), event.weight_);
+    
+    if ( event.jets_->size() >= 2 )
+    {
+      const LorentzVector ttbarVsumLVec = zLVec + event.jets_->at(0) + event.jets_->at(1) + *event.met_;
+      hTTbarVsum_m_  ->Fill(ttbarVsumLVec.mass(), event.weight_);
+      hTTbarVsum_pt_ ->Fill(ttbarVsumLVec.pt()  , event.weight_);
+      hTTbarVsum_eta_->Fill(ttbarVsumLVec.eta() , event.weight_);
+      hTTbarVsum_phi_->Fill(ttbarVsumLVec.phi() , event.weight_);
+    }
   }
 
   hMet_pt_->Fill((event.met_->pt()), event.weight_);
@@ -621,11 +673,40 @@ void TTbarDileptonNtupleAnalyzer::HistSet::fill(TTbarDileptonNtupleAnalyzer::Sel
   hNTbjets_->Fill(nTbjet, event.weight_);
   hNMbjets_->Fill(nMbjet, event.weight_);
   hNLbjets_->Fill(nLbjet, event.weight_);
+
+  if ( event.jets_->size() >= 2 )
+  {
+    const LorentzVector jjLVec = event.jets_->at(0)+event.jets_->at(1);
+    hJJ_m_  ->Fill(jjLVec.mass(), event.weight_);
+    hJJ_pt_ ->Fill(jjLVec.pt()  , event.weight_);
+    hJJ_eta_->Fill(jjLVec.eta() , event.weight_);
+    hJJ_phi_->Fill(jjLVec.phi() , event.weight_);
+
+    int bidx1 = -1, bidx2 = -1;
+    for ( int i=0, n=event.jets_->size(); i<n; ++i )
+    {
+      if ( event.jets_bTag_->at(i) < selector.cut_btagMedium_ ) continue;
+
+      if ( bidx1 < 0 ) bidx1 = i;
+      else if ( bidx2 < 0 ) bidx2 = i;
+      else break;
+    }
+    if ( bidx1 >= 0 and bidx2 >= 0 )
+    {
+      const LorentzVector bbLVec = event.jets_->at(bidx1)+event.jets_->at(bidx2);
+      hBB_m_  ->Fill(bbLVec.mass(), event.weight_);
+      hBB_pt_ ->Fill(bbLVec.pt()  , event.weight_);
+      hBB_eta_->Fill(bbLVec.eta() , event.weight_);
+      hBB_phi_->Fill(bbLVec.phi() , event.weight_);
+    }
+  }
+
 }
 
 TTbarDileptonNtupleAnalyzer::Selector::Selector(Event* event, int mode)
 {
   event_ = event;
+  mode_ = mode;
 
   isGoodEvent_.resize(nCutSteps);
   for ( int i=0; i<nCutSteps; ++i ) isGoodEvent_[i] = false;
