@@ -55,8 +55,8 @@ process.PUweight.PileUpRDdn = PileUpRD2012DN
 process.PUweight.PileUpMC   = Summer12
 
 process.load("TopAnalysis.LeptonAnalysis.patRelIsoLepton_cfi")
-process.patElectronsWithRelIso04 = process.patElectronsWithRelIso.clone(coneSize = cms.double(0.4))
-process.patMuonsWithRelIso04 = process.patMuonsWithRelIso.clone(coneSize = cms.double(0.4))
+process.patElectronsWithRelIso.coneSize = cms.double(0.3)
+process.patMuonsWithRelIso.coneSize = cms.double(0.3)
 
 process.genElectron = cms.EDFilter("GenParticleSelector",
     src = cms.InputTag("genParticlesPruned"),
@@ -88,7 +88,7 @@ process.ee = cms.EDAnalyzer("DoubleElectronAnalyzer",
     weight = cms.InputTag("PUweight", "weight"),
     met = cms.InputTag("cmgPFMET"),
     eventCounter = cms.InputTag("prePathCounter"),
-    isoDR = cms.double(0.3),
+    genPariclesLabel = cms.InputTag("genParticlesPruned"),
     idNames1 = cms.vstring(
         "mvaNonTrigV0", "mvaTrigV0", 
         "eidLoose",  "eidMedium", "eidSuperTight", "eidTight", "eidVeryLoose",
@@ -109,7 +109,7 @@ process.mm = cms.EDAnalyzer("DoubleMuonAnalyzer",
     weight = cms.InputTag("PUweight", "weight"),
     met = cms.InputTag("cmgPFMET"),
     eventCounter = cms.InputTag("prePathCounter"),
-    isoDR = cms.double(0.3),
+    genPariclesLabel = cms.InputTag("genParticlesPruned"),
     idNames1 = cms.vstring(),
     idNames2 = cms.vstring(),
 )
@@ -120,7 +120,7 @@ process.me = cms.EDAnalyzer("MuEGAnalyzer",
     weight = cms.InputTag("PUweight", "weight"),
     met = cms.InputTag("cmgPFMET"),
     eventCounter = cms.InputTag("prePathCounter"),
-    isoDR = cms.double(0.3),
+    genPariclesLabel = cms.InputTag("genParticlesPruned"),
     idNames1 = cms.vstring(),
     idNames2 = cms.vstring(
         "mvaNonTrigV0", "mvaTrigV0",

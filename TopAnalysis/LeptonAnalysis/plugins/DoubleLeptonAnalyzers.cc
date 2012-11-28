@@ -20,6 +20,9 @@
 #include "AnalysisDataFormats/CMGTools/interface/BaseMET.h"
 #include "EGamma/EGammaAnalysisTools/interface/ElectronEffectiveArea.h"
 #include "Muon/MuonAnalysisTools/interface/MuonEffectiveArea.h"
+#include "DataFormats/HepMCCandidate/interface/GenParticleFwd.h"
+#include "DataFormats/HepMCCandidate/interface/GenParticle.h"
+#include "DataFormats/Math/interface/deltaR.h"
 
 #include "TTree.h"
 #include "TH1F.h"
@@ -40,8 +43,11 @@ public:
   void endJob();
   void endLuminosityBlock(const edm::LuminosityBlock& lumi, const edm::EventSetup& eventSetup);
 
-  double getId(const pat::Muon& ele, const std::string& idName);
+  double getId(const pat::Muon& mu, const std::string& idName);
   double getId(const pat::Electron& ele, const std::string& idName);
+
+  bool isMatched(const pat::Muon& mu, std::vector<const reco::GenParticle*> genLeptons);
+  bool isMatched(const pat::Electron& ele, std::vector<const reco::GenParticle*> genLeptons);
 
 private:
   edm::InputTag lepton1Label_;
@@ -50,10 +56,10 @@ private:
   //edm::InputTag beamSpotLabel_;
   edm::InputTag weightLabel_;
   edm::InputTag eventCounterLabel_;
+  edm::InputTag genParticlesLabel_;
 
 private:
   bool isMC_;
-  double isoDR_;
   TH1F* hEvents_;
   TTree* tree_;
   int run_, lumi_, event_;
@@ -68,6 +74,8 @@ private:
   int q_;
   double m_;
   double met_;
+  int genMatch1_;
+  int genMatch2_;
 
   std::vector<std::string> idNames1_, idNames2_;
   std::vector<double> ids1_, ids2_;
@@ -82,13 +90,12 @@ DoubleLeptonAnalyzer<Lepton1, Lepton2>::DoubleLeptonAnalyzer(const edm::Paramete
   //beamSpotLabel_ = pset.getParameter<edm::InputTag>("beamSpot");
   weightLabel_ = pset.getParameter<edm::InputTag>("weight");
   eventCounterLabel_ = pset.getParameter<edm::InputTag>("eventCounter");
+  genParticlesLabel_ = pset.getParameter<edm::InputTag>("genPariclesLabel");
 
   idNames1_ = pset.getParameter<std::vector<std::string> >("idNames1");
   idNames2_ = pset.getParameter<std::vector<std::string> >("idNames2");
   ids1_.resize(idNames1_.size());
   ids2_.resize(idNames2_.size());
-  
-  isoDR_ = pset.getParameter<double>("isoDR");
 }
 
 template<typename Lepton1, typename Lepton2>
@@ -142,6 +149,8 @@ void DoubleLeptonAnalyzer<Lepton1, Lepton2>::beginJob()
   tree_->Branch("q", &q_, "q/I");
   tree_->Branch("m", &m_, "m/D");
   tree_->Branch("met", &met_, "met/D");
+  tree_->Branch("genMatch1", &genMatch1_, "genMatch1/I");
+  tree_->Branch("genMatch2", &genMatch2_, "genMatch2/I");
 
   for ( int i=0, n=idNames1_.size(); i<n; ++i )
   {
@@ -190,6 +199,19 @@ void DoubleLeptonAnalyzer<Lepton1, Lepton2>::analyze(const edm::Event& event, co
   event.getByLabel(metLabel_, metHandle);
   met_ = metHandle->at(0).pt();
 
+  edm::Handle<reco::GenParticleCollection> genParticles;
+  event.getByLabel(genParticlesLabel_,genParticles);
+
+  std::vector<const reco::GenParticle*> genLeptons;
+  if ( genParticles.isValid() ) {
+    for ( int i = 0, ngen = genParticles->size(); i < ngen; ++i ) {
+      const reco::GenParticle& p = genParticles->at(i);
+      if ( p.status() != 3 ) continue;
+//      const int absPdgId = abs(p.pdgId());
+	  if ( abs(p.pdgId()) == 11 or abs(p.pdgId()) == 13 ) genLeptons.push_back(&p);
+    }
+  }
+
   //edm::Handle<reco::BeamSpot> beamSpotHandle_;
   //event.getByLabel(beamSpotLabel_, beamSpotHandle_); 
 
@@ -220,23 +242,19 @@ void DoubleLeptonAnalyzer<Lepton1, Lepton2>::analyze(const edm::Event& event, co
       isoRho1_ = lep1.userIsolation("User3Iso");
       isoRho2_ = lep2.userIsolation("User3Iso");
 
-      //chIso1_ = lep1.chargedHadronIso(isoDR_);
-      //nhIso1_ = lep1.neutralHadronIso(isoDR_);
-      //phIso1_ = lep1.photonIso(isoDR_);
-      //chIso2_ = lep2.chargedHadronIso(isoDR_);
-      //nhIso2_ = lep2.neutralHadronIso(isoDR_);
-      //phIso2_ = lep2.photonIso(isoDR_);
-
       q_ = lep1.charge() + lep2.charge();
       m_ = (lep1.p4()+lep2.p4()).M();
 
       for ( int iId=0, nId=idNames1_.size(); iId<nId; ++iId ) ids1_[iId] = getId(lep1, idNames1_[iId]);
       for ( int iId=0, nId=idNames2_.size(); iId<nId; ++iId ) ids2_[iId] = getId(lep2, idNames2_[iId]);
 
+// doMCMatching
+      genMatch1_ = isMatched(lep1, genLeptons);
+      genMatch2_ = isMatched(lep2, genLeptons);
+
       tree_->Fill();
     }
   }
-  
 }
 
 template<typename Lepton1, typename Lepton2>
@@ -249,6 +267,51 @@ template<typename Lepton1, typename Lepton2>
 double DoubleLeptonAnalyzer<Lepton1, Lepton2>::getId(const pat::Muon& mu, const std::string& idName)
 {
   return mu.muonID(idName);
+}
+
+template<typename Lepton1, typename Lepton2>
+bool DoubleLeptonAnalyzer<Lepton1, Lepton2>::isMatched(const pat::Muon& mu, std::vector<const reco::GenParticle*> genLeptons)
+{
+  double minDR = 0.3;
+  const reco::GenParticle* matchedGenParticle = 0;
+  for ( int i=0, n=genLeptons.size(); i<n; ++i )
+  {
+    const reco::GenParticle* p = genLeptons.at(i);
+
+    if ( abs(p->pdgId()) != 13 ) continue;
+
+    const double dR = deltaR(mu, *p);
+
+    if ( dR > minDR ) continue;
+
+    minDR = dR;
+    matchedGenParticle = p;
+  }
+
+  if ( matchedGenParticle ) return true;
+  return false;
+}
+template<typename Lepton1, typename Lepton2>
+bool DoubleLeptonAnalyzer<Lepton1, Lepton2>::isMatched(const pat::Electron& ele, std::vector<const reco::GenParticle*> genLeptons)
+{
+  double minDR = 0.3;
+  const reco::GenParticle* matchedGenParticle = 0;
+  for ( int i=0, n=genLeptons.size(); i<n; ++i )
+  {
+    const reco::GenParticle* p = genLeptons.at(i);
+
+    if ( abs(p->pdgId()) != 11 ) continue;
+
+    const double dR = deltaR(ele, *p);
+
+    if ( dR > minDR ) continue;
+
+    minDR = dR;
+    matchedGenParticle = p;
+  }
+
+  if ( matchedGenParticle ) return true;
+  return false;
 }
 
 typedef DoubleLeptonAnalyzer<pat::Electron, pat::Electron> DoubleElectronAnalyzer;
