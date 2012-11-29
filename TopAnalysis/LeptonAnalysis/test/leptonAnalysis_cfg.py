@@ -48,6 +48,12 @@ process.TFileService = cms.Service("TFileService",
     fileName = cms.string("ntuple/ntuple_%s_%04d.root" % (sample, section)),
 )
 
+process.load("HLTrigger.HLTfilters.hltHighLevel_cfi")
+process.hltHighLevel.throw = False
+process.hltEE = process.hltHighLevel.clone(HLTPaths = cms.vstring("HLT_Ele17_CaloIdT_CaloIsoVL_TrkIdVL_TrkIsoVL_Ele8_CaloIdT_CaloIsoVL_TrkIdVL_TrkIsoVL_v*",))
+process.hltMM = process.hltHighLevel.clone(HLTPaths = cms.vstring("HLT_Mu17_Mu8_v*", "HLT_Mu17_TkMu8_v*",))
+process.hltME = process.hltHighLevel.clone(HLTPaths = cms.vstring("HLT_Mu17_Ele8_CaloIdT_CaloIsoVL_TrkIdVL_TrkIsoVL_v*", "HLT_Mu8_Ele17_CaloIdT_CaloIsoVL_TrkIdVL_TrkIsoVL_v*",))
+
 from KoPFA.CommonTools.PileUpWeight_cff import *
 process.PUweight.PileUpRD   = PileUpRD2012
 process.PUweight.PileUpRDup = PileUpRD2012UP
@@ -56,31 +62,9 @@ process.PUweight.PileUpMC   = Summer12
 
 process.load("TopAnalysis.LeptonAnalysis.patRelIsoLepton_cfi")
 process.patElectronsWithRelIso.coneSize = cms.double(0.3)
+process.patElectronsWithRelIso.cut = "abs(eta) < 2.5 && pt > 5"
 process.patMuonsWithRelIso.coneSize = cms.double(0.3)
-
-process.genElectron = cms.EDFilter("GenParticleSelector",
-    src = cms.InputTag("genParticlesPruned"),
-    cut = cms.string("abs(pdgId) == 11 && status == 3"),
-)
-
-process.genMuon = cms.EDFilter("GenParticleSelector",
-    src = cms.InputTag("genParticlesPruned"),
-    cut = cms.string("abs(pdgId) == 13 && status == 3"),
-)
-
-process.genElectronFilter = cms.EDFilter("CandViewCountFilter",
-    src = cms.InputTag("genElectron"),
-    minNumber = cms.uint32(2),
-)
-
-process.genMuonFilter = cms.EDFilter("CandViewCountFilter",
-    src = cms.InputTag("genMuon"),
-    minNumber = cms.uint32(2),
-)
-
-process.genMuEGMuonFilter = process.genMuonFilter.clone(minNumber = cms.uint32(1))
-process.genMuEGElectronFilter = process.genElectronFilter.clone(minNumber = cms.uint32(1))
-process.genMuEGFilter = cms.Sequence(process.genMuEGMuonFilter+process.genMuEGElectronFilter)
+process.patMuonsWithRelIso.cut = "isPFMuon && (isGlobalMuon || isTrackerMuon) && abs(eta) < 2.5 && pt > 5"
 
 process.ee = cms.EDAnalyzer("DoubleElectronAnalyzer",
     lepton1 = cms.InputTag("patElectronsWithRelIso"),
@@ -132,56 +116,36 @@ process.me = cms.EDAnalyzer("MuEGAnalyzer",
 
 if isMC:
     process.pEE = cms.Path(
-        process.genElectron* process.genElectronFilter*
+        process.hltEE +
         process.PUweight+
         process.patElectronsWithRelIso +
         process.ee
     )
-    process.eeOthers = process.ee.clone()
-    process.pEEOthers = cms.Path(
-        process.genElectron* ~process.genElectronFilter*
-        process.PUweight+
-        process.patElectronsWithRelIso + 
-        process.eeOthers
-    )
     process.pMM = cms.Path(
-        process.genMuon* process.genMuonFilter*
+        process.hltMM +
         process.PUweight+
         process.patMuonsWithRelIso +
         process.mm
     )
-    process.mmOthers = process.mm.clone()
-    process.pMMOthers = cms.Path(
-        process.genMuon* ~process.genMuonFilter*
-        process.PUweight+
-        process.patMuonsWithRelIso +
-        process.mmOthers
-    )
     process.pME = cms.Path(
-        process.genMuon* process.genMuEGMuonFilter*
-        process.genElectron* process.genMuEGElectronFilter*
+        process.hltME +
         process.PUweight+
         process.patElectronsWithRelIso + process.patMuonsWithRelIso +
         process.me
     )
-    process.meOthers = process.me.clone()
-    process.pMEOthers = cms.Path(
-        process.genMuon* ~process.genMuEGMuonFilter*
-        process.genElectron* ~process.genMuEGElectronFilter*
-        process.PUweight+
-        process.patElectronsWithRelIso + process.patMuonsWithRelIso +
-        process.meOthers
-    )
 else:
     process.pEE = cms.Path(
+        process.hltEE +
         process.patElectronsWithRelIso +
         process.ee
     )
     process.pMM = cms.Path(
+        process.hltMM +
         process.patMuonsWithRelIso +
         process.mm
     )
     process.pME = cms.Path(
+        process.hltME +
         process.patElectronsWithRelIso + process.patMuonsWithRelIso +
         process.me
     )
