@@ -336,8 +336,58 @@ class PlotTool:
 
         print outBorder
 
+class PlotBuilder:
+    def __init__(self, realDataName, mcProdName, mode, hNEventName="hEvents", outFile=gROOT):
+        self.mode = mode
+        self.outFile = outFile
+
+        xmlPath = "%s/src/TopAnalysis/TTbarDilepton/data/dataset.xml" % os.environ["CMSSW_BASE"]
+        self.dset = DatasetXML(xmlPath, realDataName, mcProdName)
+
+        self.lumi = self.dset.lumi[mode]
+        for dsName in self.dset.dsNames[mode]:
+            self.dset.dataFiles[mode].append(TFile("hist/hist_%s_%s.root" % (dsName, mode)))
+
+        for channel in self.dset.channels:
+            for sample in channel.samples:
+                sample.file = TFile("hist/hist_%s-%s_%s.root" % (mcProdName, sample.name, mode))
+                sample.nEvent = sample.file.Get(hNEventName).GetBinContent(1)
+
+    def buildRDHist(self, category, histName):
+        hRD = None
+        for file in self.dset.dataFiles[self.mode]:
+            hRD_src = file.Get("%s/%s" % (category, histName))
+            if not hRD:
+                self.outFile.cd()
+                hRD = hRD_src.Clone("%s_%s_%s" % (self.mode, category, histName))
+                hRD.Reset()
+                hRD.Sumw2()
+            hRD.Add(hRD_src)
+
+        return hRD
+
+    def buildMCHists(self, category, histName):
+        hStack = THStack("hs_%s_%s_%s" % (self.mode, category, histName), "hStack %s %s %s" % (self.mode, category, histName))
+        hMCs = []
+        for channel in self.dset.channels:
+            hMC = None
+            for sample in channel.samples:
+                hMC_src = sample.file.Get("%s/%s" % (category, histName))
+                if not hMC:
+                    self.outFile.cd()
+                    hMC = hMC_src.Clone("%s_%s_%s" % (self.mode, category, histName))
+                    hMC.Reset()
+                    hMC.SetFillColor(channel.color)
+                hMC.Add(hMC_src, self.lumi*sample.xsec/sample.nEvent)
+            if not hMC: continue
+
+            hStack.Add(hMC)
+            hMCs.append((channel.name, hMC))
+
+        return hStack, hMCs
+
 class NtupleAnalyzerLite:
-    def __init__(self, realDataName, mcProdName, mode, sampleToFileMap):
+    def __init__(self, realDataName, mcProdName, mode, sampleToFileMap, hNEventName="hEvents"):
         self.categories = []
         self.hists = {}
         self.inputFiles = {}
@@ -353,6 +403,8 @@ class NtupleAnalyzerLite:
             self.inputFiles[name] = TFile(sampleToFileMap[dsName])
             self.inputTrees[name] = self.inputFiles[name].Get("%s/tree" % mode)
             self.outFiles[name] = TFile("hist/hist_%s.root" % name, "RECREATE")
+            hNEvent = self.inputFiles[name].Get("%s/%s" % (mode, hNEventName)).Clone(hNEventName)
+            hNEvent.Write()
 
         for channel in self.dset.channels:
             for sample in channel.samples:
@@ -360,6 +412,8 @@ class NtupleAnalyzerLite:
                 self.inputFiles[name] = TFile(sampleToFileMap[sample.name])
                 self.inputTrees[name] = self.inputFiles[name].Get("%s/tree" % mode)
                 self.outFiles[name] = TFile("hist/hist_%s.root" % name, "RECREATE")
+                hNEvent = self.inputFiles[name].Get("%s/%s" % (mode, hNEventName)).Clone(hNEventName)
+                hNEvent.Write()
 
     def addCategory(self, name, cut):
         self.categories.append((name, cut))
