@@ -62,7 +62,7 @@ process.PUweight.PileUpMC   = Summer12
 
 process.load("TopAnalysis.LeptonAnalysis.patRelIsoLepton_cfi")
 process.patElectronsWithRelIso.coneSize = cms.double(0.3)
-process.patElectronsWithRelIso.cut = "abs(eta) < 2.5 && pt > 5"
+process.patElectronsWithRelIso.cut = "isPF && passConversionVeto && gsfTrack.trackerExpectedHitsInner.numberOfHits <= 0 && abs(eta) < 2.5 && pt > 5"
 process.patMuonsWithRelIso.coneSize = cms.double(0.3)
 process.patMuonsWithRelIso.cut = "isPFMuon && (isGlobalMuon || isTrackerMuon) && abs(eta) < 2.5 && pt > 5"
 
