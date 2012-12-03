@@ -7,6 +7,6 @@ gROOT.ProcessLine(".x rootlogon.C")
 
 from TopAnalysis.TTbarDilepton.PlotTool import *
 
-plotTool = PlotTool("Run2012", "Summer12")
+plotTool = PlotTool("Run2012", "Summer12", "hEventCounter")
 plotTool.draw("image")
 plotTool.printCutFlow()

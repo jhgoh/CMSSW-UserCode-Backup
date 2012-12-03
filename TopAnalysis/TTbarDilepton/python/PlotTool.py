@@ -140,6 +140,7 @@ class PlotTool:
 
             for f in self.dset.dataFiles[mode]:
                 hSrc = f.Get("%s/%s" % (step, histName))
+                if not hSrc: continue
                 hSrc.Sumw2()
 
                 if not hist:
@@ -150,6 +151,7 @@ class PlotTool:
 
                 hist.Add(hSrc) 
 
+            if not hist: continue
             nbin = hist.GetNbinsX()
             hist.AddBinContent(nbin, hist.GetBinContent(nbin+1))
             hists[mode] = hist
@@ -183,6 +185,7 @@ class PlotTool:
 
             for sample in channel.samples:
                 hSrc = getattr(sample, "file_%s" % mode).Get("%s/%s" % (step, histName))
+                if not hSrc: continue
 
                 if not hist:
                     hist = hSrc.Clone("hch_%s_%s_%s_%s" % (histName, channelName, mode, step))
@@ -192,6 +195,7 @@ class PlotTool:
 
                 hist.Add(hist, hSrc, 1, sample.xsec/sample.nEvent*self.dset.lumi[mode])
 
+            if not hist: continue
             nbin = hist.GetNbinsX()
             hist.AddBinContent(nbin, hist.GetBinContent(nbin+1))
             hists[mode] = hist
@@ -224,6 +228,7 @@ class PlotTool:
                 if "ymax" in options:
                     hStack.SetMaximum(float(options["ymax"]))
 
+                if mode not in hists: continue
                 hStack.Add(hists[mode])
 
                 if mode not in hList:
@@ -294,6 +299,7 @@ class PlotTool:
 
                     if opt["logy"] : pad.SetLogy()
 
+                    if mode not in dataHists: continue
                     hData = dataHists[mode]
                     hist, legend = plotElement[mode]
                     legend.AddEntry(hData, self.realDataName, "lp")
@@ -346,11 +352,11 @@ class PlotBuilder:
 
         self.lumi = self.dset.lumi[mode]
         for dsName in self.dset.dsNames[mode]:
-            self.dset.dataFiles[mode].append(TFile("hist/hist_%s_%s.root" % (dsName, mode)))
+            self.dset.dataFiles[mode].append(TFile("hist/%s_%s.root" % (dsName, mode)))
 
         for channel in self.dset.channels:
             for sample in channel.samples:
-                sample.file = TFile("hist/hist_%s-%s_%s.root" % (mcProdName, sample.name, mode))
+                sample.file = TFile("hist/%s-%s_%s.root" % (mcProdName, sample.name, mode))
                 sample.nEvent = sample.file.Get(hNEventName).GetBinContent(1)
 
     def buildRDHist(self, category, histName):
@@ -387,33 +393,42 @@ class PlotBuilder:
         return hStack, hMCs
 
 class NtupleAnalyzerLite:
-    def __init__(self, realDataName, mcProdName, mode, sampleToFileMap, hNEventName="hEvents"):
+    def __init__(self, realDataName, mcProdName, mode, dsName, srcDir, hNEventName="hEvents", treeName="tree"):
         self.categories = []
         self.hists = {}
-        self.inputFiles = {}
-        self.inputTrees = {}
-        self.outFiles = {}
+        self.inputFile = None
+        self.inputTree = None
+        self.outFile = None
 
         xmlPath = "%s/src/TopAnalysis/TTbarDilepton/data/dataset.xml" % os.environ["CMSSW_BASE"]
         self.dset = DatasetXML(xmlPath, realDataName, mcProdName)
 
-        for dsName in self.dset.dsNames[mode]:
-            if dsName not in sampleToFileMap: continue
+        if dsName in self.dset.dsNames[mode]:
             name = "%s_%s" % (dsName, mode)
-            self.inputFiles[name] = TFile(sampleToFileMap[dsName])
-            self.inputTrees[name] = self.inputFiles[name].Get("%s/tree" % mode)
-            self.outFiles[name] = TFile("hist/hist_%s.root" % name, "RECREATE")
-            hNEvent = self.inputFiles[name].Get("%s/%s" % (mode, hNEventName)).Clone(hNEventName)
+            self.inputFile = TFile("%s/%s.root" % (srcDir, dsName))
+            self.inputTree = self.inputFile.Get("%s/%s" % (mode, treeName))
+            self.outFile = TFile("hist/%s.root" % name, "RECREATE")
+            hNEvent = self.inputFile.Get("%s/%s" % (mode, hNEventName)).Clone(hNEventName)
+            self.nEvent = hNEvent.GetBinContent(1)
             hNEvent.Write()
+        else:
+            samples = {}
+            for channel in self.dset.channels:
+                for sample in channel.samples:
+                    samples[sample.name] = sample
 
-        for channel in self.dset.channels:
-            for sample in channel.samples:
+            if dsName in samples.keys():
+                sample = samples[dsName]
                 name = "%s-%s_%s" % (mcProdName, sample.name, mode)
-                self.inputFiles[name] = TFile(sampleToFileMap[sample.name])
-                self.inputTrees[name] = self.inputFiles[name].Get("%s/tree" % mode)
-                self.outFiles[name] = TFile("hist/hist_%s.root" % name, "RECREATE")
-                hNEvent = self.inputFiles[name].Get("%s/%s" % (mode, hNEventName)).Clone(hNEventName)
+                self.inputFile = TFile("%s/%s-%s.root" % (srcDir, mcProdName, dsName))
+                self.inputTree = self.inputFile.Get("%s/%s" % (mode, treeName))
+                self.outFile = TFile("hist/%s.root" % name, "RECREATE")
+                hNEvent = self.inputFile.Get("%s/%s" % (mode, hNEventName)).Clone(hNEventName)
+                self.nEvent = hNEvent.GetBinContent(1)
                 hNEvent.Write()
+            else:
+                print "Cannot find sample", dsName
+                
 
     def addCategory(self, name, cut):
         self.categories.append((name, cut))
@@ -422,19 +437,21 @@ class NtupleAnalyzerLite:
         self.hists[name] = (varexp, title, nbin, xmin, xmax)
 
     def scanCutFlow(self):
-        for sample in self.outFiles:
-            print "@@ Analyzing %s" % sample
-            outFile = self.outFiles[sample]
+        for categoryName, cut in self.categories:
+            cutStepDir = self.outFile.mkdir(categoryName)
+            cutStepDir.cd()
 
-            for categoryName, cut in self.categories:
-                cutStepDir = outFile.mkdir(categoryName)
-                cutStepDir.cd()
+            h = TH1F("hNEvent", "Number of events", 3, 1, 4)
+            h.Fill(1, self.nEvent)
+            self.inputTree.Draw("2>>hNEvent", "(%s)" % cut, "goff")
+            self.inputTree.Draw("3>>hNEvent", "(weight)*(%s)" % cut, "goff")
+            h.Write()
 
-                for histName in self.hists:
-                    varexp, title, nbin, xmin, xmax = self.hists[histName]
+            for histName in self.hists:
+                varexp, title, nbin, xmin, xmax = self.hists[histName]
 
-                    h = TH1F(histName, title, nbin, xmin, xmax)
+                h = TH1F(histName, title, nbin, xmin, xmax)
 
-                    self.inputTrees[sample].Draw("%s>>%s" % (varexp, histName), "(weight)*(%s)" % cut, "goff")
+                self.inputTree.Draw("%s>>%s" % (varexp, histName), "(weight)*(%s)" % cut, "goff")
 
-                    h.Write()
+                h.Write()
