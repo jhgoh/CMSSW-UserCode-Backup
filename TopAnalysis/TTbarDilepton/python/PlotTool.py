@@ -336,4 +336,51 @@ class PlotTool:
 
         print outBorder
 
+class NtupleAnalyzerLite:
+    def __init__(self, realDataName, mcProdName, mode, sampleToFileMap):
+        self.categories = []
+        self.hists = {}
+        self.inputFiles = {}
+        self.inputTrees = {}
+        self.outFiles = {}
 
+        xmlPath = "%s/src/TopAnalysis/TTbarDilepton/data/dataset.xml" % os.environ["CMSSW_BASE"]
+        self.dset = DatasetXML(xmlPath, realDataName, mcProdName)
+
+        for dsName in self.dset.dsNames[mode]:
+            if dsName not in sampleToFileMap: continue
+            name = "%s_%s" % (dsName, mode)
+            self.inputFiles[name] = TFile(sampleToFileMap[dsName])
+            self.inputTrees[name] = self.inputFiles[name].Get("%s/tree" % mode)
+            self.outFiles[name] = TFile("hist/hist_%s.root" % name, "RECREATE")
+
+        for channel in self.dset.channels:
+            for sample in channel.samples:
+                name = "%s-%s_%s" % (mcProdName, sample.name, mode)
+                self.inputFiles[name] = TFile(sampleToFileMap[sample.name])
+                self.inputTrees[name] = self.inputFiles[name].Get("%s/tree" % mode)
+                self.outFiles[name] = TFile("hist/hist_%s.root" % name, "RECREATE")
+
+    def addCategory(self, name, cut):
+        self.categories.append((name, cut))
+
+    def addHistogram(self, varexp, name, title, nbin, xmin, xmax):
+        self.hists[name] = (varexp, title, nbin, xmin, xmax)
+
+    def scanCutFlow(self):
+        for sample in self.outFiles:
+            print "@@ Analyzing %s" % sample
+            outFile = self.outFiles[sample]
+
+            for categoryName, cut in self.categories:
+                cutStepDir = outFile.mkdir(categoryName)
+                cutStepDir.cd()
+
+                for histName in self.hists:
+                    varexp, title, nbin, xmin, xmax = self.hists[histName]
+
+                    h = TH1F(histName, title, nbin, xmin, xmax)
+
+                    self.inputTrees[sample].Draw("%s>>%s" % (varexp, histName), "(weight)*(%s)" % cut, "goff")
+
+                    h.Write()
