@@ -15,6 +15,32 @@ class Sample:
         self.xsec = 0.0
         self.file = None
 
+class PlotsetXML:
+    def __init__(self, fileName):
+        self.steps = []
+        self.plots = {}
+
+        from xml.dom.minidom import parse
+        plxml = parse(fileName)
+        for step in plxml.getElementsByTagName("step"):
+            stepName = step.getAttribute("name")
+            ymin = float(step.getAttribute("ymin"))
+            ymax = float(step.getAttribute("ymax"))
+            logy = step.getAttribute("logy").lower() == "true"
+            
+            self.steps.append(stepName)
+            self.plots[stepName] = []
+            for plot in step.getElementsByTagName("plot"):
+                plotName = plot.getAttribute("name")
+                plotOpt = {"ymin":ymin, "ymax":ymax, "logy":logy}
+
+                if plot.hasAttribute("ymin"): plotOpt["ymin"] = float(plot.getAttribute("ymin"))
+                if plot.hasAttribute("ymax"): plotOpt["ymax"] = float(plot.getAttribute("ymax"))
+                if plot.hasAttribute("logy"): plotOpt["logy"] = plot.getAttribute("logy").lower() == "true"
+                if plot.hasAttribute("mode"): plotOpt["mode"] = plot.getAttribute("mode").split(",")
+
+                self.plots[stepName].append( (plotName, plotOpt) )
+
 class DatasetXML:
     def __init__(self, fileName, realDataName, mcProdName):
         from xml.dom.minidom import parse
@@ -93,236 +119,138 @@ class DatasetXML:
 class PlotTool:
     def __init__(self, realDataName, mcProdName, hNEventName = "Step 0/hNEvent"):
         self.realDataName = realDataName
+        self.cachedCanvases = {}
+        self.cachedObjs = {}
 
         self.modes = ["mm", "ee", "me", "ll"]
 
-        self.histNames = set()
-        self.steps = set()
-
-        self.cachedObjs = []
-        self.cachedCanvases = {}
-
-        xmlPath = "%s/src/TopAnalysis/TTbarDilepton/data/dataset.xml" % os.environ["CMSSW_BASE"]
-        self.dset = DatasetXML(xmlPath, realDataName, mcProdName)
-        from xml.dom.minidom import parse
-        psxml = parse("%s/src/TopAnalysis/TTbarDilepton/data/plots.xml" % os.environ["CMSSW_BASE"])
-        plotSteps = [s.getAttribute("name") for s in psxml.getElementsByTagName("step")]
-
-        for mode in self.dset.dataFiles:
-            for dsName in self.dset.dsNames[mode]:
-                self.dset.dataFiles[mode].append(TFile("hist/%s_%s.root" % (dsName, mode)))
-
-        for channel in self.dset.channels:
-            for sample in channel.samples:
-                sampleName = sample.name
-                sample.file_mm = TFile("hist/%s-%s_mm.root" % (mcProdName, sampleName))
-                sample.file_ee = TFile("hist/%s-%s_ee.root" % (mcProdName, sampleName))
-                sample.file_me = TFile("hist/%s-%s_me.root" % (mcProdName, sampleName))
-                sample.nEvent = sample.file_mm.Get(hNEventName).GetBinContent(1) ## User number of event in the first mode
-
-                ## Make list of cut steps and histograms
-                stepKeys = sample.file_mm.GetListOfKeys()
-                for stepKey in stepKeys:
-                    subDirName = stepKey.GetName()
-                    if subDirName not in plotSteps: continue
-                    subDir = sample.file_mm.Get(subDirName)
-                    if not subDir.IsA().InheritsFrom("TDirectory"): continue
-                    self.steps.add(subDirName)
-
-                    histKeys = subDir.GetListOfKeys()
-                    for histKey in histKeys:
-                        histName = histKey.GetName()
-                        hist = subDir.Get(histName)
-                        if not hist.IsA().InheritsFrom("TH1"): continue
-
-                        self.histNames.add(histName)
-
-    def makeDataMergedHistogram(self, histName, step, options):
-        hists = {}
+        self.steps = []
+        self.plots = {}
+        ## Build plotting interfaces and check consistency
+        self.plotters = {}
         for mode in self.modes[:-1]:
-            hist = None
+            self.plotters[mode] = PlotBuilder(realDataName, mcProdName, mode, hNEventName)
+            steps = self.plotters[mode].plotset.steps
+            plots = self.plotters[mode].plotset.plots
+            if len(self.steps) == 0:
+                for step in steps:
+                    if step not in self.plotters[mode].steps: continue
+                    self.steps.append(step)
 
-            for f in self.dset.dataFiles[mode]:
-                hSrc = f.Get("%s/%s" % (step, histName))
-                if not hSrc: continue
-                hSrc.Sumw2()
+                    self.plots[step] = []
+                    for plotName, plotOpt in plots[step]:
+                        if plotName not in self.plotters[mode].plots: continue
+                        self.plots[step].append((plotName, plotOpt))
 
-                if not hist:
-                    hist = hSrc.Clone("hdata_%s_%s_%s" % (histName, mode, step))
-                    hist.Reset()
+    def makeMergedPlot(self, category, histName, hRD_srcs, hMCs_srcs):
+        hRD = None
+        labels = []
+        hMCs = []
 
-                    self.cachedObjs.append(hist)
+        for mode in hRD_srcs:
+            hRD_src = hRD_srcs[mode]
+            if not hRD:
+                hRD = hRD_src.Clone("hrd_ll_%s_%s" % (category, histName))
+                hRD.Reset()
+            hRD.Add(hRD_src)
 
-                hist.Add(hSrc) 
+            for i, (label, hMC_src) in enumerate(hMCs_srcs[mode]):
+                if i >= len(hMCs):
+                    labels.append(label)
+                    hMC = hMC_src.Clone("hch%d_ll_%s_%s" % (i, category, histName))
+                    hMCs.append((label, hMC))
+                else:
+                    label, hMC = hMCs[labels.index(label)]
+                    hMC.Add(hMC_src)
 
-            if not hist: continue
-            nbin = hist.GetNbinsX()
-            hist.AddBinContent(nbin, hist.GetBinContent(nbin+1))
-            hists[mode] = hist
+        return (hRD, hMCs)
 
-        hist = hists[self.modes[0]].Clone("hdata_%s_%s_%s" % (histName, self.modes[-1], step))
-        hist.Reset()
-        self.cachedObjs.append(hist)
-        for mode in hists:
-            hist.Add(hists[mode])
-        hists[self.modes[-1]] = hist
+    def buildStack(self, mode, category, histName, hMCs):
+        hsName = "hs_%s_%s_%s" % (mode, category, histName)
+        hstack = THStack(hsName, hsName)
+        for label, hMC in hMCs:
+            hstack.Add(hMC)
 
-        for mode in hists:
-            hist = hists[mode]
-            if "ymin" in options:
-                hist.SetMinimum(float(options["ymin"]))
-            if "ymax" in options:
-                hist.SetMaximum(float(options["ymax"]))
+        return hstack
+        
+    def buildLegend(self, labelAndHists, reverse=True):
+        lh = labelAndHists[:]
+        if reverse: lh.reverse()
+        legend = TLegend(0.70, 0.70, 0.93, 0.93)
+        legend.SetFillColor(kWhite)
+        legend.SetLineColor(kWhite)
+        for label, hist in lh:
+            legend.AddEntry(hist, label, "f")
+        return legend
 
-        return hists
+    def cacheObjects(self, key, objects):
+        if key not in self.cachedObjs: self.cachedObjs[key] = []
 
-    def makeChannelMergedHistogram(self, histName, channelName, step, options):
-        channel = None
-        for ch in self.dset.channels:
-            if ch.name == channelName:
-                channel = ch
-                break
+        self.cachedObjs[key].extend(objects)
 
-        hists = {}
-        for mode in self.modes[:-1]:
-            hist = None
+    def findCachedObjects(self, key, nameFragment):
+        if key not in self.cachedObjs: return []
 
-            for sample in channel.samples:
-                hSrc = getattr(sample, "file_%s" % mode).Get("%s/%s" % (step, histName))
-                if not hSrc: continue
-
-                if not hist:
-                    hist = hSrc.Clone("hch_%s_%s_%s_%s" % (histName, channelName, mode, step))
-                    hist.SetFillColor(channel.color)
-                    hist.Reset()
-                    self.cachedObjs.append(hist)
-
-                hist.Add(hist, hSrc, 1, sample.xsec/sample.nEvent*self.dset.lumi[mode])
-
-            if not hist: continue
-            nbin = hist.GetNbinsX()
-            hist.AddBinContent(nbin, hist.GetBinContent(nbin+1))
-            hists[mode] = hist
-
-        hist = hists[self.modes[0]].Clone("hch_%s_%s_%s_%s" % (histName, channelName, self.modes[-1], step))
-        hist.Reset()
-        self.cachedObjs.append(hist)
-        for mode in hists:
-            hist.Add(hist, hists[mode], 1, 1)
-        hists[self.modes[-1]] = hist
-
-        return hists
-
-    def makeStackWithLegend(self, histName, step, options):
-        plotElements = {}
-        for mode in self.modes:
-            hStack = THStack("hs_%s_%s_%s" % (histName, mode, step), "%s %s %s" % (histName, mode, step))
-            legend = TLegend(0.70, 0.70, 0.93, 0.93)
-            legend.SetFillColor(kWhite)
-            legend.SetLineColor(kWhite)
-            plotElements[mode] = (hStack, legend)
-
-        hList = {}
-        for channel in self.dset.channels:
-            hists = self.makeChannelMergedHistogram(histName, channel.name, step, options)
-            for mode in self.modes:
-                hStack, legend = plotElements[mode]
-                if "ymin" in options:
-                    hStack.SetMinimum(float(options["ymin"]))
-                if "ymax" in options:
-                    hStack.SetMaximum(float(options["ymax"]))
-
-                if mode not in hists: continue
-                hStack.Add(hists[mode])
-
-                if mode not in hList:
-                    hList[mode] = []
-                hList[mode].append((channel.name, hists[mode]))
-
-        for mode in hList:
-            hList[mode].reverse()
-
-        for mode in hList:
-            for label, h in hList[mode]:
-                hStack, legend = plotElements[mode]
-                legend.AddEntry(h, label, "f")
-
-        return plotElements
+        matched = []
+        for obj in self.cachedObjs[key]:
+            if not hasattr(obj, 'GetName'): continue
+            if nameFragment in obj.GetName():
+                matched.append(obj)
+       
+        return matched 
 
     def draw(self, outDir):
-        ## Build plot list from plot.xml
-        plotList = {}
+        for step in self.steps:
+            for plotName, plotOpt in self.plots[step]:
+                hRD = {}
+                hsMC = {}
+                hMCs = {}
+                legend = {}
+                for mode in self.modes[:-1]:
+                    plotter = self.plotters[mode]
+                    hRD[mode] = plotter.buildRDHist(step, plotName)
+                    hMCs[mode] = plotter.buildMCHists(step, plotName)
+                    hsMC[mode] = self.buildStack(mode, step, plotName, hMCs[mode])
 
-        from xml.dom.minidom import parse
-        psxml = parse("%s/src/TopAnalysis/TTbarDilepton/data/plots.xml" % os.environ["CMSSW_BASE"])
-        plotCutSteps = psxml.getElementsByTagName("step")
-        for plotCutStep in plotCutSteps:
-            stepName = plotCutStep.getAttribute("name")
+                    self.cacheObjects("%s_%s" % (step, plotName), [hRD[mode], hsMC[mode], hMCs[mode]])
+                hRD["ll"], hMCs["ll"] = self.makeMergedPlot(step, plotName, hRD, hMCs)
+                hsMC["ll"] = self.buildStack("ll", step, plotName, hMCs["ll"])
+                self.cacheObjects("%s_%s" % (step, plotName), [hRD["ll"], hsMC["ll"], hMCs["ll"]])
 
-            ## Step name should be in the cut step list
-            if stepName not in self.steps: continue
-            plotList[stepName] = []
+                for mode in self.modes:
+                    legend[mode] = self.buildLegend(hMCs[mode])
+                    legend[mode].AddEntry(hRD[mode], self.realDataName, "lp")
 
-            ymin = float(plotCutStep.getAttribute("ymin"))
-            ymax = float(plotCutStep.getAttribute("ymax"))
-            logy = plotCutStep.getAttribute("logy").lower() == "true"
+                    self.cacheObjects("%s_%s" % (step, plotName), [legend[mode]])
 
-            for plot in plotCutStep.getElementsByTagName("plot"):
-                plotName = plot.getAttribute("name")
-                plotNames = []
-
-                if '*' != plotName[-1]:
-                    if plotName not in self.histNames: continue
-                    plotNames.append(plotName)
-                else:
-                    plotName = plotName[:-1]
-                    for histName in self.histNames:
-                        if histName[:len(plotName)] == plotName: plotNames.append(histName)
-
-                plotOpt = {"ymin":ymin, "ymax":ymax, "logy":logy}
-
-                if plot.hasAttribute("ymin"): plotOpt["ymin"] = float(plot.getAttribute("ymin"))
-                if plot.hasAttribute("ymax"): plotOpt["ymax"] = float(plot.getAttribute("ymax"))
-                if plot.hasAttribute("logy"): plotOpt["logy"] = plot.getAttribute("logy").lower() == "true"
-                if plot.hasAttribute("mode"): plotOpt["mode"] = plot.getAttribute("mode").split(",")
-
-                for plotName in plotNames:
-                    plotList[stepName].append( (plotName, plotOpt) )
-
-        for step in plotList:
-            for name, opt in plotList[step]:
-                dataHists = self.makeDataMergedHistogram(name, step, opt)
-                plotElement = self.makeStackWithLegend(name, step, opt)
-                plotName = plotElement[self.modes[-1]][0].GetName()
-                plotName = plotName.replace(" ", "_")
-                if plotName in self.cachedCanvases: plotName += "_"
-                c = TCanvas("c_%s" % plotName, "%s" % plotName, 800, 800)
+                canvasName = "c_%s_%s" % (step.replace(" ", "_"), plotName.replace(" ", "_"))
+                while canvasName in self.cachedCanvases:
+                    canvasName += "_"
+                c = TCanvas(canvasName, canvasName, 600, 600)
                 c.Divide(2,2)
-                self.cachedCanvases[plotName] = c
+                self.cachedCanvases[canvasName] = c
+
                 for i, mode in enumerate(self.modes):
                     pad = c.cd(i+1)
 
-                    if opt["logy"] : pad.SetLogy()
+                    if plotOpt["logy"] : pad.SetLogy()
 
-                    if mode not in dataHists: continue
-                    hData = dataHists[mode]
-                    hist, legend = plotElement[mode]
-                    legend.AddEntry(hData, self.realDataName, "lp")
+                    if mode not in hRD: continue
+                    hRD[mode].SetMinimum(plotOpt["ymin"])
+                    hRD[mode].SetMaximum(plotOpt["ymax"])
+                    hRD[mode].Draw()
+                    hsMC[mode].Draw("same")
+                    hRD[mode].Draw("same")
+                    hRD[mode].Draw("sameaxis")
+                    legend[mode].Draw()
 
-                    hData.Draw()
-                    legend.Draw()
-                    hist.Draw("same")
-                    hData.Draw("same")
-                    hData.Draw("sameaxis")
-
-                    self.cachedObjs.extend([hData, hist, legend])
-
-                c.Print("image/"+c.GetName()+".pdf")
-                c.Print("image/"+c.GetName()+".png")
+                if outDir is not None:
+                    c.Print(os.path.join(outDir, c.GetName()+".pdf"))
+                    c.Print(os.path.join(outDir, c.GetName()+".png"))
 
     def printCutFlow(self):
         outBorder = "="*(22+10*len(self.steps)+2)
-        seperator = " "+"-"*(22+10*len(self.steps))+" "
+        separator = " "+"-"*(22+10*len(self.steps))+" "
 
         for mode in self.modes[:-1]:
             print outBorder
@@ -330,20 +258,35 @@ class PlotTool:
             header += "".join(["%10s" % step for step in self.steps])
 
             print header
-            print seperator
+            print separator
 
+            plotter = self.plotters[mode]
+
+            sumMCs = [0.]*len(self.steps)
             ## Get cut steps and build contents
-            for channel in self.dset.channels:
+            for channel in plotter.dataset.channels:
                 for sample in channel.samples:
-                    file = getattr(sample, "file_%s" % mode)
-
                     line = " %20s |" % sample.name
                     for step in self.steps:
-                        nPassing = file.Get("%s/hNEvent" % step).GetBinContent(3)
-                        line += "%10.2f" % (nPassing*sample.xsec/sample.nEvent*self.dset.lumi[mode])
+                        nPass = sample.file.Get("%s/hNEvent" % step).GetBinContent(3)
+                        nPassNorm = nPass*sample.xsec/sample.nEvent*plotter.dataset.lumi[mode]
+                        sumMCs[self.steps.index(step)] += nPassNorm
+                        line += "%10.2f" % nPassNorm
                     line += "\n"
 
                     print line,
+
+            print separator
+            line = " %20s |" % "MC total"
+            for sumMC in sumMCs: line += "%10.2f" % sumMC
+            print line
+            print separator
+            line = " %20s |" % self.realDataName
+            dataFiles = plotter.dataset.dataFiles[mode]
+            for step in self.steps:
+                nPass = sum([f.Get("%s/hNEvent" % step).GetBinContent(3) for f in dataFiles])
+                line += "%10.2f" % nPass
+            print line
 
         print outBorder
 
@@ -352,25 +295,46 @@ class PlotBuilder:
         self.mode = mode
         self.outFile = outFile
 
-        xmlPath = "%s/src/TopAnalysis/TTbarDilepton/data/dataset.xml" % os.environ["CMSSW_BASE"]
-        self.dset = DatasetXML(xmlPath, realDataName, mcProdName)
+        datasetXMLPath = "%s/src/TopAnalysis/TTbarDilepton/data/dataset.xml" % os.environ["CMSSW_BASE"]
+        self.dataset = DatasetXML(datasetXMLPath, realDataName, mcProdName)
 
-        self.lumi = self.dset.lumi[mode]
-        for dsName in self.dset.dsNames[mode]:
-            self.dset.dataFiles[mode].append(TFile("hist/%s_%s.root" % (dsName, mode)))
+        plotsetXMLPath = "%s/src/TopAnalysis/TTbarDilepton/data/plots.xml" % os.environ["CMSSW_BASE"]
+        self.plotset = PlotsetXML(plotsetXMLPath)
 
-        for channel in self.dset.channels:
+        self.lumi = self.dataset.lumi[mode]
+        for dsName in self.dataset.dsNames[mode]:
+            self.dataset.dataFiles[mode].append(TFile("hist/%s_%s.root" % (dsName, mode)))
+
+        for channel in self.dataset.channels:
             for sample in channel.samples:
                 sample.file = TFile("hist/%s-%s_%s.root" % (mcProdName, sample.name, mode))
                 sample.nEvent = sample.file.Get(hNEventName).GetBinContent(1)
 
+        ## Get list of steps in the file using data file and xml interface
+        self.steps = []
+        self.plots = []
+        dataFile = self.dataset.dataFiles[mode][0]
+        for stepName in [d.GetName() for d in dataFile.GetListOfKeys()]:
+            stepDir = dataFile.Get(stepName)
+            if not stepDir.IsA().InheritsFrom("TDirectory"): continue
+
+            self.steps.append(stepName)
+
+            for plotName in [k.GetName() for k in stepDir.GetListOfKeys()]:
+                plot = stepDir.Get(plotName)
+                if not plot.IsA().InheritsFrom("TH1"): continue
+
+                self.plots.append(plotName)
+
     def buildRDHist(self, category, histName):
         hRD = None
-        for file in self.dset.dataFiles[self.mode]:
+        for file in self.dataset.dataFiles[self.mode]:
             hRD_src = file.Get("%s/%s" % (category, histName))
+            if not hRD_src:
+                print "Cannot find", category, histName
             if not hRD:
                 self.outFile.cd()
-                hRD = hRD_src.Clone("%s_%s_%s" % (self.mode, category, histName))
+                hRD = hRD_src.Clone("hrd_%s_%s_%s" % (self.mode, category, histName))
                 hRD.Reset()
                 hRD.Sumw2()
             hRD.Add(hRD_src)
@@ -378,24 +342,22 @@ class PlotBuilder:
         return hRD
 
     def buildMCHists(self, category, histName):
-        hStack = THStack("hs_%s_%s_%s" % (self.mode, category, histName), "hStack %s %s %s" % (self.mode, category, histName))
         hMCs = []
-        for channel in self.dset.channels:
+        for i, channel in enumerate(self.dataset.channels):
             hMC = None
             for sample in channel.samples:
                 hMC_src = sample.file.Get("%s/%s" % (category, histName))
                 if not hMC:
                     self.outFile.cd()
-                    hMC = hMC_src.Clone("%s_%s_%s" % (self.mode, category, histName))
+                    hMC = hMC_src.Clone("hch%d_%s_%s_%s" % (i, self.mode, category, histName))
                     hMC.Reset()
                     hMC.SetFillColor(channel.color)
                 hMC.Add(hMC_src, self.lumi*sample.xsec/sample.nEvent)
             if not hMC: continue
 
-            hStack.Add(hMC)
             hMCs.append((channel.name, hMC))
 
-        return hStack, hMCs
+        return hMCs
 
 class NtupleAnalyzerLite:
     def __init__(self, realDataName, mcProdName, mode, dsName, srcDir, hNEventName="hEvents", treeName="tree"):
@@ -406,9 +368,9 @@ class NtupleAnalyzerLite:
         self.outFile = None
 
         xmlPath = "%s/src/TopAnalysis/TTbarDilepton/data/dataset.xml" % os.environ["CMSSW_BASE"]
-        self.dset = DatasetXML(xmlPath, realDataName, mcProdName)
+        self.dataset = DatasetXML(xmlPath, realDataName, mcProdName)
 
-        if dsName in self.dset.dsNames[mode]:
+        if dsName in self.dataset.dsNames[mode]:
             name = "%s_%s" % (dsName, mode)
             self.inputFile = TFile("%s/%s.root" % (srcDir, dsName))
             #self.inputTree = self.inputFile.Get("%s/%s" % (mode, treeName))
@@ -420,7 +382,7 @@ class NtupleAnalyzerLite:
             hNEvent.Write()
         else:
             samples = {}
-            for channel in self.dset.channels:
+            for channel in self.dataset.channels:
                 for sample in channel.samples:
                     samples[sample.name] = sample
 
