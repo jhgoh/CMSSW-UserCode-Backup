@@ -13,63 +13,64 @@
   <plot name="hJet1_*" />
   <plot name="hJet2_*" />
   <plot name="hMet_pt" />
-  <plot name="hLL_m" />
+  <plot name="hLL_m" ymin="1" ymax="1e8" />
   <plot name="hMM_m" />
   <plot name="hEE_m" />
   <plot name="hME_m" />
 </step>
 
-<step name="Step 1" ymin="1e-1" ymax="1e8" logy="true">
-  <plot name="hNVertex" ymin="0" ymax="1e5" logy="false" />
+<step name="Step 1" ymin="1e-1" ymax="1e9" logy="true">
+  <plot name="hNVertex" ymin="0" ymax="1e6" logy="false" />
   <plot name="hNJets" />
   <plot name="hMet_pt" />
-  <plot name="hLL_m" />
+  <plot name="hLL_m" ymin="1" ymax="1e8" />
 </step>
 
-<step name="Step 2" ymin="1e-1" ymax="1e7" logy="true">
-  <plot name="hNVertex" ymin="0" ymax="8e4" logy="false" />
+<step name="Step 2" ymin="1e-1" ymax="1e8" logy="true">
+  <plot name="hNVertex" ymin="0" ymax="2e5" logy="false" />
   <plot name="hNJets" />
   <plot name="hNMbjets" />
   <plot name="hMet_pt" />
-  <plot name="hLL_m" />
+  <plot name="hLL_m" ymin="1" ymax="1e7" />
 </step>
 
 <step name="Step 3" ymin="1e-1" ymax="1e7" logy="true">
-  <plot name="hNVertex" ymin="0" ymax="25000" logy="false" />
-  <plot name="hNJets" ymin="0" ymax="25000" logy="false" />
-  <plot name="hNJets" />
+  <plot name="hNVertex" ymin="0" ymax="1e4" logy="false" />
+  <plot name="hNJets" ymin="0" ymax="1e5" logy="false" />
+  <plot name="hNJets" ymin="1" />
   <plot name="hNMbjets" />
   <plot name="hMet_pt" />
-  <plot name="hTTbarVsum_m" ymax="1e5" />
+  <plot name="hVsumTT_m" ymax="1e7" />
 </step>
 
 <step name="Step 4" ymin="1e-1" ymax="1e7" logy="true">
-  <plot name="hNVertex" ymin="0" ymax="1700" logy="false" />
-  <plot name="hNJets" ymin="0" ymax="2000" logy="false" />
-  <plot name="hNJets" />
-  <plot name="hNMbjets" ymax="1e5" />
-  <plot name="hMet_pt" ymax="1e5" />
-  <plot name="hTTbarVsum_m" ymax="1e5" />
+  <plot name="hNVertex" ymin="0" ymax="6e3" logy="false" />
+  <plot name="hNJets" ymin="0" ymax="5e4" logy="false" />
+  <plot name="hNJets" ymin="1" />
+  <plot name="hNMbjets" ymax="1e7" />
+  <plot name="hMet_pt" ymax="1e7" />
+  <plot name="hVsumTT_m" ymax="1e7" />
 </step>
 
-<step name="Step 5" ymin="0" ymax="500" logy="false">
-  <plot name="hNVertex" ymax="1200" logy="false" />
-  <plot name="hNJets" ymin="1e-1" ymax="1e5" logy="true" />
-  <plot name="hNJets" ymax="10000" />
-  <plot name="hNMbjets" ymax="10000" />
-  <plot name="hMet_pt" ymax="1000" />
-  <plot name="hTTbarVsum_m" ymax="1000" />
+<step name="Step 5" ymin="0" ymax="1e5" logy="false">
+  <plot name="hNVertex" ymax="4e3" logy="false" />
+  <plot name="hNJets" ymin="1e-1" ymax="1e6" logy="true" />
+  <plot name="hNJets" ymax="2.5e4" />
+  <plot name="hNMbjets" ymax="1e4" />
+  <plot name="hMet_pt" ymax="1e4" />
+  <plot name="hVsumTT_m" ymax="3e3" />
+  <plot name="hKinTT_m" ymax="3e3" />
 </step>
 
-<step name="Step 6" ymin="0" ymax="500" logy="false">
-  <plot name="hNVertex" ymax="70" logy="false" />
-  <plot name="hNJets" ymax="300" />
-  <plot name="hNMbjets" ymax="700" />
-  <plot name="hNMbjets" ymin="1e-1" ymax="1e5" logy="true" />
-  <plot name="hMet_pt" ymax="50" />
-  <plot name="hJJ_m" ymax="100" />
-  <plot name="hBB_m" ymax="100" />
-  <plot name="hTTbarVsum_m" ymax="50" />
+<step name="Step 6" ymin="0" ymax="1e4" logy="false">
+  <plot name="hNVertex" ymax="1e4" logy="false" />
+  <plot name="hNJets" ymax="1e5" />
+  <plot name="hNMbjets" ymax="1e4" />
+  <plot name="hNMbjets" ymin="1e-1" ymax="1e4" logy="true" />
+  <plot name="hMet_pt" ymax="1e4" />
+  <plot name="hJJ_m" ymax="1e4" />
+  <plot name="hBB_m" ymax="1e4" />
+  <plot name="hVsumTT_m" ymax="1e4" />
 </step>
 
 </plots>

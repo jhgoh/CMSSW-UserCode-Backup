@@ -18,7 +18,8 @@
 
 <data id="Summer12" type="MC">
   <channel name="t#bar{t}" color="kRed+1">
-    <sample name="TTJets" xsec="225.197" />
+    <sample name="TTJets" xsec="23.6196" />
+    <!--<sample name="TTJets" xsec="225.197" />-->
     <!--<sample name="TTJetsOthers" xsec="225.197" />-->
   </channel>
   <channel name="W#rightarrow l#nu" color="kGreen-3">
@@ -30,7 +31,8 @@
     <sample name="WZ" xsec="32.3" />
   </channel>
   <channel name="Single top" color="kMagenta">
-    <sample name="SingleTop" xsec="22.2" />
+    <sample name="SingleToptW" xsec="11.1" />
+    <sample name="SingleTopBartW" xsec="11.1" />
   </channel>
   <!--//
   <channel name="Z/#gamma*#rightarrow#tau^{+}#tau^{-}" color="kAzure+8">

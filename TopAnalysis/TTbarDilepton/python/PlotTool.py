@@ -104,6 +104,9 @@ class PlotTool:
 
         xmlPath = "%s/src/TopAnalysis/TTbarDilepton/data/dataset.xml" % os.environ["CMSSW_BASE"]
         self.dset = DatasetXML(xmlPath, realDataName, mcProdName)
+        from xml.dom.minidom import parse
+        psxml = parse("%s/src/TopAnalysis/TTbarDilepton/data/plots.xml" % os.environ["CMSSW_BASE"])
+        plotSteps = [s.getAttribute("name") for s in psxml.getElementsByTagName("step")]
 
         for mode in self.dset.dataFiles:
             for dsName in self.dset.dsNames[mode]:
@@ -121,6 +124,7 @@ class PlotTool:
                 stepKeys = sample.file_mm.GetListOfKeys()
                 for stepKey in stepKeys:
                     subDirName = stepKey.GetName()
+                    if subDirName not in plotSteps: continue
                     subDir = sample.file_mm.Get(subDirName)
                     if not subDir.IsA().InheritsFrom("TDirectory"): continue
                     self.steps.add(subDirName)
@@ -248,6 +252,7 @@ class PlotTool:
     def draw(self, outDir):
         ## Build plot list from plot.xml
         plotList = {}
+
         from xml.dom.minidom import parse
         psxml = parse("%s/src/TopAnalysis/TTbarDilepton/data/plots.xml" % os.environ["CMSSW_BASE"])
         plotCutSteps = psxml.getElementsByTagName("step")
@@ -406,9 +411,11 @@ class NtupleAnalyzerLite:
         if dsName in self.dset.dsNames[mode]:
             name = "%s_%s" % (dsName, mode)
             self.inputFile = TFile("%s/%s.root" % (srcDir, dsName))
-            self.inputTree = self.inputFile.Get("%s/%s" % (mode, treeName))
+            #self.inputTree = self.inputFile.Get("%s/%s" % (mode, treeName))
+            self.inputTree = self.inputFile.Get("%s" % treeName)
             self.outFile = TFile("hist/%s.root" % name, "RECREATE")
-            hNEvent = self.inputFile.Get("%s/%s" % (mode, hNEventName)).Clone(hNEventName)
+            #hNEvent = self.inputFile.Get("%s/%s" % (mode, hNEventName)).Clone(hNEventName.replace("/", "_"))
+            hNEvent = self.inputFile.Get("%s" % hNEventName).Clone(os.path.basename(hNEventName))
             self.nEvent = hNEvent.GetBinContent(1)
             hNEvent.Write()
         else:
@@ -421,9 +428,11 @@ class NtupleAnalyzerLite:
                 sample = samples[dsName]
                 name = "%s-%s_%s" % (mcProdName, sample.name, mode)
                 self.inputFile = TFile("%s/%s-%s.root" % (srcDir, mcProdName, dsName))
-                self.inputTree = self.inputFile.Get("%s/%s" % (mode, treeName))
+                #self.inputTree = self.inputFile.Get("%s/%s" % (mode, treeName))
+                self.inputTree = self.inputFile.Get("%s" % treeName)
                 self.outFile = TFile("hist/%s.root" % name, "RECREATE")
-                hNEvent = self.inputFile.Get("%s/%s" % (mode, hNEventName)).Clone(hNEventName)
+                #hNEvent = self.inputFile.Get("%s/%s" % (mode, hNEventName)).Clone(hNEventName.replace("/", "_"))
+                hNEvent = self.inputFile.Get("%s" % hNEventName).Clone(os.path.basename(hNEventName))
                 self.nEvent = hNEvent.GetBinContent(1)
                 hNEvent.Write()
             else:
@@ -443,8 +452,8 @@ class NtupleAnalyzerLite:
 
             h = TH1F("hNEvent", "Number of events", 3, 1, 4)
             h.Fill(1, self.nEvent)
-            self.inputTree.Draw("2>>hNEvent", "(%s)" % cut, "goff")
-            self.inputTree.Draw("3>>hNEvent", "(weight)*(%s)" % cut, "goff")
+            self.inputTree.Draw("2>>+hNEvent", "(%s)" % cut, "goff")
+            self.inputTree.Draw("3>>+hNEvent", "(puweight)*(%s)" % cut, "goff")
             h.Write()
 
             for histName in self.hists:
@@ -452,6 +461,6 @@ class NtupleAnalyzerLite:
 
                 h = TH1F(histName, title, nbin, xmin, xmax)
 
-                self.inputTree.Draw("%s>>%s" % (varexp, histName), "(weight)*(%s)" % cut, "goff")
+                self.inputTree.Draw("%s>>%s" % (varexp, histName), "(puweight)*(%s)" % cut, "goff")
 
                 h.Write()
