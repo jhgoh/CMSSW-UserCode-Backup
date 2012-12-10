@@ -117,10 +117,10 @@ class DatasetXML:
             self.channels.append(ch)
 
 class PlotTool:
-    def __init__(self, realDataName, mcProdName, hNEventName = "Step 0/hNEvent"):
+    def __init__(self, realDataName, mcProdName, hNEventName = "Step 0/hNEvent", histDir="hist"):
         self.realDataName = realDataName
         self.cachedCanvases = {}
-        self.cachedObjs = {}
+        self.cachedObjects = []
 
         self.modes = ["mm", "ee", "me", "ll"]
 
@@ -129,7 +129,7 @@ class PlotTool:
         ## Build plotting interfaces and check consistency
         self.plotters = {}
         for mode in self.modes[:-1]:
-            self.plotters[mode] = PlotBuilder(realDataName, mcProdName, mode, hNEventName)
+            self.plotters[mode] = PlotBuilder(realDataName, mcProdName, mode, hNEventName, histDir=histDir)
             steps = self.plotters[mode].plotset.steps
             plots = self.plotters[mode].plotset.plots
             if len(self.steps) == 0:
@@ -176,28 +176,13 @@ class PlotTool:
     def buildLegend(self, labelAndHists, reverse=True):
         lh = labelAndHists[:]
         if reverse: lh.reverse()
-        legend = TLegend(0.70, 0.70, 0.93, 0.93)
-        legend.SetFillColor(kWhite)
+        legend = TLegend(0.70, 0.70, 0.93, 0.93, "", "NDC")
+        legend.SetFillStyle(0)
+        #legend.SetLineStyle(0)
         legend.SetLineColor(kWhite)
         for label, hist in lh:
             legend.AddEntry(hist, label, "f")
         return legend
-
-    def cacheObjects(self, key, objects):
-        if key not in self.cachedObjs: self.cachedObjs[key] = []
-
-        self.cachedObjs[key].extend(objects)
-
-    def findCachedObjects(self, key, nameFragment):
-        if key not in self.cachedObjs: return []
-
-        matched = []
-        for obj in self.cachedObjs[key]:
-            if not hasattr(obj, 'GetName'): continue
-            if nameFragment in obj.GetName():
-                matched.append(obj)
-       
-        return matched 
 
     def draw(self, outDir):
         for step in self.steps:
@@ -212,16 +197,16 @@ class PlotTool:
                     hMCs[mode] = plotter.buildMCHists(step, plotName)
                     hsMC[mode] = self.buildStack(mode, step, plotName, hMCs[mode])
 
-                    self.cacheObjects("%s_%s" % (step, plotName), [hRD[mode], hsMC[mode], hMCs[mode]])
+                    self.cachedObjects.extend([hRD[mode], hsMC[mode], hMCs[mode]])
                 hRD["ll"], hMCs["ll"] = self.makeMergedPlot(step, plotName, hRD, hMCs)
                 hsMC["ll"] = self.buildStack("ll", step, plotName, hMCs["ll"])
-                self.cacheObjects("%s_%s" % (step, plotName), [hRD["ll"], hsMC["ll"], hMCs["ll"]])
+                self.cachedObjects.extend([hRD["ll"], hsMC["ll"], hMCs["ll"]])
 
                 for mode in self.modes:
                     legend[mode] = self.buildLegend(hMCs[mode])
                     legend[mode].AddEntry(hRD[mode], self.realDataName, "lp")
 
-                    self.cacheObjects("%s_%s" % (step, plotName), [legend[mode]])
+                    self.cachedObjects.extend([legend[mode]])
 
                 canvasName = "c_%s_%s" % (step.replace(" ", "_"), plotName.replace(" ", "_"))
                 while canvasName in self.cachedCanvases:
@@ -268,8 +253,9 @@ class PlotTool:
                 for sample in channel.samples:
                     line = " %20s |" % sample.name
                     for step in self.steps:
-                        nPass = sample.file.Get("%s/hNEvent" % step).GetBinContent(3)
-                        nPassNorm = nPass*sample.xsec/sample.nEvent*plotter.dataset.lumi[mode]
+                        nPass = sample.file.Get("%s/hNEvent" % step).GetBinContent(4)
+                        #nPassNorm = nPass*sample.xsec/sample.nEvent*plotter.dataset.lumi[mode]
+                        nPassNorm = nPass*sample.xsec*plotter.dataset.lumi[mode]
                         sumMCs[self.steps.index(step)] += nPassNorm
                         line += "%10.2f" % nPassNorm
                     line += "\n"
@@ -284,14 +270,14 @@ class PlotTool:
             line = " %20s |" % self.realDataName
             dataFiles = plotter.dataset.dataFiles[mode]
             for step in self.steps:
-                nPass = sum([f.Get("%s/hNEvent" % step).GetBinContent(3) for f in dataFiles])
+                nPass = sum([f.Get("%s/hNEvent" % step).GetBinContent(4) for f in dataFiles])
                 line += "%10.2f" % nPass
             print line
 
         print outBorder
 
 class PlotBuilder:
-    def __init__(self, realDataName, mcProdName, mode, hNEventName="hEvents", outFile=gROOT):
+    def __init__(self, realDataName, mcProdName, mode, hNEventName="hNEvent", histDir="hist", outFile=gROOT):
         self.mode = mode
         self.outFile = outFile
 
@@ -303,11 +289,11 @@ class PlotBuilder:
 
         self.lumi = self.dataset.lumi[mode]
         for dsName in self.dataset.dsNames[mode]:
-            self.dataset.dataFiles[mode].append(TFile("hist/%s_%s.root" % (dsName, mode)))
+            self.dataset.dataFiles[mode].append(TFile("%s/%s-%s.root" % (histDir, dsName, mode)))
 
         for channel in self.dataset.channels:
             for sample in channel.samples:
-                sample.file = TFile("hist/%s-%s_%s.root" % (mcProdName, sample.name, mode))
+                sample.file = TFile("%s/%s-%s-%s.root" % (histDir, mcProdName, sample.name, mode))
                 sample.nEvent = sample.file.Get(hNEventName).GetBinContent(1)
 
         ## Get list of steps in the file using data file and xml interface
@@ -352,7 +338,7 @@ class PlotBuilder:
                     hMC = hMC_src.Clone("hch%d_%s_%s_%s" % (i, self.mode, category, histName))
                     hMC.Reset()
                     hMC.SetFillColor(channel.color)
-                hMC.Add(hMC_src, self.lumi*sample.xsec/sample.nEvent)
+                hMC.Add(hMC_src, self.lumi*sample.xsec)
             if not hMC: continue
 
             hMCs.append((channel.name, hMC))
@@ -360,69 +346,75 @@ class PlotBuilder:
         return hMCs
 
 class NtupleAnalyzerLite:
-    def __init__(self, realDataName, mcProdName, mode, dsName, srcDir, hNEventName="hEvents", treeName="tree"):
-        self.categories = []
+    def __init__(self, inputTreePath, outputFilePath, hNEventPath, normFactor, weightVar="puweight"):
+        self.weightVar = weightVar
         self.hists = {}
-        self.inputFile = None
-        self.inputTree = None
-        self.outFile = None
+        self.categories = []
 
-        xmlPath = "%s/src/TopAnalysis/TTbarDilepton/data/dataset.xml" % os.environ["CMSSW_BASE"]
-        self.dataset = DatasetXML(xmlPath, realDataName, mcProdName)
+        inputFileName, inputTreeName = inputTreePath.split(":")
+        self.inputFile = TFile(inputFileName)
+        self.inputTree = self.inputFile.Get(inputTreeName)
 
-        if dsName in self.dataset.dsNames[mode]:
-            name = "%s_%s" % (dsName, mode)
-            self.inputFile = TFile("%s/%s.root" % (srcDir, dsName))
-            #self.inputTree = self.inputFile.Get("%s/%s" % (mode, treeName))
-            self.inputTree = self.inputFile.Get("%s" % treeName)
-            self.outFile = TFile("hist/%s.root" % name, "RECREATE")
-            #hNEvent = self.inputFile.Get("%s/%s" % (mode, hNEventName)).Clone(hNEventName.replace("/", "_"))
-            hNEvent = self.inputFile.Get("%s" % hNEventName).Clone(os.path.basename(hNEventName))
-            self.nEvent = hNEvent.GetBinContent(1)
-            hNEvent.Write()
+        self.outputFile = TFile(outputFilePath, "RECREATE")
+        self.hNEvent = self.inputFile.Get(hNEventPath).Clone("hNEvent")
+        self.hNEvent.Write()
+
+        ## Get overall normalization factor
+        if type(normFactor) in (type(0.0), type(0)):
+            self.nEvent = 0
+            self.scale = float(normFactor)
+        elif type(normFactor) == type("") and ':' in normFactor:
+            ## Try to get event counter histogram
+            ## The form should be "Some/directory/histogram:binNumber"
+            normHistPath, binNumber = normFactor.split(":")
+            self.nEvent = self.inputFile.Get(normHistPath).GetBinContent(int(binNumber))
+            self.scale = 1.0/self.nEvent
         else:
-            samples = {}
-            for channel in self.dataset.channels:
-                for sample in channel.samples:
-                    samples[sample.name] = sample
+            print "@@ Invalid normFactor,", normFactor, inputTreePath
+            return
 
-            if dsName in samples.keys():
-                sample = samples[dsName]
-                name = "%s-%s_%s" % (mcProdName, sample.name, mode)
-                self.inputFile = TFile("%s/%s-%s.root" % (srcDir, mcProdName, dsName))
-                #self.inputTree = self.inputFile.Get("%s/%s" % (mode, treeName))
-                self.inputTree = self.inputFile.Get("%s" % treeName)
-                self.outFile = TFile("hist/%s.root" % name, "RECREATE")
-                #hNEvent = self.inputFile.Get("%s/%s" % (mode, hNEventName)).Clone(hNEventName.replace("/", "_"))
-                hNEvent = self.inputFile.Get("%s" % hNEventName).Clone(os.path.basename(hNEventName))
-                self.nEvent = hNEvent.GetBinContent(1)
-                hNEvent.Write()
-            else:
-                print "Cannot find sample", dsName
-                
-
-    def addCategory(self, name, cut):
-        self.categories.append((name, cut))
+    def addCategory(self, name, cut, histNames, options):
+        if type(options) == type(''): options = [options]
+        self.categories.append( (name, cut, histNames, options) )
 
     def addHistogram(self, varexp, name, title, nbin, xmin, xmax):
         self.hists[name] = (varexp, title, nbin, xmin, xmax)
 
     def scanCutFlow(self):
-        for categoryName, cut in self.categories:
-            cutStepDir = self.outFile.mkdir(categoryName)
-            cutStepDir.cd()
+        for categoryName, cut, histNames, options in self.categories:
+            categoryDir = self.outputFile.mkdir(categoryName)
+            categoryDir.cd()
 
-            h = TH1F("hNEvent", "Number of events", 3, 1, 4)
-            h.Fill(1, self.nEvent)
-            self.inputTree.Draw("2>>+hNEvent", "(%s)" % cut, "goff")
-            self.inputTree.Draw("3>>+hNEvent", "(puweight)*(%s)" % cut, "goff")
+            tree = self.inputTree
+
+            if "renewCut" in options: tree.SetEventList(0)
+
+            eventList = TEventList("eventList", "")
+            tree.Draw(">>eventList", cut)
+            tree.SetEventList(eventList)
+            cut = "1"
+
+            h = TH1F("hNEvent", "Number of events", 4, 1, 5)
+            h.Fill(1, self.hNEvent.GetBinContent(1))
+            tree.Draw("2>>+hNEvent", "%s" % cut, "goff")
+            tree.Draw("3>>+hNEvent", "(%s)*(%s)" % (self.weightVar, cut), "goff")
+            tree.Draw("4>>+hNEvent", "(%s*%g)*(%s)" % (self.weightVar, self.scale, cut), "goff")
+
+            h.GetXaxis().SetBinLabel(1, "Generated event")
+            h.GetXaxis().SetBinLabel(2, "Event after cut")
+            h.GetXaxis().SetBinLabel(3, "Event after cut with weight")
+            h.GetXaxis().SetBinLabel(4, "Normalized event after cut with weight")
             h.Write()
+        
+            for histName in histNames:
+                if histName not in self.hists: continue
 
-            for histName in self.hists:
-                varexp, title, nbin, xmin, xmax = self.hists[histName]
+                varexp = self.hists[histName][0]
+                options = self.hists[histName][1:]
+                h = TH1F(histName, *options)
 
-                h = TH1F(histName, title, nbin, xmin, xmax)
-
-                self.inputTree.Draw("%s>>%s" % (varexp, histName), "(puweight)*(%s)" % cut, "goff")
+                tree.Draw("min(%s,%f)>>%s" % (varexp, h.GetXaxis().GetXmax()-1e-9, histName), "(%s)*(%s)" % (self.weightVar, cut), "goff")
+                h.Scale(self.scale)
 
                 h.Write()
+
