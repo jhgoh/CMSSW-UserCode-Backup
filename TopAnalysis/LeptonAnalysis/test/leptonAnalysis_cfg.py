@@ -19,12 +19,21 @@ process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
 process.MessageLogger.cerr.FwkReport.reportEvery = 10000
 
 process.source = cms.Source("PoolSource", fileNames = cms.untracked.vstring())
+for line in open("/afs/cern.ch/user/j/jhgoh/public/sources/CMG/V5_10_0/%s.txt" % sample).readlines():
+    line = line.strip()
+    if 'root' not in line: continue
+    if '#' == line[0]: continue
+    process.source.fileNames.append(line)
+
 if 'Run2012' in sample:
     isMC = False  
-    process.load("KoPFA.CommonTools.Sources.CMG.V5_10_0.Run2012.cmgTuple_%s_cff" % sample)
+    from CMGTools.Common.Tools.applyJSON_cff import *
+    json = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions12/8TeV/Prompt/Cert_190456-208686_8TeV_PromptReco_Collisions12_JSON.txt'
+    applyJSON(process, json)
+#process.load("KoPFA.CommonTools.Sources.CMG.V5_10_0.Run2012.cmgTuple_%s_cff" % sample)
 else:
     isMC = True
-    process.load("KoPFA.CommonTools.Sources.CMG.V5_10_0.Summer12.cmgTuple_%s_cff" % sample)
+    #process.load("KoPFA.CommonTools.Sources.CMG.V5_10_0.Summer12.cmgTuple_%s_cff" % sample)
     #process.source.fileNames = process.source.fileNames[:4000]
 #process.maxEvents.input = 1000
 
