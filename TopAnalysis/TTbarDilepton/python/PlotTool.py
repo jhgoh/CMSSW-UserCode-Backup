@@ -116,6 +116,17 @@ class DatasetXML:
 
             self.channels.append(ch)
 
+    def getSampleInfo(self, sampleName):
+        for channel in self.channels:
+            for sample in channel.samples:
+                if sampleName == sample.name: return sample
+        return None
+
+    def getChannelInfo(self, channelName):
+        for channel in self.channels:
+            if channel.name == channelName: return channel
+        return None
+
 class PlotTool:
     def __init__(self, realDataName, mcProdName, hNEventName = "Step 0/hNEvent", histDir="hist"):
         self.realDataName = realDataName
@@ -224,7 +235,7 @@ class PlotTool:
                     hRD[mode].SetMinimum(plotOpt["ymin"])
                     hRD[mode].SetMaximum(plotOpt["ymax"])
                     hRD[mode].Draw()
-                    hsMC[mode].Draw("same")
+                    hsMC[mode].Draw("samehist")
                     hRD[mode].Draw("same")
                     hRD[mode].Draw("sameaxis")
                     legend[mode].Draw()
@@ -346,8 +357,9 @@ class PlotBuilder:
         return hMCs
 
 class NtupleAnalyzerLite:
-    def __init__(self, inputTreePath, outputFilePath, hNEventPath, normFactor, weightVar="puweight"):
+    def __init__(self, inputTreePath, outputFilePath, hNEventPath, normFactor, weightVar="puweight", precut=""):
         self.weightVar = weightVar
+        self.precut = precut
         self.hists = {}
         self.categories = []
 
@@ -373,12 +385,15 @@ class NtupleAnalyzerLite:
             print "@@ Invalid normFactor,", normFactor, inputTreePath
             return
 
-    def addCategory(self, name, cut, histNames, options):
+    def addCategory(self, name, cut, histNames, options = []):
         if type(options) == type(''): options = [options]
         self.categories.append( (name, cut, histNames, options) )
 
-    def addHistogram(self, varexp, name, title, nbin, xmin, xmax):
+    def addH1(self, varexp, name, title, nbin, xmin, xmax):
         self.hists[name] = (varexp, title, nbin, xmin, xmax)
+
+    def addH2(self, varexp, name, title, nbinx, xmin, xmax, nbiny, ymin, ymax):
+        self.hists[name] = (varexp, title, nbinx, xmin, xmax, nbiny, ymin, ymax)
 
     def scanCutFlow(self):
         for categoryName, cut, histNames, options in self.categories:
@@ -389,12 +404,16 @@ class NtupleAnalyzerLite:
 
             if "renewCut" in options: tree.SetEventList(0)
 
+            if self.precut != "":
+                if cut == "": cut = self.precut
+                else: cut = "(%s) && (%s)" % (cut, self.precut)
             eventList = TEventList("eventList", "")
             tree.Draw(">>eventList", cut)
             tree.SetEventList(eventList)
             cut = "1"
 
             h = TH1F("hNEvent", "Number of events", 4, 1, 5)
+            h.Sumw2()
             h.Fill(1, self.hNEvent.GetBinContent(1))
             tree.Draw("2>>+hNEvent", "%s" % cut, "goff")
             tree.Draw("3>>+hNEvent", "(%s)*(%s)" % (self.weightVar, cut), "goff")
@@ -411,10 +430,22 @@ class NtupleAnalyzerLite:
 
                 varexp = self.hists[histName][0]
                 options = self.hists[histName][1:]
-                h = TH1F(histName, *options)
+                if len(options) == 4 :
+                    h = TH1F(histName, *options)
+                    h.Sumw2()
 
-                tree.Draw("min(%s,%f)>>%s" % (varexp, h.GetXaxis().GetXmax()-1e-9, histName), "(%s)*(%s)" % (self.weightVar, cut), "goff")
+                    tree.Draw("min(%s,%f)>>%s" % (varexp, h.GetXaxis().GetXmax()-1e-9, histName), "(%s)*(%s)" % (self.weightVar, cut), "goff")
+                elif len(options) == 7 :
+                    h = TH2F(histName, *options)
+                    h.Sumw2()
+
+                    tree.Draw("%s>>%s" % (varexp, histName), "(%s)*(%s)" % (self.weightVar, cut), "goff")
+                else:
+                    print "Wrong options,", options
+
+                    
                 h.Scale(self.scale)
 
                 h.Write()
+                h = None
 
