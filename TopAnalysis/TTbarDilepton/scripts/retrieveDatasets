@@ -12,71 +12,6 @@ sourceBase = '/afs/cern.ch/user/j/jhgoh/public/sources/CMG'
 sys.path.append(sourceBase)
 datasets = __import__(cmgVersion).datasets
 
-"""datasets = {}
-
-datasets['Run2012A-DoubleElectron'] = [
-  '/DoubleElectron/Run2012A-13Jul2012-v1/AOD/V5/PAT_CMG_V5_10_0',
-  '/DoubleElectron/Run2012A-recover-06Aug2012-v1/AOD/V5_B/PAT_CMG_V5_10_0',
-]
-datasets['Run2012B-DoubleElectron'] = [
-  '/DoubleElectron/Run2012B-13Jul2012-v1/AOD/V5/PAT_CMG_V5_10_0',
-]
-datasets['Run2012C-DoubleElectron'] = [
-  '/DoubleElectron/Run2012C-24Aug2012-v1/AOD/V5_B/PAT_CMG_V5_10_0',
-  '/DoubleElectron/Run2012C-PromptReco-v2/AOD/PAT_CMG_V5_10_0_runrange_start-203002',
-]
-
-datasets['Run2012A-DoubleMu'] = [
-  '/DoubleMu/Run2012A-13Jul2012-v1/AOD/V5_B/PAT_CMG_V5_10_0',
-  '/DoubleMu/Run2012A-recover-06Aug2012-v1/AOD/V5_B/PAT_CMG_V5_10_0',
-]
-datasets['Run2012B-DoubleMu'] = [
-  '/DoubleMu/Run2012B-13Jul2012-v4/AOD/V5_B/PAT_CMG_V5_10_0',
-]
-datasets['Run2012C-DoubleMu'] = [
-  '/DoubleMu/Run2012C-24Aug2012-v1/AOD/V5_B/PAT_CMG_V5_10_0',
-  '/DoubleMu/Run2012C-PromptReco-v2/AOD/PAT_CMG_V5_10_0_runrange_start-203002',
-]
-
-datasets['Run2012A-MuEG'] = [
-  '/MuEG/Run2012A-13Jul2012-v1/AOD/V5/PAT_CMG_V5_10_0',
-  '/MuEG/Run2012A-recover-06Aug2012-v1/AOD/V5_B/PAT_CMG_V5_10_0',
-]
-datasets['Run2012B-MuEG'] = [
-  '/MuEG/Run2012B-13Jul2012-v1/AOD/V5_B/PAT_CMG_V5_10_0',
-]
-datasets['Run2012C-MuEG'] = [
-  '/MuEG/Run2012C-24Aug2012-v1/AOD/V5_B/PAT_CMG_V5_10_0',
-  '/MuEG/Run2012C-PromptReco-v2/AOD/PAT_CMG_V5_10_0_runrange_start-203002',
-]
-
-datasets['Summer12-ZJets10To50'] = ['/DYJetsToLL_M-10To50filter_8TeV-madgraph/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM/V5_B/PAT_CMG_V5_10_0']
-datasets['Summer12-ZJets'] = ['/DYJetsToLL_M-50_TuneZ2Star_8TeV-madgraph-tarball/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM/V5_B/PAT_CMG_V5_10_0']
-datasets['Summer12-TTJets'] = ['/TTJets_MassiveBinDECAY_TuneZ2star_8TeV-madgraph-tauola/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM/V5_B/PAT_CMG_V5_10_0']
-datasets['Summer12-SingleTop'] = [
-  'T_tW-channel-DR_TuneZ2star_8TeV-powheg-tauola/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM/V5_B/PAT_CMG_V5_10_0',
-  'Tbar_tW-channel-DR_TuneZ2star_8TeV-powheg-tauola/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM/V5_B/PAT_CMG_V5_10_0',
-]
-datasets['Summer12-WJets'] = ['/WJetsToLNu_TuneZ2Star_8TeV-madgraph-tarball/Summer12_DR53X-PU_S10_START53_V7A-v2/AODSIM/V5_B/PAT_CMG_V5_10_0']
-datasets['Summer12-WW'] = ['/WW_TuneZ2star_8TeV_pythia6_tauola/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM/V5_B/PAT_CMG_V5_10_0']
-datasets['Summer12-WZ'] = ['/WZ_TuneZ2star_8TeV_pythia6_tauola/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM/V5_B/PAT_CMG_V5_10_0']
-datasets['Summer12-ZZ'] = ['/ZZ_TuneZ2star_8TeV_pythia6_tauola/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM/V5_B/PAT_CMG_V5_10_0']
-
-#TTJets_mass161_5_TuneZ2star_8TeV-madgraph-tauola/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM/V5_B/PAT_CMG_V5_10_0
-#TTJets_mass163_5_TuneZ2star_8TeV-madgraph-tauola/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM/V5_B/PAT_CMG_V5_10_0
-#TTJets_mass166_5_TuneZ2star_8TeV-madgraph-tauola/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM/V5_B/PAT_CMG_V5_10_0
-#TTJets_mass169_5_TuneZ2star_8TeV-madgraph-tauola/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM/V5_B/PAT_CMG_V5_10_0
-#TTJets_mass175_5_TuneZ2star_8TeV-madgraph-tauola/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM/V5_B/PAT_CMG_V5_10_0
-#TTJets_mass178_5_TuneZ2star_8TeV-madgraph-tauola/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM/V5_B/PAT_CMG_V5_10_0
-#TTJets_mass181_5_TuneZ2star_8TeV-madgraph-tauola/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM/V5_B/PAT_CMG_V5_10_0
-#TTJets_mass184_5_TuneZ2star_8TeV-madgraph-tauola/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM/V5_B/PAT_CMG_V5_10_0
-#TTJets_matchingdown_TuneZ2star_8TeV-madgraph-tauola/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM/V5_B/PAT_CMG_V5_10_0
-#TTJets_matchingup_TuneZ2star_8TeV-madgraph-tauola/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM/V5_B/PAT_CMG_V5_10_0
-#TTJets_scaledown_TuneZ2star_8TeV-madgraph-tauola/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM/V5_B/PAT_CMG_V5_10_0
-#TTJets_scaleup_TuneZ2star_8TeV-madgraph-tauola/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM/V5_B/PAT_CMG_V5_10_0
-#TTH_HToBB_M-125_8TeV-pythia6/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM/V5_B/PAT_CMG_V5_10_0
-"""
-
 ## Main routine
 
 dataset_files = {}
@@ -102,12 +37,16 @@ for i, dataset in enumerate(datasets):
     dataset_files[dataset] = files
     dataset_size[dataset] = totalSize
 
-print "Writing datasets to TopAnalysis/TTbarDilepton/data/dataset-*.txt"
+print "Writing datasets to TopAnalysis/TTbarDilepton/data/%s" % cmgVersion
+outPath = "%s/src/TopAnalysis/TTbarDilepton/data/%s" % (os.environ["CMSSW_BASE"], cmgVersion)
+if not os.path.exists(outPath):
+    os.makedirs(outPath)
+
 for dataset in datasets:
     files = dataset_files[dataset]
     totalSize = dataset_size[dataset]
 
-    outFile = open("%s/src/TopAnalysis/TTbarDilepton/data/dataset-%s.txt" % (os.environ["CMSSW_BASE"], dataset), "w")
+    outFile = open("%s/%s.txt" % (outPath, dataset), "w")
     print>>outFile, "# Dataset = %s" % dataset
     for i, dataPath in enumerate(datasets[dataset]):
         print>>outFile, "# path%d = %s" % (i+1, dataPath)
