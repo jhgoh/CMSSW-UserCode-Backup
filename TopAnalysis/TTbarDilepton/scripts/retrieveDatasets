@@ -1,7 +1,18 @@
 #!/usr/bin/env python
+import sys
+if len(sys.argv) < 2:
+    print "Usage: %s CMGVersion"
+    sys.exit()
+
+cmgVersion = sys.argv[1]
 
 baseDir = '/store/cmst3/user/cmgtools/CMG'
-datasets = {}
+sourceBase = '/afs/cern.ch/user/j/jhgoh/public/sources/CMG'
+
+sys.path.append(sourceBase)
+datasets = __import__(cmgVersion).datasets
+
+"""datasets = {}
 
 datasets['Run2012A-DoubleElectron'] = [
   '/DoubleElectron/Run2012A-13Jul2012-v1/AOD/V5/PAT_CMG_V5_10_0',
@@ -64,6 +75,7 @@ datasets['Summer12-ZZ'] = ['/ZZ_TuneZ2star_8TeV_pythia6_tauola/Summer12_DR53X-PU
 #TTJets_scaledown_TuneZ2star_8TeV-madgraph-tauola/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM/V5_B/PAT_CMG_V5_10_0
 #TTJets_scaleup_TuneZ2star_8TeV-madgraph-tauola/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM/V5_B/PAT_CMG_V5_10_0
 #TTH_HToBB_M-125_8TeV-pythia6/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM/V5_B/PAT_CMG_V5_10_0
+"""
 
 ## Main routine
 
