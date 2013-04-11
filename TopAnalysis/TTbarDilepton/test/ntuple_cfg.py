@@ -16,7 +16,7 @@ process.MessageLogger.cerr.FwkReport.reportEvery = 1000
 process.source = cms.Source("PoolSource", fileNames = cms.untracked.vstring())
 from TopAnalysis.TTbarDilepton.dataset_cff import *
 dataset, section, nFiles = parseJobSectionOption()
-files = loadDataset(dataset)
+files = loadDataset("V5_12_0_44X", dataset)
 begin, end = calculateRange(files, section, nFiles)
 process.source.fileNames = files[begin:end]
 
@@ -70,7 +70,7 @@ process.ee.electron.minNumber = 2
 process.me.muon.minNumber = 1
 process.me.electron.minNumber = 1
 
-production, primaryDS = dataset.split('-')
+primaryDS, production = dataset.split('-')
 from TopAnalysis.TTbarDilepton.trigger_cff import *
 
 if isRealData(dataset):
@@ -93,9 +93,9 @@ else:
     process.ee.doMCMatch = True
     process.me.doMCMatch = True
 
-    process.hltMM.HLTPaths = HLTPaths["%s-DoubleMu"       % production]
-    process.hltEE.HLTPaths = HLTPaths["%s-DoubleElectron" % production]
-    process.hltME.HLTPaths = HLTPaths["%s-MuEG"           % production]
+    process.hltMM.HLTPaths = HLTPaths["DoubleMu-%s"       % production]
+    process.hltEE.HLTPaths = HLTPaths["DoubleElectron-%s" % production]
+    process.hltME.HLTPaths = HLTPaths["MuEG-%s"           % production]
 
     process.commonSequence = cms.Sequence(
         process.commonSequenceForMC
@@ -105,7 +105,7 @@ else:
       + process.lumiWeight
     )
 
-    prod, sample = dataset.split('-')
+    sample, prod = dataset.split('-')
 
     process.pMM = cms.Path(process.commonSequence + process.hltMM + process.mm)
     process.pEE = cms.Path(process.commonSequence + process.hltEE + process.ee)
