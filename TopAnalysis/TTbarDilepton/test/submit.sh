@@ -1,7 +1,7 @@
 #!/bin/bash
 
 MAXFILES=50
-DSFILES=`\ls ../data/dataset-*.txt`
+DSFILES=`\ls /afs/cern.ch/user/j/jhgoh/public/sources/CMG/V5_12_0_44X/*.txt`
 
 cat > run.sh <<EOF
 #!/bin/bash
@@ -32,7 +32,7 @@ if [ ! -d ntuple/unmerged ]; then
 fi
 
 for DSFILE in $DSFILES; do
-  DATASET=`basename $DSFILE | sed -e 's/dataset-//g' -e 's/.txt//g'`
+  DATASET=`basename $DSFILE | sed -e 's/.txt//g'`
   NFILES=`cat $DSFILE | grep .root | grep -v '^#' | grep -v '^ *$' | wc -l`
   NJOBS=$(($NFILES/$MAXFILES))
   if [ $(($NJOBS*$MAXFILES)) -lt $NFILES ]; then
