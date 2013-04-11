@@ -19,8 +19,9 @@ def parseJobSectionOption():
 
     return dataset, section, maxFiles
 
-def loadDataset(sample):
-    lines = open("%s/src/TopAnalysis/TTbarDilepton/data/dataset-%s.txt" % (os.environ["CMSSW_BASE"], sample)).readlines()
+def loadDataset(cmgVersion, sample):
+    baseDir = "/afs/cern.ch/user/j/jhgoh/public/sources/CMG/%s" % cmgVersion
+    lines = open("%s/%s.txt" % (baseDir, sample)).readlines()
     files = []
     for line in lines:
         line = line.strip()
