@@ -3,14 +3,20 @@
 <use name="FWCore/ParameterSet" />
 <use name="CommonTools/UtilAlgos" />
 <use name="CommonTools/Utils" />
+
 <use name="DataFormats/L1Trigger" />
 <use name="DataFormats/L1GlobalMuonTrigger" />
+<use name="DataFormats/MuonReco" />
 <use name="DataFormats/BeamSpot" />
+<use name="DataFormats/TrackReco" />
+<use name="TrackingTools/TrajectoryState" />
+<use name="MuonAnalysis/MuonAssociators" />
 <use name="DataFormats/Math" />
+
 <use name="root" />
-<use name="HLTrigger/TPGAnalysis" />
 
 <library file="*.cc" name="HLTriggerTPGAnalysisPlugins">
   <flags EDM_PLUGIN="1" />
 </library>
+
 

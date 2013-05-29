@@ -6,8 +6,8 @@ from L1TriggerConfig.L1GtConfigProducers.L1GtTriggerMaskTechTrigConfig_cff impor
 from HLTrigger.HLTfilters.hltLevel1GTSeed_cfi import *
 
 hltLevel1GTSeed.L1TechTriggerSeeding = cms.bool(True)
-hltLevel1GTSeed.L1SeedsLogicalExpression = cms.string('0 AND (40 OR 41) AND NOT (36 OR 37 OR 38 OR 39)')
-#hltLevel1GTSeed.L1SeedsLogicalExpression = cms.string('NOT (36 OR 37 OR 38 OR 39)')
+#hltLevel1GTSeed.L1SeedsLogicalExpression = cms.string('0 AND (40 OR 41) AND NOT (36 OR 37 OR 38 OR 39)')
+hltLevel1GTSeed.L1SeedsLogicalExpression = cms.string('NOT (36 OR 37 OR 38 OR 39)')
 
 muonOrthogonalTriggers = cms.EDFilter("HLTHighLevel",
     TriggerResultsTag = cms.InputTag("TriggerResults", "", "HLT"),
@@ -24,11 +24,10 @@ noscraping = cms.EDFilter("FilterOutScraping",
     thresh = cms.untracked.double(0.25)
 )
 
-primaryVertexFilter = cms.EDFilter("GoodVertexFilter",
-    vertexCollection = cms.InputTag("offlinePrimaryVertices"),
-    minimumNDOF = cms.uint32(4),
-    maxAbsZ = cms.double(15),
-    maxd0 = cms.double(2)
+oneGoodVertexFilter = cms.EDFilter("VertexSelector",
+    src = cms.InputTag("offlinePrimaryVertices"),
+    cut = cms.string("!isFake && ndof > 4 && abs(z) <= 20 && position.Rho <= 2"),
+    filter = cms.bool(True),   # otherwise it won't filter the events, just produce an empty vertex collection.
 )
 
 muonCounterFilter = cms.EDFilter("CandViewCountFilter",
@@ -37,14 +36,9 @@ muonCounterFilter = cms.EDFilter("CandViewCountFilter",
     maxNumber = cms.uint32(99999)
 )
 
-muonMinBiasCommonFilters = cms.Sequence(
-    hltLevel1GTSeed * noscraping * 
-    primaryVertexFilter * muonCounterFilter
-)
-
 muonCommonFilters = cms.Sequence(
     hltLevel1GTSeed * muonOrthogonalTriggers * noscraping * 
-    primaryVertexFilter * muonCounterFilter
+    oneGoodVertexFilter * muonCounterFilter
 )
 
 from RecoMuon.TrackingTools.MuonServiceProxy_cff import *

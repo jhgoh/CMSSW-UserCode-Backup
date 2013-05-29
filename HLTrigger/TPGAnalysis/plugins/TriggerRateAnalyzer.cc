@@ -1,16 +1,4 @@
-#include "FWCore/Framework/interface/Frameworkfwd.h"
-#include "FWCore/Framework/interface/MakerMacros.h"
-#include "FWCore/Framework/interface/EDAnalyzer.h"
-
-#include "FWCore/Framework/interface/Run.h"
-#include "FWCore/Framework/interface/Event.h"
-#include "FWCore/Framework/interface/EventSetup.h"
-#include "FWCore/Framework/interface/ESHandle.h"
-#include "FWCore/Utilities/interface/InputTag.h"
-#include "FWCore/ParameterSet/interface/ParameterSet.h"
-
-#include "FWCore/Common/interface/TriggerNames.h"
-#include "DataFormats/Common/interface/TriggerResults.h"
+#include "HLTrigger/TPGAnalysis/interface/TriggerRateAnalyzer.h"
 
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "FWCore/ServiceRegistry/interface/Service.h"
@@ -18,31 +6,6 @@
 #include "CommonTools/Utils/interface/TFileDirectory.h"
 
 #include <TString.h>
-#include <TH1F.h>
-
-#include <string>
-#include <vector>
-#include <map>
-
-class TriggerRateAnalyzer : public edm::EDAnalyzer
-{
-public:
-  TriggerRateAnalyzer(const edm::ParameterSet& pset);
-  ~TriggerRateAnalyzer();
-
-  void beginRun(const edm::Run& run, const edm::EventSetup& eventSetup);
-  void endRun();
-  void beginLuminosityBlock(const edm::LuminosityBlock& lumi, const edm::EventSetup& eventSetup);
-  void analyze(const edm::Event& event, const edm::EventSetup& eventSetup);
-
-private:
-  std::vector<std::string> myTrigNames_;
-
-  int runNumber_;
-  
-  TH1F* hNEvent_;
-  std::map<int, TH1F*> hNEventInRun_;
-};
 
 TriggerRateAnalyzer::TriggerRateAnalyzer(const edm::ParameterSet& pset)
 {
@@ -83,10 +46,6 @@ void TriggerRateAnalyzer::beginRun(const edm::Run& run, const edm::EventSetup& e
 }
 
 void TriggerRateAnalyzer::endRun()
-{
-}
-
-void TriggerRateAnalyzer::beginLuminosityBlock(const edm::LuminosityBlock& lumi, const edm::EventSetup& eventSetup)
 {
 }
 
@@ -135,4 +94,3 @@ void TriggerRateAnalyzer::analyze(const edm::Event& event, const edm::EventSetup
   } // Loop over trigger results
 }
 
-DEFINE_FWK_MODULE(TriggerRateAnalyzer);

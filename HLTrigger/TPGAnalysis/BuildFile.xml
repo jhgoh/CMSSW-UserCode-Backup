@@ -4,10 +4,7 @@
 <use name="DataFormats/TrackReco" />
 <use name="DataFormats/MuonReco" />
 <use name="DataFormats/JetReco" />
-<use name="PhysicsTools/RooStatsCms" />
-<use name="PhysicsTools/SelectorUtils" />
 <use name="root" />
-<use name="rootgraphics" />
 
 <export>
   <lib name="HLTriggerTPGAnalysis" />
@@ -15,8 +12,5 @@
   <use name="DataFormats/TrackReco" />
   <use name="DataFormats/MuonReco" />
   <use name="DataFormats/JetReco" />
-  <use name="root" />
-  <use name="rootgraphics" />
-  <use name="PhysicsTools/RooStatsCms" />
 </export>
 

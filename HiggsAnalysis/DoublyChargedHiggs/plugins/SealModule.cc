@@ -1,10 +1,9 @@
 #include "FWCore/Framework/interface/MakerMacros.h"
 
-#include "HiggsAnalysis/DoublyChargedHiggs/plugins/DileptonProducer.h"
-#include "HiggsAnalysis/DoublyChargedHiggs/plugins/DHGenEventFilter.h"
-#include "HiggsAnalysis/DoublyChargedHiggs/plugins/MultipleCandCounterFilter.h"
+#include "HiggsAnalysis/DoublyChargedHiggs/interface/FourMuonAnalyzer.h"
+#include "HiggsAnalysis/DoublyChargedHiggs/interface/PATMuonCandSelector.h"
+#include "HiggsAnalysis/DoublyChargedHiggs/interface/DimuonProducer.h"
 
-DEFINE_FWK_MODULE(DileptonProducer);
-DEFINE_FWK_MODULE(DHGenEventFilter);
-DEFINE_FWK_MODULE(MultipleCandCounterFilter);
-
+DEFINE_FWK_MODULE(FourMuonAnalyzer);
+DEFINE_FWK_MODULE(PATMuonCandSelector);
+DEFINE_FWK_MODULE(DimuonProducer);
