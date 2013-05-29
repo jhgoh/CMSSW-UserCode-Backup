@@ -22,6 +22,7 @@
 #include "AnalysisDataFormats/CMGTools/interface/Muon.h"
 #include "AnalysisDataFormats/CMGTools/interface/PFJet.h"
 #include "AnalysisDataFormats/CMGTools/interface/BaseMET.h"
+#include "AnalysisDataFormats/CMGTools/interface/GenericTypes.h"
 //#include "DataFormats/PatCandidates/interface/Electron.h"
 //#include "DataFormats/PatCandidates/interface/Muon.h"
 //#include "DataFormats/PatCandidates/interface/Jet.h"
@@ -276,10 +277,12 @@ void EventTupleProducer::analyze(const edm::Event& event, const edm::EventSetup&
   event.getByLabel(metLabel_, metHandle);
   met_ = metHandle->at(0).p4();
 
-  typedef edm::AssociationMap<edm::OneToMany<std::vector<reco::GenJet>, reco::GenParticleCollection> > GenJetToGenParticlesMap;
-  typedef edm::AssociationMap<edm::OneToOne<std::vector<cmg::PFJet>, std::vector<reco::GenJet> > > RecoToGenJetMap;
-  edm::Handle<GenJetToGenParticlesMap> genJetToPartonMapHandle;
-  edm::Handle<RecoToGenJetMap> recoToGenJetMapHandle;
+  //typedef edm::AssociationMap<edm::OneToMany<std::vector<reco::GenJet>, reco::GenParticleCollection> > GenJetToGenParticlesMap;
+  //typedef edm::AssociationMap<edm::OneToOne<std::vector<cmg::PFJet>, std::vector<reco::GenJet> > > RecoToGenJetMap;
+  typedef edm::AssociationMap<edm::OneToMany<std::vector<cmg::GenJet>, reco::GenParticleCollection> > CMGGenJetToGenParticlesMap;
+  typedef edm::AssociationMap<edm::OneToOne<std::vector<cmg::PFJet>, std::vector<cmg::GenJet> > > RecoToCMGGenJetMap;
+  edm::Handle<CMGGenJetToGenParticlesMap> genJetToPartonMapHandle;
+  edm::Handle<RecoToCMGGenJetMap> recoToGenJetMapHandle;
 
   // This while loop runs just for once, a "break" statement must be kept in the end of loop
   // It reduces nested loop
@@ -353,11 +356,12 @@ void EventTupleProducer::analyze(const edm::Event& event, const edm::EventSetup&
     while ( doMCMatch_ )
     {
       edm::Ref<std::vector<cmg::PFJet> > jetRef(jetHandle, i);
-      RecoToGenJetMap::const_iterator recoToGenJet = recoToGenJetMapHandle->find(jetRef);
+      RecoToCMGGenJetMap::const_iterator recoToGenJet = recoToGenJetMapHandle->find(jetRef);
       if ( recoToGenJet == recoToGenJetMapHandle->end() ) break;
 
-      const edm::Ref<std::vector<reco::GenJet> >& genJet = recoToGenJet->val;
-      GenJetToGenParticlesMap::const_iterator genJetToParton = genJetToPartonMapHandle->find(genJet);
+      //const edm::Ref<std::vector<reco::GenJet> >& genJet = recoToGenJet->val;
+      const edm::Ref<std::vector<cmg::GenJet> >& genJet = recoToGenJet->val;
+      CMGGenJetToGenParticlesMap::const_iterator genJetToParton = genJetToPartonMapHandle->find(genJet);
       if ( genJetToParton == genJetToPartonMapHandle->end() ) break;
 
       const edm::RefVector<reco::GenParticleCollection>& genPartons = genJetToParton->val;
