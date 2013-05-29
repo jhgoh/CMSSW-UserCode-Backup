@@ -1,6 +1,8 @@
 import FWCore.ParameterSet.Config as cms
 import sys, os
 
+cmgVersion = os.environ["CMGVERSION"]
+
 process = cms.Process("Ana")
 
 process.load("FWCore.MessageLogger.MessageLogger_cfi")
@@ -16,7 +18,7 @@ process.MessageLogger.cerr.FwkReport.reportEvery = 1000
 process.source = cms.Source("PoolSource", fileNames = cms.untracked.vstring())
 from TopAnalysis.TTbarDilepton.dataset_cff import *
 dataset, section, nFiles = parseJobSectionOption()
-files = loadDataset("V5_12_0_44X", dataset)
+files = loadDataset(cmgVersion, dataset)
 begin, end = calculateRange(files, section, nFiles)
 process.source.fileNames = files[begin:end]
 
@@ -32,7 +34,7 @@ process.genParticleCount = cms.EDFilter("GenParticleCountFilter",
     maxNumber = cms.uint32(1),
 )
 
-process.genParticleTauVeto =cms.EDFilter("GenParticleCountFilter",
+process.genParticleTauVeto = cms.EDFilter("GenParticleCountFilter",
     src = cms.InputTag("genParticlesPruned"),
     cut = cms.string("status == 3"),
     ids = cms.vint32(15, -15),
@@ -100,7 +102,7 @@ else:
     process.commonSequence = cms.Sequence(
         process.commonSequenceForMC
     #  + process.genParticleCount + process.genParticleTauVeto
-      + process.genParticlesForJetsNoNu * process.ak5GenJetsNoNu
+    #  + process.genParticlesForJetsNoNu * process.ak5GenJetsNoNu
       + process.recoToGenJet + process.genJetToPartons
       + process.lumiWeight
     )
