@@ -6,8 +6,7 @@ import sys, os
 doSubmit = True
 cmgVersion = "V5_13_0"
 #cmgVersion = "V5_12_0_44X"
-maxFiles = 50
-dsFilePath = "/afs/cern.ch/user/j/jhgoh/public/sources/CMG/%s" % cmgVersion
+maxFiles = 100
 
 datasets = [
     "DoubleElectron-Run2012A", "DoubleElectron-Run2012B", "DoubleElectron-Run2012C", "DoubleElectron-Run2012D",
@@ -51,6 +50,7 @@ export MAXFILES=$3
 cmsRun ntuple_cfg.py
 
 """ % (os.getcwd(), cmgVersion)
+runScript = None
 
 os.system("chmod +x run.sh")
 
