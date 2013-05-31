@@ -2,11 +2,12 @@
 
 from TopAnalysis.TTbarDilepton.dataset_cff import *
 import sys, os
+from datetime import datetime
 
 doSubmit = True
 cmgVersion = "V5_13_0"
 #cmgVersion = "V5_12_0_44X"
-maxFiles = 100
+maxFiles = 50
 
 datasets = [
     "DoubleElectron-Run2012A", "DoubleElectron-Run2012B", "DoubleElectron-Run2012C", "DoubleElectron-Run2012D",
@@ -58,6 +59,8 @@ if not os.path.isdir("log"): os.mkdir("log")
 if not os.path.isdir("ntuple"): os.mkdir("ntuple")
 if not os.path.isdir("ntuple/unmerged"): os.mkdir("ntuple/unmerged")
 
+submitLog = open("log/submit.log", "w")
+print>>submitLog, "Submitting jobs", datetime.now()
 for dataset in datasets:
     files = loadDataset(cmgVersion, dataset)
     nFiles = len(files)
@@ -69,7 +72,15 @@ for dataset in datasets:
     print "    nJobs    =", nJobs
     print "    maxFiles =", maxFiles
 
+    print>>submitLog, "Submitting", dataset
+    print>>submitLog, "    nFiles   =", nFiles
+    print>>submitLog, "    nJobs    =", nJobs
+    print>>submitLog, "    maxFiles =", maxFiles
+
     for section in range(nJobs):
         cmd = "bsub -q 8nh -oo log/%s_%s.log run.sh %s %s %s" % (dataset, section, dataset, section, maxFiles)
         print cmd
+        print>>submitLog, cmd
         if doSubmit: os.system(cmd)
+print>>submitLog, "Submit done", datetime.now()
+submitLog = None
